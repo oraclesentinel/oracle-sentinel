@@ -62,7 +62,7 @@ Every 4 hours, OpenClaw triggers a full scan cycle. No human intervention.
 | **Dashboard** | https://oraclesentinel.xyz/app |
 | **Documentation** | https://oraclesentinel.xyz/docs |
 | **Landing Page** | https://oraclesentinel.xyz |
-| **Telegram Bot** | https://t.me/OracleSentinelBot |
+| **Telegram Bot** | https://t.me/oraclesentinel_pm_bot |
 | **X (Twitter)** | https://x.com/oracle_sentinel |
 | **Token ($OSAI)** | [Solscan](https://solscan.io/token/HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump) |
 
@@ -103,7 +103,7 @@ curl https://oraclesentinel.xyz/api/health
 ## How to Interact
 
 **Via Telegram Bot:**
-Send any Polymarket URL to [@OracleSentinelBot](https://t.me/OracleSentinelBot) and get instant AI analysis with:
+Send any Polymarket URL to [@oraclesentinel_pm_bot](https://t.me/oraclesentinel_pm_bot) and get instant AI analysis with:
 - Resolution rules breakdown
 - AI probability vs market price
 - Edge calculation
