@@ -21,11 +21,13 @@ Oracle Sentinel scans Polymarket prediction markets every 4 hours, identifies mi
 ┌─────────────────────────────────────────────────────────────┐
 │                    ORACLE SENTINEL                          │
 ├─────────────────────────────────────────────────────────────┤
-│  1. INGEST   → Fetch market data + news from Polymarket     │
-│  2. EXTRACT  → Claude Haiku extracts facts (no opinions)    │
-│  3. ASSESS   → Claude Sonnet computes AI probability        │
-│  4. SIGNAL   → Edge calculator generates BUY/NO_TRADE       │
-│  5. TRACK    → Accuracy tracker records every outcome       │
+│  1. INGEST   → Fetch live prices via Polymarket Gamma API   │
+│  2. RESEARCH → Search news (DuckDuckGo + Google News RSS)   │
+│  3. EXTRACT  → Claude Haiku extracts facts (no opinions)    │
+│  4. ASSESS   → Claude Sonnet computes AI probability        │
+│  5. SIGNAL   → Edge calculator generates BUY/NO_TRADE       │
+│  6. TRACK    → Accuracy tracker records every outcome       │
+│  7. ALERT    → Whale trades monitor detects large moves     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -50,7 +52,10 @@ Every 4 hours, OpenClaw triggers a full scan cycle. No human intervention.
 | Feature | Description |
 |---------|-------------|
 | **Dual-Model AI** | Haiku extracts, Sonnet assesses — two models cross-validate |
-| **Whale Detection** | Order book analysis for smart money signals |
+| **Real-Time Prices** | Live market data via Polymarket Gamma API |
+| **Deep News Research** | Full article extraction from DuckDuckGo + Google News |
+| **Whale Trade Alerts** | Real-time monitoring of $5,000+ trades with TX verification |
+| **Dashboard AI Agent** | Chat directly with Oracle Sentinel on the web dashboard |
 | **Quantified Edge** | Mathematical difference between AI and market consensus |
 | **Safety Overrides** | Code rejects AI overconfidence automatically |
 | **Accuracy Tracking** | Price snapshots at 1h, 6h, 24h — wins and losses recorded |
@@ -63,6 +68,7 @@ Every 4 hours, OpenClaw triggers a full scan cycle. No human intervention.
 | **Documentation** | https://oraclesentinel.xyz/docs |
 | **Landing Page** | https://oraclesentinel.xyz |
 | **Telegram Bot** | https://t.me/oraclesentinel_pm_bot |
+| **Telegram Channel** | https://t.me/oraclesentinelsignals |
 | **X (Twitter)** | https://x.com/oracle_sentinel |
 | **Token ($OSAI)** | [Solscan](https://solscan.io/token/HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump) |
 
@@ -84,6 +90,15 @@ curl https://oraclesentinel.xyz/api/dashboard
 curl https://oraclesentinel.xyz/api/health
 ```
 
+## Monitoring Systems
+
+| System | Frequency | Purpose |
+|--------|-----------|---------|
+| **Market Scanner** | Every 4 hours | Analyze top markets, generate signals |
+| **Whale Monitor** | Every 5 minutes | Detect $5,000+ trades, send alerts with TX hash |
+| **Price Updater** | Every scan | Track market movements for accuracy |
+| **Accuracy Tracker** | Continuous | Verify predictions against outcomes |
+
 ## Tech Stack
 
 **Intelligence:**
@@ -102,6 +117,13 @@ curl https://oraclesentinel.xyz/api/health
 
 ## How to Interact
 
+**Via Dashboard AI Agent:**
+Visit [oraclesentinel.xyz/app](https://oraclesentinel.xyz/app), click the chat button, and ask anything:
+- "Analyze this market: [Polymarket URL]"
+- "Research and analyze: [Polymarket URL]" (includes news context)
+- "What are the current signals?"
+- "Show me your accuracy stats"
+
 **Via Telegram Bot:**
 Send any Polymarket URL to [@oraclesentinel_pm_bot](https://t.me/oraclesentinel_pm_bot) and get instant AI analysis with:
 - Resolution rules breakdown
@@ -109,8 +131,43 @@ Send any Polymarket URL to [@oraclesentinel_pm_bot](https://t.me/oraclesentinel_
 - Edge calculation
 - Signal recommendation
 
+**Via Telegram Alerts:**
+Join the channel to receive automatic notifications:
+- Signal reports every 4 hours
+- Whale trade alerts ($5,000+ trades) every 5 minutes
+
 **Via API:**
 Integrate Oracle Sentinel's intelligence into your own tools using our REST API.
+
+## AI Agent Integration
+
+External AI agents can integrate with Oracle Sentinel using our skill file:
+```
+https://oraclesentinel.xyz/skill.md
+```
+
+This enables any AI agent to:
+- Query real-time market data
+- Get active trading signals
+- Check prediction accuracy
+- Analyze specific markets on demand
+
+**Available Endpoints:**
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/signals` | Active trading signals with edge calculations |
+| `GET /api/markets` | All monitored markets with current prices |
+| `GET /api/predictions` | Tracked predictions and outcomes |
+| `GET /api/dashboard` | Full dashboard data including accuracy stats |
+| `GET /api/health` | System health check |
+
+**Example: Fetch Signals**
+```bash
+curl -s https://oraclesentinel.xyz/api/signals | jq '.[:3]'
+```
+
+For detailed integration instructions, see [skill.md](https://oraclesentinel.xyz/skill.md).
 
 ## Transparency
 
@@ -121,7 +178,5 @@ No cherry-picked wins. No deleted calls. No hidden losses.
 Current accuracy stats available live at [oraclesentinel.xyz/app](https://oraclesentinel.xyz/app)
 
 ---
-
-**Built for the [Solana Agent Hackathon](https://colosseum.com/agent-hackathon)**
 
 Powered by Claude and OpenClaw.
