@@ -143,7 +143,7 @@ Integrate Oracle Sentinel's intelligence into your own tools using our REST API.
 
 External AI agents can integrate with Oracle Sentinel using our skill file:
 ```
-https://oraclesentinel.xyz/skill.md
+curl -s https://oraclesentinel.xyz/skill.md
 ```
 
 This enables any AI agent to:
