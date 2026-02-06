@@ -6,6 +6,7 @@ Autonomous AI agent for Polymarket prediction intelligence.
 ![Agent](https://img.shields.io/badge/powered%20by-OpenClaw-blue)
 ![AI](https://img.shields.io/badge/AI-Claude%20Sonnet%204.5-purple)
 ![Solana](https://img.shields.io/badge/token-$OSAI-teal)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ## What It Does
 
@@ -60,6 +61,18 @@ Every 4 hours, OpenClaw triggers a full scan cycle. No human intervention.
 | **Safety Overrides** | Code rejects AI overconfidence automatically |
 | **Accuracy Tracking** | Price snapshots at 1h, 6h, 24h — wins and losses recorded |
 
+## Adaptive Intelligence
+
+Oracle Sentinel doesn't just scan on a schedule — it reacts to market movements in real-time.
+
+**Smart Scanner** monitors all markets every 10 minutes:
+- **Volume Spike Detection** — triggers when volume increases 50%+ in 1 hour
+- **Price Movement Detection** — triggers when price moves 10%+ in 1 hour
+- **Instant Full Analysis** — fetches news, runs AI, tracks prediction
+- **Real-time Alerts** — sends Telegram notification with signal
+
+This means Oracle Sentinel catches breaking news opportunities that would be missed by fixed 4-hour scans.
+
 ## Links
 
 | Resource | URL |
@@ -95,9 +108,11 @@ curl https://oraclesentinel.xyz/api/health
 | System | Frequency | Purpose |
 |--------|-----------|---------|
 | **Market Scanner** | Every 4 hours | Analyze top markets, generate signals |
+| **Smart Scanner** | Every 10 minutes | Detect volume/price spikes, instant analysis |
 | **Whale Monitor** | Every 5 minutes | Detect $5,000+ trades, send alerts with TX hash |
+| **Re-analysis** | Every hour | Re-analyze markets closing in 5-6 hours |
+| **Auto Resolver** | Every hour | Verify predictions against final outcomes |
 | **Price Updater** | Every scan | Track market movements for accuracy |
-| **Accuracy Tracker** | Continuous | Verify predictions against outcomes |
 
 ## Tech Stack
 
