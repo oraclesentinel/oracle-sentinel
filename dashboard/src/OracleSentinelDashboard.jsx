@@ -758,68 +758,6 @@ export default function OracleSentinelDashboard() {
             </div>
           </div>
         )}
-              <ColHeaders columns={[{l:"TIME",w:"64px"},{l:"SIGNAL",w:"54px"},{l:"MARKET",w:"1fr"},{l:"EDGE",w:"62px",a:"right"},{l:"PRICE",w:"54px",a:"right"},{l:"CONF",w:"50px",a:"center"},{l:"STATUS",w:"72px",a:"right"}]} />
-              {signals.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "30px 0", color: SLATE, fontSize: "11px" }}>No active BUY signals. Scanning every 4 hours.</div>
-              ) : (
-                signals.map((s, i) => <SignalRow key={s.id} signal={{
-                  id: s.id,
-                  time: (s.created_at || "").split(" ")[1] || "",
-                  market: s.question,
-                  signal: s.signal_type,
-                  edge: s.edge,
-                  confidence: s.confidence,
-                  price: s.market_yes_price,
-                  status: "TRACKING",
-                }} index={i} />)
-              )}
-            </Panel>
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              <Panel title="DISTRIBUTION">
-                <div style={{ display: "flex", justifyContent: "space-around", padding: "12px 0" }}>
-                  {[{ label: "BUY_YES", value: acc.buy_yes || 0, color: TEAL }, { label: "BUY_NO", value: acc.buy_no || 0, color: RED_COLD }].map(d => (
-                    <div key={d.label} style={{ textAlign: "center" }}>
-                      <div style={{ width: "52px", height: "52px", borderRadius: "50%", border: `2px solid ${d.color}50`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
-                        <span style={{ color: d.color, fontSize: "18px", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{d.value}</span>
-                      </div>
-                      <span style={{ color: SLATE, fontSize: "9px", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>{d.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-              <Panel title="PREDICTION TRACKING">
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 6px", borderBottom: `1px solid ${BORDER}`, marginBottom: "4px" }}>
-                  <span style={{ color: SLATE, fontSize: "8px", letterSpacing: "1px" }}>SIGNAL</span>
-                  <span style={{ color: SLATE, fontSize: "8px", letterSpacing: "1px", flex: 1, marginLeft: "10px" }}>MARKET</span>
-                  <span style={{ color: SLATE, fontSize: "8px", letterSpacing: "1px", width: "50px", textAlign: "right" }}>EDGE</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "10px", fontFamily: "'JetBrains Mono', monospace", maxHeight: "200px", overflowY: "auto" }}>
-                  {predictions.length === 0 ? (
-                    <div style={{ color: SLATE, textAlign: "center", padding: "16px 0" }}>No predictions yet</div>
-                  ) : predictions.map((p, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: `1px solid ${GRID_LINE}` }}>
-                      <span style={{ color: p.signal_type === "BUY_YES" ? TEAL : RED_COLD, width: "50px", fontWeight: 600, fontSize: "9px" }}>{p.signal_type === "BUY_YES" ? "▲ YES" : "▼ NO"}</span>
-                      <span style={{ color: ICE, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: "0 6px" }}>{p.question}</span>
-                      <span style={{ color: FROST, width: "50px", textAlign: "right" }}>{p.edge_at_signal}%</span>
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-              <Panel title="SYSTEM">
-                <div style={{ display: "flex", flexDirection: "column", gap: "7px", fontSize: "11px" }}>
-                  {[
-                    { l: "Polymarket API", s: apiOk ? "CONNECTED" : "OFFLINE", c: apiOk ? TEAL : RED_COLD },
-                    { l: "OpenRouter AI", s: "CONNECTED", c: TEAL },
-                    { l: "Telegram Bot", s: "CONNECTED", c: TEAL },
-                    { l: "Cron Daemon", s: "4H CYCLE", c: TEAL },
-                    { l: "Database", s: (stats.total_markets || 0) + " MARKETS", c: BLUE_BRIGHT },
-                    { l: "Last Scan", s: timeAgo(stats.last_scan), c: AMBER_COLD },
-                  ].map(x => <div key={x.l} style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SLATE }}>{x.l}</span><span style={{ color: x.c, fontSize: "10px", fontWeight: 500 }}>{x.s}</span></div>)}
-                </div>
-              </Panel>
-            </div>
-          </div>
-        )}
 
         {/* ── MARKETS ── */}
         {activeTab === "markets" && (
