@@ -561,6 +561,95 @@ function AIAgentChat() {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// AI AGENT PANEL (Full Page Version)
+// ═══════════════════════════════════════════════════════════════
+function AIAgentPanel() {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (!input.trim() || isLoading) return;
+    const userMessage = input.trim();
+    setInput("");
+    setMessages(prev => [...prev, { role: "user", content: userMessage }]);
+    setIsLoading(true);
+    try {
+      const response = await fetch(API_BASE + "/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage, history: messages })
+      });
+      const data = await response.json();
+      if (data.error) {
+        setMessages(prev => [...prev, { role: "assistant", content: `Error: ${data.error}`, isError: true }]);
+      } else {
+        setMessages(prev => [...prev, { role: "assistant", content: data.response }]);
+      }
+    } catch (error) {
+      setMessages(prev => [...prev, { role: "assistant", content: "Failed to connect to AI agent. Please try again.", isError: true }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 320px)" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "12px", background: BG, borderRadius: "4px", marginBottom: "12px" }}>
+        {messages.length === 0 && (
+          <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textAlign: "center", padding: "60px 20px" }}>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>🤖</div>
+            <div style={{ color: FROST, marginBottom: "12px", fontSize: "14px" }}>Oracle Sentinel AI Agent</div>
+            <div style={{ lineHeight: "1.8", maxWidth: "500px", margin: "0 auto" }}>
+              Analyze any Polymarket with:<br />
+              <span style={{ color: TEAL }}>"Analyze this market: [URL]"</span><br /><br />
+              Or ask questions like:<br />
+              <span style={{ color: AMBER_COLD }}>"What are the current signals?"</span><br />
+              <span style={{ color: AMBER_COLD }}>"Show me accuracy stats"</span>
+            </div>
+          </div>
+        )}
+        {messages.map((msg, i) => (
+          <div key={i} style={{ alignSelf: msg.role === "user" ? "flex-end" : "flex-start", maxWidth: "75%" }}>
+            <div style={{ background: msg.role === "user" ? BLUE_DARK : BG_PANEL, border: `1px solid ${msg.isError ? RED_COLD : (msg.role === "user" ? BLUE_MID : BORDER)}`, borderRadius: msg.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px", padding: "12px 16px", color: msg.isError ? RED_COLD : ICE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", lineHeight: "1.7", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              {msg.content}
+            </div>
+            <div style={{ color: SLATE, fontSize: "9px", fontFamily: "'JetBrains Mono', monospace", marginTop: "4px", textAlign: msg.role === "user" ? "right" : "left" }}>
+              {msg.role === "user" ? "You" : "AI Agent"}
+            </div>
+          </div>
+        ))}
+        {isLoading && (
+          <div style={{ alignSelf: "flex-start", maxWidth: "75%" }}>
+            <div style={{ background: BG_PANEL, border: `1px solid ${BORDER}`, borderRadius: "12px 12px 12px 4px", padding: "12px 16px", color: FROST, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ animation: "pulse 1s infinite" }}>●</span>Analyzing...
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+      <div style={{ display: "flex", gap: "10px" }}>
+        <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Ask about any Polymarket or paste a URL to analyze..." disabled={isLoading} style={{ flex: 1, background: BG, border: `1px solid ${BORDER_LIGHT}`, borderRadius: "6px", padding: "12px 14px", color: ICE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", resize: "none", height: "50px", outline: "none" }} onFocus={(e) => { e.target.style.borderColor = BLUE_MID; }} onBlur={(e) => { e.target.style.borderColor = BORDER_LIGHT; }} />
+        <button onClick={sendMessage} disabled={isLoading || !input.trim()} style={{ background: isLoading || !input.trim() ? BORDER : `linear-gradient(135deg, ${BLUE_MID}, ${BLUE_DIM})`, border: "none", borderRadius: "6px", padding: "0 24px", color: isLoading || !input.trim() ? SLATE : ICE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", fontWeight: 600, cursor: isLoading || !input.trim() ? "not-allowed" : "pointer", transition: "all 0.2s" }}>
+          {isLoading ? "..." : "SEND"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function OracleSentinelDashboard() {
   const [booted, setBooted] = useState(false);
   const [activeTab, setActiveTab] = useState("signals");
@@ -690,7 +779,7 @@ export default function OracleSentinelDashboard() {
 
       {/* Tabs */}
       <div style={{ display: "flex", borderBottom: `1px solid ${BORDER}`, background: BG_PANEL }}>
-        {["signals", "markets", "accuracy", "log", "whales"].map(t => (
+        {["signals", "markets", "accuracy", "log", "whales", "ai agent"].map(t => (
           <button key={t} className={`tab-btn ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>{t.toUpperCase()}</button>
         ))}
         <div style={{ marginLeft: "auto", padding: "10px 20px", fontSize: "10px", color: SLATE, display: "flex", alignItems: "center", gap: "6px" }}>
@@ -911,6 +1000,13 @@ export default function OracleSentinelDashboard() {
             </div>
           </div>
         )}
+
+        {/* ── AI AGENT ── */}
+        {activeTab === "ai agent" && (
+          <Panel title="AI AGENT" headerRight={<span style={{ color: TEAL, fontSize: "10px", fontFamily: "'JetBrains Mono', monospace" }}>Prediction Market Analyst</span>}>
+            <AIAgentPanel />
+          </Panel>
+        )}
       </div>
 
       {/* Footer */}
@@ -921,9 +1017,6 @@ export default function OracleSentinelDashboard() {
           <span style={{ color: apiOk ? TEAL : RED_COLD }}>{apiOk ? "API: connected" : "API: offline"}</span>
         </span>
       </div>
-
-      {/* AI Agent Chat */}
-      <AIAgentChat />
     </div>
   );
 }
