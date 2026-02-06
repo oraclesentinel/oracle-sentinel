@@ -262,6 +262,10 @@ class AccuracyTracker:
             except:
                 continue
 
+            # Only resolve if market is actually closed
+            if not row['closed']:
+                continue
+                
             if yes_final >= 0.95:
                 resolution = 'YES'
             elif yes_final <= 0.05:

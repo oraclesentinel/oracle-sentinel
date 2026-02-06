@@ -46,7 +46,11 @@ class PriceUpdater:
             SELECT t.id, t.market_id, t.token_id, t.outcome, m.question
             FROM tokens t
             JOIN markets m ON t.market_id = m.id
-            WHERE m.active = 1 AND t.token_id IS NOT NULL AND t.token_id != ''
+            WHERE m.active = 1 
+              AND m.closed = 0
+              AND (m.end_date IS NULL OR m.end_date > datetime('now'))
+              AND t.token_id IS NOT NULL 
+              AND t.token_id != ''
         ''')
         
         rows = cursor.fetchall()

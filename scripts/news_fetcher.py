@@ -393,7 +393,9 @@ class NewsFetcher:
                     WHERE s.market_id = m.id
                    ) as last_news
             FROM markets m
-            WHERE m.active = 1 AND m.closed = 0
+            WHERE m.active = 1 
+              AND m.closed = 0
+              AND (m.end_date IS NULL OR m.end_date > datetime('now'))
             ORDER BY m.volume_24h DESC
             LIMIT ?
         ''', (limit,))

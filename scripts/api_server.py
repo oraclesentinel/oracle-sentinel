@@ -48,6 +48,8 @@ def dashboard_summary():
             FROM opportunities o
             JOIN markets m ON o.market_id = m.id
             WHERE o.status = 'active'
+              AND m.closed = 0
+              AND (m.end_date IS NULL OR m.end_date > datetime('now'))
               AND o.id = (SELECT MAX(o2.id) FROM opportunities o2 WHERE o2.market_id = o.market_id)
             ORDER BY ABS(o.edge) DESC
         """).fetchall()

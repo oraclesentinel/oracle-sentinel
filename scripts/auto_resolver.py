@@ -113,8 +113,14 @@ def get_unresolved_past_predictions() -> list:
 def determine_resolution(market_data: dict) -> str:
     """Determine if market resolved YES or NO based on outcome prices"""
     try:
-        # Check if market is resolved
-        if market_data.get('closed') or market_data.get('resolved'):
+        # Must check closed/resolved first - don't resolve markets that aren't closed
+        is_closed = market_data.get('closed', False)
+        is_resolved = market_data.get('resolved', False)
+        
+        if not is_closed and not is_resolved:
+            return None  # Market not finished yet
+        
+        if is_closed or is_resolved:
             outcome_prices = market_data.get('outcomePrices', [])
             if not outcome_prices:
                 outcome_prices = market_data.get('outcome_prices', [])
@@ -129,11 +135,11 @@ def determine_resolution(market_data: dict) -> str:
                     return 'YES'
                 elif yes_price <= 0.05:
                     return 'NO'
-        
-        # Check resolution field directly
-        resolution = market_data.get('resolution', market_data.get('result'))
-        if resolution:
-            return resolution.upper()
+            
+            # Check resolution field directly (only if market is closed)
+            resolution = market_data.get('resolution', market_data.get('result'))
+            if resolution:
+                return resolution.upper()
         
         return None
     except Exception as e:

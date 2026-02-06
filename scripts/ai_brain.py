@@ -688,7 +688,9 @@ Respond ONLY with the JSON object, no other text."""
                    ) as last_analyzed
             FROM markets m
             JOIN signals s ON s.market_id = m.id
-            WHERE m.active = 1 AND m.closed = 0
+            WHERE m.active = 1 
+              AND m.closed = 0
+              AND (m.end_date IS NULL OR m.end_date > datetime('now'))
             ORDER BY m.volume_24h DESC
             LIMIT ?
         ''', (limit,))
