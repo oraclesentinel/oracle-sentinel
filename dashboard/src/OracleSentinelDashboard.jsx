@@ -703,7 +703,61 @@ export default function OracleSentinelDashboard() {
         {/* ── SIGNALS ── */}
         {activeTab === "signals" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "14px" }}>
-            <Panel title="ACTIVE TRADING SIGNALS" headerRight={<span style={{ color: SLATE, fontSize: "10px", fontFamily: "'JetBrains Mono', monospace" }}>{signals.length} detected</span>}>
+            <Panel title="PREDICTION SIGNALS" headerRight={<span style={{ color: SLATE, fontSize: "10px", fontFamily: "'JetBrains Mono', monospace" }}>{predictions.length} tracked</span>}>
+              <ColHeaders columns={[{l:"SIGNAL",w:"60px"},{l:"MARKET",w:"1fr"},{l:"EDGE",w:"60px",a:"right"},{l:"CONF",w:"60px",a:"center"},{l:"STATUS",w:"80px",a:"right"}]} />
+              {predictions.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "30px 0", color: SLATE, fontSize: "11px" }}>No predictions tracked yet. Scanning every 4 hours.</div>
+              ) : (
+                predictions.map((p, i) => {
+                  const status = p.direction_correct === 1 ? { color: TEAL, label: "CORRECT" } 
+                               : p.direction_correct === 0 ? { color: RED_COLD, label: "WRONG" } 
+                               : { color: AMBER_COLD, label: "TRACKING" };
+                  return (
+                    <div key={p.id || i} className="row-hover" style={{ display: "grid", gridTemplateColumns: "60px 1fr 60px 60px 80px", gap: "8px", alignItems: "center", padding: "7px 10px", fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.04}s both` }}>
+                      <span style={{ color: p.signal_type === "BUY_YES" ? TEAL : RED_COLD, fontWeight: 600, fontSize: "10px" }}>{p.signal_type === "BUY_YES" ? "▲ YES" : "▼ NO"}</span>
+                      <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.question}</span>
+                      <span style={{ color: FROST, textAlign: "right", fontWeight: 500 }}>{p.edge_at_signal}%</span>
+                      <span style={{ color: p.confidence === "HIGH" ? BLUE_BRIGHT : AMBER_COLD, textAlign: "center", fontSize: "9px", fontWeight: 500 }}>{p.confidence || "—"}</span>
+                      <span style={{ color: status.color, textAlign: "right", fontSize: "9px", fontWeight: 500 }}>{status.label}</span>
+                    </div>
+                  );
+                })
+              )}
+            </Panel>
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <Panel title="DISTRIBUTION">
+                <div style={{ display: "flex", justifyContent: "space-around", padding: "12px 0" }}>
+                  {[{ label: "BUY_YES", value: acc.buy_yes || 0, color: TEAL }, { label: "BUY_NO", value: acc.buy_no || 0, color: RED_COLD }].map(d => (
+                    <div key={d.label} style={{ textAlign: "center" }}>
+                      <div style={{ width: "52px", height: "52px", borderRadius: "50%", border: `2px solid ${d.color}50`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
+                        <span style={{ color: d.color, fontSize: "18px", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{d.value}</span>
+                      </div>
+                      <span style={{ color: SLATE, fontSize: "9px", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>{d.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+              <Panel title="ACCURACY">
+                <AccuracyGauge accuracy={acc.accuracy_pct || 0} />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "12px" }}>
+                  <Metric label="Resolved" value={acc.resolved || 0} color={AMBER_COLD} size="14px" />
+                  <Metric label="Correct" value={acc.correct || 0} color={TEAL} size="14px" />
+                </div>
+              </Panel>
+              <Panel title="SYSTEM">
+                <div style={{ display: "flex", flexDirection: "column", gap: "7px", fontSize: "11px" }}>
+                  {[
+                    { l: "Polymarket API", s: apiOk ? "CONNECTED" : "OFFLINE", c: apiOk ? TEAL : RED_COLD },
+                    { l: "OpenRouter AI", s: "CONNECTED", c: TEAL },
+                    { l: "Telegram Bot", s: "CONNECTED", c: TEAL },
+                    { l: "Cron Daemon", s: "4H CYCLE", c: TEAL },
+                    { l: "Last Scan", s: timeAgo(stats.last_scan), c: AMBER_COLD },
+                  ].map(x => <div key={x.l} style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SLATE }}>{x.l}</span><span style={{ color: x.c, fontSize: "10px", fontWeight: 500 }}>{x.s}</span></div>)}
+                </div>
+              </Panel>
+            </div>
+          </div>
+        )}
               <ColHeaders columns={[{l:"TIME",w:"64px"},{l:"SIGNAL",w:"54px"},{l:"MARKET",w:"1fr"},{l:"EDGE",w:"62px",a:"right"},{l:"PRICE",w:"54px",a:"right"},{l:"CONF",w:"50px",a:"center"},{l:"STATUS",w:"72px",a:"right"}]} />
               {signals.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "30px 0", color: SLATE, fontSize: "11px" }}>No active BUY signals. Scanning every 4 hours.</div>
