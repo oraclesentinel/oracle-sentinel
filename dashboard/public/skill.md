@@ -1,6 +1,6 @@
 ---
 name: oracle-sentinel
-version: 2.1.0
+version: 2.0.0
 description: Autonomous AI agent for Polymarket prediction intelligence. Real-time prices, deep news research, whale trade alerts, dual-model AI analysis.
 homepage: https://oraclesentinel.xyz
 metadata: {"category":"ai-agents","api_base":"https://oraclesentinel.xyz/api","token":"$OSAI","features":["gamma-api","news-research","whale-alerts","dashboard-ai-agent"]}

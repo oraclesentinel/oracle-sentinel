@@ -1,16 +1,16 @@
 ---
 name: oracle-sentinel
-version: 1.0.0
-description: Autonomous AI agent for Polymarket prediction intelligence. Dual-model analysis, quantified edge, radical transparency.
+version: 2.0.0
+description: Autonomous AI agent for Polymarket prediction intelligence. Real-time prices, deep news research, whale trade alerts, dual-model AI analysis.
 homepage: https://oraclesentinel.xyz
-metadata: {"category":"ai-agents","api_base":"https://oraclesentinel.xyz/api","token":"$OSAI"}
+metadata: {"category":"ai-agents","api_base":"https://oraclesentinel.xyz/api","token":"$OSAI","features":["gamma-api","news-research","whale-alerts","dashboard-ai-agent"]}
 ---
 
 # Oracle Sentinel
 
 Autonomous AI agent for Polymarket prediction intelligence.
 
-**Scans 79+ markets every 4 hours.** Identifies mispricing using dual-model AI. Tracks every prediction with radical transparency.
+**Scans 190+ markets every 4 hours.** Real-time prices via Polymarket Gamma API. Deep news research from multiple sources. Whale trade alerts for $5K+ transactions. Dual-model AI analysis with radical transparency.
 
 ## Quick Start
 ```bash
@@ -30,36 +30,63 @@ curl -s https://oraclesentinel.xyz/api/dashboard
 curl -s https://oraclesentinel.xyz/api/health
 ```
 
+## Dashboard AI Agent
+
+Chat directly with Oracle Sentinel on the web dashboard: **https://oraclesentinel.xyz/app**
+
+Click the chat button and ask:
+- "Analyze this market: [Polymarket URL]"
+- "Research and analyze: [Polymarket URL]" (includes deep news research)
+- "What are the current signals?"
+- "Show me your accuracy stats"
+
+The AI agent fetches real-time market data, searches news from multiple sources, and reads full article content for deeper analysis.
+
 ## Telegram Bot
 
 For interactive market analysis, message: **@oraclesentinel_pm_bot**
 
 Send any Polymarket URL and the bot will:
-1. Fetch the market page
+1. Fetch real-time prices via Gamma API
 2. Read resolution rules carefully
 3. Check for loopholes in criteria
-4. Search for relevant news
+4. Search and read full news articles
 5. Calculate AI probability
 6. Compare vs market price
 7. Return signal with full reasoning
 
-### Example
-```
-Analyze this market: https://polymarket.com/event/presidential-election-2024
-```
+## Whale Trade Alerts
+
+Real-time monitoring of large trades on Polymarket.
+
+- Scans every 5 minutes for trades > $5,000
+- Each trade alerted only once (no duplicates)
+- Includes full transaction hash for on-chain verification
+- Alerts sent to Telegram automatically
 
 ## How It Works
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    ORACLE SENTINEL                          │
 ├─────────────────────────────────────────────────────────────┤
-│  1. INGEST   → Fetch market data + news from Polymarket     │
-│  2. EXTRACT  → Claude Haiku extracts facts (no opinions)    │
-│  3. ASSESS   → Claude Sonnet computes AI probability        │
-│  4. SIGNAL   → Edge calculator generates BUY/NO_TRADE       │
-│  5. TRACK    → Accuracy tracker records every outcome       │
+│  1. INGEST   → Fetch live prices via Polymarket Gamma API   │
+│  2. RESEARCH → Search news (DuckDuckGo + Google News RSS)   │
+│  3. EXTRACT  → Claude Haiku extracts facts (no opinions)    │
+│  4. ASSESS   → Claude Sonnet computes AI probability        │
+│  5. SIGNAL   → Edge calculator generates BUY/NO_TRADE       │
+│  6. TRACK    → Accuracy tracker records every outcome       │
+│  7. ALERT    → Whale trades monitor detects $5K+ moves      │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+## Monitoring Systems
+
+| System | Frequency | Purpose |
+|--------|-----------|---------|
+| Market Scanner | Every 4 hours | Analyze top markets, generate signals |
+| Whale Monitor | Every 5 minutes | Detect $5,000+ trades with TX hash |
+| Price Updater | Every scan | Track market movements |
+| Accuracy Tracker | Continuous | Verify predictions against outcomes |
 
 ## API Reference
 
@@ -94,23 +121,25 @@ Analyze this market: https://polymarket.com/event/presidential-election-2024
 
 | Signal | Meaning |
 |--------|---------|
-| `BUY_YES` | AI probability > market price by 3%+ |
-| `BUY_NO` | AI probability < market price by 3%+ |
+| `BUY_YES` | AI probability > market price by 5%+ |
+| `BUY_NO` | AI probability < market price by 5%+ |
 | `NO_TRADE` | Edge too small or low confidence |
-| `SKIP` | Insufficient data |
+| `SKIP` | Insufficient data or coin-flip market |
 
 ## Confidence Levels
 
 | Level | Description |
 |-------|-------------|
-| `HIGH` | Strong data support, clear reasoning |
-| `MEDIUM` | Moderate data, some uncertainty |
-| `LOW` | Limited data, high uncertainty |
+| `HIGH` | Strong data support, clear reasoning, required for signals |
+| `MEDIUM` | Moderate data, requires 15%+ edge for signal |
+| `LOW` | Limited data, never generates signal |
 
 ## Safety Overrides
 
 Oracle Sentinel has hardcoded safety rules:
-- High edge + medium confidence = NO_TRADE
+- Only HIGH confidence generates BUY signals
+- MEDIUM confidence requires 15%+ edge
+- Market 45-55% (coin-flip zone) = automatic skip
 - Market >97% or <3% = automatic skip
 - Low confidence = never generates signal
 
@@ -137,6 +166,7 @@ for s in signals:
 | Dashboard | https://oraclesentinel.xyz/app |
 | Documentation | https://oraclesentinel.xyz/docs |
 | API Base | https://oraclesentinel.xyz/api |
+| Skill File | https://oraclesentinel.xyz/skill.md |
 | Telegram Bot | https://t.me/oraclesentinel_pm_bot |
 | X (Twitter) | https://x.com/oracle_sentinel |
 | GitHub | https://github.com/oraclesentinel/oracle-sentinel |
@@ -147,9 +177,10 @@ for s in signals:
 - **Claude Sonnet 4.5** — Probability assessment
 - **Claude Haiku 3.5** — Fact extraction
 - **OpenClaw** — Autonomous agent gateway
+- **Polymarket Gamma API** — Real-time market data
 
 ## About
 
-Oracle Sentinel runs autonomously 24/7. Every 4 hours, OpenClaw triggers a full scan cycle — no human intervention required.
+Oracle Sentinel runs autonomously 24/7. Every 4 hours, the system triggers a full scan cycle — no human intervention required.
 
 Every signal has a number. Every prediction is recorded. Every outcome is verified.
