@@ -9,7 +9,7 @@ import re
 import json
 import sqlite3
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 # Load environment
@@ -49,6 +49,7 @@ class NewsFetcher:
         self.max_articles_to_fetch = 6
         self.seen_urls = set()
         self.seen_domains = {}
+        self.max_article_age_days = 30  # Reject articles older than 30 days
 
     def _get_db(self):
         return sqlite3.connect(DB_PATH)
@@ -269,7 +270,7 @@ class NewsFetcher:
                 except:
                     pass
 
-            return {
+            article_data = {
                 'text': text,
                 'title': meta.get('title', ''),
                 'author': meta.get('author', ''),
@@ -277,9 +278,68 @@ class NewsFetcher:
                 'sitename': meta.get('sitename', ''),
                 'word_count': len(text.split())
             }
+            
+            # VALIDATION: Check article date
+            if not self._is_article_date_valid(article_data.get('date', '')):
+                self._log('WARN', f'  Article rejected: invalid/future date ({article_data.get("date", "unknown")})')
+                return None
+            
+            return article_data
 
         except Exception as e:
             return None
+    
+    def _is_article_date_valid(self, date_str: str) -> bool:
+        """
+        Validate article publication date.
+        Returns False if:
+        - Date is in the future (impossible)
+        - Date is older than max_article_age_days
+        - Date cannot be parsed
+        """
+        if not date_str:
+            # No date = assume valid (we filter by search recency anyway)
+            return True
+        
+        try:
+            # Try to parse date
+            article_date = None
+            formats = [
+                '%Y-%m-%d',
+                '%Y-%m-%dT%H:%M:%S',
+                '%Y-%m-%dT%H:%M:%SZ',
+                '%Y-%m-%d %H:%M:%S',
+            ]
+            
+            for fmt in formats:
+                try:
+                    # Trafilatura sometimes returns dates like "2026-02-07T10:30:00"
+                    date_clean = date_str[:19] if 'T' in date_str else date_str[:10]
+                    article_date = datetime.strptime(date_clean, fmt)
+                    break
+                except:
+                    continue
+            
+            if not article_date:
+                # Could not parse - accept it (better to include than reject valid articles)
+                return True
+            
+            now = datetime.now()
+            
+            # Check if date is in the future (impossible - reject)
+            if article_date > now + timedelta(days=1):  # 1 day buffer for timezone differences
+                return False
+            
+            # Check if article is too old
+            age_days = (now - article_date).days
+            if age_days > self.max_article_age_days:
+                return False
+            
+            return True
+            
+        except Exception as e:
+            # Parsing failed - accept article (cautious approach)
+            return True
 
     # =========================================================
     # STEP 5: Save to Database

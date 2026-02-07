@@ -311,7 +311,7 @@ Include the source for each fact."""
         """
         self._log('INFO', f'  Stage 2: Assessing probability...')
         
-        # VALIDATION: Check if market is still open
+        # VALIDATION 1: Check if market is still open
         end_date = market_data.get('end_date', 'Unknown')
         if not self._is_market_still_open(end_date):
             self._log('WARN', f'  Market already closed or closes too soon (end_date: {end_date}). Skipping analysis.')
@@ -326,6 +326,49 @@ Include the source for each fact."""
                 'edge_assessment': 'N/A - Market closed',
                 'whale_interpretation': 'N/A - Market closed'
             }
+        
+        # VALIDATION 2: Check if market has enough time (>24h)
+        # Short-term markets (<24h) are too volatile and unpredictable
+        if end_date and end_date != 'Unknown':
+            try:
+                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                now = datetime.now(timezone.utc)
+                hours_remaining = (end_dt - now).total_seconds() / 3600
+                
+                if hours_remaining < 24:
+                    self._log('WARN', f'  Market closes in {hours_remaining:.1f}h (<24h). Skipping short-term prediction.')
+                    return {
+                        'probability': market_data.get('yes_price', 0.5),
+                        'confidence': 'SKIP',
+                        'reasoning': f'Market closes in {hours_remaining:.1f} hours. Short-term markets (<24h) are too unpredictable for reliable analysis.',
+                        'recommendation': 'SKIP',
+                        'key_factors_for': [],
+                        'key_factors_against': [],
+                        'risks': 'N/A - Short-term market',
+                        'edge_assessment': 'N/A - Insufficient timeframe',
+                        'whale_interpretation': 'N/A - Short-term market'
+                    }
+            except Exception as e:
+                self._log('WARN', f'Failed to check timeframe: {e}')
+        
+        # VALIDATION 3: Check liquidity threshold
+        # Low liquidity markets are easily manipulated
+        liquidity_threshold = 10000  # $10K minimum
+        liquidity_val = market_data.get('liquidity', 0)
+        
+        if liquidity_val < liquidity_threshold:
+            self._log('WARN', f'  Market liquidity ${liquidity_val:,.0f} below threshold ${liquidity_threshold:,.0f}. Skipping.')
+            return {
+                'probability': market_data.get('yes_price', 0.5),
+                'confidence': 'SKIP',
+                'reasoning': f'Market liquidity (${liquidity_val:,.0f}) is too low. Thin markets below ${liquidity_threshold:,.0f} are easily manipulated and unreliable.',
+                'recommendation': 'SKIP',
+                'key_factors_for': [],
+                'key_factors_against': [],
+                'risks': 'N/A - Low liquidity',
+                'edge_assessment': 'N/A - Thin market',
+                'whale_interpretation': 'N/A - Low liquidity'
+            }
 
         # Market context
         yes_price = market_data.get('yes_price', 0)
@@ -337,6 +380,12 @@ Include the source for each fact."""
         
         # Parse resolution criteria for clarity
         resolution_info = self._parse_resolution_criteria(resolution_rules, question)
+        
+        # Detect market category for specialized handling
+        question_lower = question.lower()
+        is_crypto = any(word in question_lower for word in ['bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'solana', 'sol'])
+        is_sports = any(word in question_lower for word in ['win', 'league', 'championship', 'match', 'game', 'score', 'nfl', 'nba', 'epl'])
+        is_political = any(word in question_lower for word in ['president', 'election', 'government', 'congress', 'senate', 'fed', 'shutdown'])
         
         # Current time context (CRITICAL for timestamp awareness)
         current_time_utc = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
@@ -382,6 +431,15 @@ POLITICAL EVENT CALIBRATION (CRITICAL):
 - Announced intentions ≠ actual outcomes
 - Political brinkmanship often goes to the wire then resolves
 - When in doubt about political timing, lean toward MEDIUM confidence, not HIGH
+
+CRYPTO/BITCOIN MARKET CALIBRATION (CRITICAL):
+- Bitcoin can swing 5-10% in a single day (high volatility asset)
+- Short-term price predictions (<48h) are extremely difficult
+- "Bitcoin above $X" → Consider recent 24h volatility, not just current price
+- Crypto markets operate 24/7, price can move dramatically overnight
+- Sentiment shifts rapidly with news (Fed policy, institutional buying, regulatory changes)
+- Don't be overconfident on small percentage moves (1-3%) in short timeframes
+- Historical volatility: BTC averages 3-5% daily swings in normal conditions, 10%+ in volatile periods
 
 MARKET PRICE ZONES:
 - Price 45-55%: This is a coin-flip. Unless you have VERY strong evidence, confidence should be MEDIUM at best
@@ -460,10 +518,19 @@ RESOLUTION RULES:
         if sports_text:
             sports_section = f"\n{sports_text}\n"
 
+        # Add category-specific context
+        category_context = ""
+        if is_crypto:
+            category_context = "\n🔶 CRYPTO MARKET DETECTED: Remember Bitcoin/crypto volatility is HIGH. Small percentage moves can happen in hours. Don't underestimate short-term price swings.\n"
+        elif is_sports:
+            category_context = "\n⚽ SPORTS MARKET DETECTED: Focus on recent form, league standings, and live match statistics over reputation.\n"
+        elif is_political:
+            category_context = "\n🏛️ POLITICAL MARKET DETECTED: Politicians often delay. Consider base rates of similar events, not just announcements.\n"
+        
         user_prompt = f"""PREDICTION MARKET ANALYSIS
 
 QUESTION: {question}
-
+{category_context}
 CURRENT MARKET DATA:
 - YES price: ${yes_price} (market implies {yes_price*100:.1f}% probability)
 - NO price: ${no_price}
