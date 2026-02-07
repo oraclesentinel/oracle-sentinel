@@ -126,6 +126,7 @@ def dashboard_summary():
         for p in predictions:
             predictions_list.append({
                 "id": p["id"],
+                "opportunity_id": p["opportunity_id"],
                 "question": p["question"],
                 "signal_type": p["signal_type"],
                 "ai_probability": p["ai_probability"],

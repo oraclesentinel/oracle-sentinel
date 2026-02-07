@@ -804,15 +804,12 @@ export default function OracleSentinelDashboard() {
                   const status = p.direction_correct === 1 ? { color: TEAL, label: "CORRECT" } 
                                : p.direction_correct === 0 ? { color: RED_COLD, label: "WRONG" } 
                                : { color: AMBER_COLD, label: "TRACKING" };
-                  // Find matching signal for detail view
-                  const matchingSignal = signals.find(s => s.question === p.question);
                   return (
                     <div key={p.id || i} className="row-hover" onClick={() => {
-                      const sig = matchingSignal || { id: null, question: p.question, reasoning: "", signal_type: p.signal_type, edge: p.edge_at_signal, confidence: p.confidence };
-                      setSelectedSignal(sig);
-                      if (sig.id) {
+                      setSelectedSignal({ question: p.question, signal_type: p.signal_type, edge: p.edge_at_signal, confidence: p.confidence, reasoning: "" });
+                      if (p.opportunity_id) {
                         setDetailLoading(true);
-                        fetch(API_BASE + "/prediction/" + sig.id)
+                        fetch(API_BASE + "/prediction/" + p.opportunity_id)
                           .then(r => r.json())
                           .then(d => { setSignalDetail(d); setDetailLoading(false); })
                           .catch(() => { setSignalDetail(null); setDetailLoading(false); });
@@ -1159,14 +1156,7 @@ export default function OracleSentinelDashboard() {
                   </div>
                 )}
 
-                {/* Polymarket Link */}
-                {signalDetail?.slug && (
-                  <div style={{ textAlign: "center", paddingTop: "4px" }}>
-                    <a href={`https://polymarket.com/event/${signalDetail.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: BLUE_MID, fontSize: "10px", textDecoration: "none" }}>
-                      View on Polymarket →
-                    </a>
-                  </div>
-                )}
+
               </div>
             )}
           </div>
