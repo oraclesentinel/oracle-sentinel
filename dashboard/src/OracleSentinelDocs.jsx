@@ -19,6 +19,7 @@ const SECTIONS = [
   { id: "problem", label: "PROBLEM" },
   { id: "architecture", label: "ARCH" },
   { id: "features", label: "FEATURES" },
+  { id: "filters", label: "FILTERS" },
   { id: "pipeline", label: "PIPELINE" },
   { id: "tech", label: "STACK" },
   { id: "accuracy", label: "ACCURACY" },
@@ -296,7 +297,7 @@ export default function OracleSentinelDocs() {
           <span style={{ color: C.slateD, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1, marginLeft: 4 }}>DOCS</span>
         </div>
         <div style={{ display: "flex", gap: 24 }}>
-          {["architecture", "features", "api", "openclaw"].map(s => (
+          {["architecture", "features", "filters", "api", "openclaw"].map(s => (
             <button key={s} onClick={() => scrollTo(s)} style={{
               background: "none", border: "none", color: activeSection === s ? C.blue : C.slate,
               fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 1.5, cursor: "pointer",
@@ -487,6 +488,136 @@ export default function OracleSentinelDocs() {
             </Reveal>
           ))}
         </div>
+      </Section>
+
+      {/* ═══════════════════════════════════════════════════════ */}
+      {/* QUALITY FILTERS */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      <Section id="filters" style={{ borderTop: `1px solid ${C.border}` }}>
+        <Reveal><SectionLabel text="QUALITY FILTERS" sub="Intelligence gates that ensure signal reliability." /></Reveal>
+        
+        <Reveal delay={0.1}>
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>MARKET QUALITY GATES</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {[
+                { 
+                  title: "Short-Term Filter", 
+                  desc: "Markets closing in <24 hours are automatically skipped. Short-term price predictions are inherently volatile and unpredictable — Oracle Sentinel focuses on longer-timeframe opportunities where analysis has higher signal-to-noise ratio.",
+                  color: C.amber
+                },
+                { 
+                  title: "Liquidity Filter", 
+                  desc: "Markets with <$10,000 liquidity are rejected. Thin markets are easily manipulated by single large trades and don't reflect genuine price discovery. Only liquid markets with real two-sided depth are analyzed.",
+                  color: C.teal
+                },
+                { 
+                  title: "Timestamp Validation", 
+                  desc: "Closed or expired markets are automatically filtered out with 2-hour buffer. The system validates end dates before analysis to prevent wasting compute on resolved events. Current UTC time is injected into AI context for temporal awareness.",
+                  color: C.blue
+                },
+                { 
+                  title: "Resolution Parser", 
+                  desc: "Market descriptions are parsed to extract exact resolution criteria — thresholds, time ranges, data sources, and special cases. This structured parsing ensures AI analyzes based on actual resolution mechanics, not just question titles.",
+                  color: C.green
+                },
+              ].map((f, i) => (
+                <Reveal key={i} delay={0.1 + i * 0.05}>
+                  <GlowCard accent={f.color} style={{ height: "100%" }}>
+                    <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 600, marginBottom: 10, lineHeight: 1.4 }}>{f.title}</div>
+                    <div style={{ color: C.slate, fontSize: 13, lineHeight: 1.7 }}>{f.desc}</div>
+                  </GlowCard>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.3}>
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>CATEGORY-SPECIFIC ANALYSIS</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+              {[
+                { 
+                  category: "Crypto Markets", 
+                  calibration: [
+                    "Bitcoin/Ethereum can swing 5-10% in 24 hours",
+                    "Short-term price moves (<48h) are extremely difficult to predict",
+                    "24/7 markets mean overnight volatility is common",
+                    "Historical volatility: BTC averages 3-5% daily (10%+ in volatile periods)",
+                  ],
+                  color: C.amber
+                },
+                { 
+                  category: "Sports Markets", 
+                  calibration: [
+                    "Recent form (last 10 matches) matters more than reputation",
+                    "League standings show current position and gap to leader",
+                    "Head-to-head stats reveal matchup-specific dynamics",
+                    "Betting streaks (goals, clean sheets) indicate momentum",
+                  ],
+                  color: C.green
+                },
+                { 
+                  category: "Political Markets", 
+                  calibration: [
+                    "Politicians often delay, extend deadlines, or find last-minute compromises",
+                    "Government shutdowns usually resolve with temporary measures",
+                    "Announced intentions ≠ actual outcomes (consider base rates)",
+                    "Political brinkmanship goes to the wire then resolves",
+                  ],
+                  color: C.blue
+                },
+              ].map((cat, i) => (
+                <Reveal key={i} delay={0.3 + i * 0.05}>
+                  <GlowCard accent={cat.color} style={{ height: "100%" }}>
+                    <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{cat.category}</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {cat.calibration.map((rule, j) => (
+                        <div key={j} style={{ display: "flex", gap: 8, fontSize: 12, color: C.slate, lineHeight: 1.6 }}>
+                          <span style={{ color: cat.color, flexShrink: 0 }}>•</span>
+                          <span>{rule}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </GlowCard>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.5}>
+          <div>
+            <div style={{ color: C.red, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>NEWS QUALITY CONTROL</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+              {[
+                { 
+                  title: "Date Validation", 
+                  desc: "Articles with impossible future dates are automatically rejected. News claiming to be from tomorrow is either misdated or fabricated — the system validates publish timestamps against current time.",
+                  color: C.red
+                },
+                { 
+                  title: "Freshness Filter", 
+                  desc: "Articles older than 30 days are filtered out. Stale news lacks relevance for real-time market analysis. Only recent, contextual information is fed to the AI assessment layer.",
+                  color: C.amber
+                },
+                { 
+                  title: "Source Diversity", 
+                  desc: "News scoring prioritizes multiple credible sources over single-source claims. Trusted outlets (Reuters, Bloomberg, AP) receive bonus weighting. The system discourages echo chambers.",
+                  color: C.teal
+                },
+              ].map((item, i) => (
+                <Reveal key={i} delay={0.5 + i * 0.05}>
+                  <GlowCard accent={item.color} style={{ height: "100%" }}>
+                    <div style={{ color: item.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{item.title}</div>
+                    <div style={{ color: C.slate, fontSize: 12, lineHeight: 1.7 }}>{item.desc}</div>
+                  </GlowCard>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </Reveal>
       </Section>
 
       {/* ═══════════════════════════════════════════════════════ */}
