@@ -335,12 +335,12 @@ def get_prediction_detail(opp_id):
 
         news = db.execute("""
             SELECT * FROM signals WHERE market_id = ? ORDER BY timestamp DESC LIMIT 5
-        """, (opp["market_id"],)).fetchall()
+        """, (opp["question"],)).fetchall()
 
         whales = db.execute("""
             SELECT * FROM whale_trades_alerted
-            WHERE market_id = ? ORDER BY alerted_at DESC LIMIT 10
-        """, (opp["market_id"],)).fetchall()
+            WHERE market_title = ? ORDER BY alerted_at DESC LIMIT 10
+        """, (opp["question"],)).fetchall()
 
         return jsonify({
             "id": opp["id"],
