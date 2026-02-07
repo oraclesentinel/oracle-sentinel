@@ -12,8 +12,8 @@ Autonomous AI agent for Polymarket prediction intelligence.
 
 Oracle Sentinel scans Polymarket prediction markets every 4 hours, identifies mispricing using dual-model AI analysis, and tracks every prediction with radical transparency.
 
-- **79+ markets** monitored continuously
 - **Dual-model AI** — Claude Haiku extracts facts, Claude Sonnet assesses probability
+- **Sports Intelligence** — Real-time data for 12 leagues (NFL, NBA, NHL, MLB, Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Champions League, MMA, F1)
 - **Quantified edge** — exact percentage difference between AI and market
 - **Radical transparency** — every prediction tracked, every outcome verified
 
@@ -23,12 +23,13 @@ Oracle Sentinel scans Polymarket prediction markets every 4 hours, identifies mi
 │                    ORACLE SENTINEL                          │
 ├─────────────────────────────────────────────────────────────┤
 │  1. INGEST   → Fetch live prices via Polymarket Gamma API   │
-│  2. RESEARCH → Search news (DuckDuckGo + Google News RSS)   │
-│  3. EXTRACT  → Claude Haiku extracts facts (no opinions)    │
-│  4. ASSESS   → Claude Sonnet computes AI probability        │
-│  5. SIGNAL   → Edge calculator generates BUY/NO_TRADE       │
-│  6. TRACK    → Accuracy tracker records every outcome       │
-│  7. ALERT    → Whale trades monitor detects large moves     │
+│  2. RESEARCH → Search news (DuckDuckGo + full extraction)   │
+│  3. SPORTS   → Fetch standings, form, H2H via SofaSport API │
+│  4. EXTRACT  → Claude Haiku extracts facts (no opinions)    │
+│  5. ASSESS   → Claude Sonnet computes AI probability        │
+│  6. SIGNAL   → Edge calculator generates BUY/NO_TRADE       │
+│  7. TRACK    → Accuracy tracker records every outcome       │
+│  8. ALERT    → Whale trades monitor detects large moves     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -53,10 +54,12 @@ Every 4 hours, OpenClaw triggers a full scan cycle. No human intervention.
 | Feature | Description |
 |---------|-------------|
 | **Dual-Model AI** | Haiku extracts, Sonnet assesses — two models cross-validate |
+| **Sports Intelligence** | Live standings, form, H2H, streaks for 12 leagues via SofaSport API |
 | **Real-Time Prices** | Live market data via Polymarket Gamma API |
 | **Deep News Research** | Full article extraction from DuckDuckGo + Google News |
 | **Whale Trade Alerts** | Real-time monitoring of $5,000+ trades with TX verification |
 | **Dashboard AI Agent** | Chat directly with Oracle Sentinel on the web dashboard |
+| **Self-Learning** | Re-analyzes predictions before market close, revises if new data |
 | **Quantified Edge** | Mathematical difference between AI and market consensus |
 | **Safety Overrides** | Code rejects AI overconfidence automatically |
 | **Accuracy Tracking** | Price snapshots at 1h, 6h, 24h — wins and losses recorded |
@@ -72,6 +75,30 @@ Oracle Sentinel doesn't just scan on a schedule — it reacts to market movement
 - **Real-time Alerts** — sends Telegram notification with signal
 
 This means Oracle Sentinel catches breaking news opportunities that would be missed by fixed 4-hour scans.
+
+## Sports Intelligence
+
+For sports markets, Oracle Sentinel fetches **real-time data** from SofaSport API:
+
+| Data Type | Description |
+|-----------|-------------|
+| **League Standings** | Current position, points, wins, losses, goal difference |
+| **Team Form** | Last 5-10 match results with scores |
+| **Head-to-Head** | Historical matchups between teams |
+| **Betting Streaks** | Over 2.5 goals, clean sheets, scoring patterns |
+| **Fan Predictions** | Crowd sentiment from 30K+ votes |
+| **Pre-match Ratings** | Team form ratings and position context |
+
+**Supported Leagues:**
+- ⚽ Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Champions League, Europa League
+- 🏀 NBA
+- 🏈 NFL
+- 🏒 NHL
+- ⚾ MLB
+- 🥊 UFC/MMA
+- 🏎️ Formula 1
+
+This gives Oracle Sentinel a **data advantage** over AI systems that only use news articles.
 
 ## Links
 
@@ -99,6 +126,11 @@ curl https://oraclesentinel.xyz/api/predictions
 # Get dashboard data
 curl https://oraclesentinel.xyz/api/dashboard
 
+# AI Chat (analyze any market)
+curl -X POST https://oraclesentinel.xyz/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Analyze https://polymarket.com/event/..."}'
+
 # Health check
 curl https://oraclesentinel.xyz/api/health
 ```
@@ -119,6 +151,12 @@ curl https://oraclesentinel.xyz/api/health
 **Intelligence:**
 - Claude Sonnet 4.5 — probability assessment
 - Claude Haiku 3.5 — fact extraction
+- SofaSport API — real-time sports data
+
+**Data Sources:**
+- Polymarket Gamma API — live market prices
+- DuckDuckGo + Trafilatura — news search & extraction
+- SofaSport — standings, form, H2H for 12 leagues
 
 **Infrastructure:**
 - OpenClaw — autonomous agent gateway
@@ -175,6 +213,7 @@ This enables any AI agent to:
 | `GET /api/markets` | All monitored markets with current prices |
 | `GET /api/predictions` | Tracked predictions and outcomes |
 | `GET /api/dashboard` | Full dashboard data including accuracy stats |
+| `POST /api/chat` | AI chat for market analysis |
 | `GET /api/health` | System health check |
 
 **Example: Fetch Signals**
