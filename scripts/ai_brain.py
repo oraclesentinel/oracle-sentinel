@@ -79,6 +79,106 @@ class AIBrain:
             self._log('WARN', f'Failed to parse end_date "{end_date_str}": {e}')
             return True  # If parsing fails, don't skip (cautious approach)
 
+    def _parse_resolution_criteria(self, description: str, question: str) -> dict:
+        """
+        Extract and highlight key resolution criteria from market description.
+        Returns structured resolution info to make criteria crystal clear to AI.
+        """
+        if not description or description.strip() == '':
+            return {
+                'has_criteria': False,
+                'summary': 'No explicit resolution criteria provided. Assess based on question wording.',
+                'key_points': [],
+                'resolution_source': 'Unknown',
+                'special_cases': []
+            }
+        
+        criteria = {
+            'has_criteria': True,
+            'summary': '',
+            'key_points': [],
+            'resolution_source': 'Unknown',
+            'special_cases': []
+        }
+        
+        desc_lower = description.lower()
+        
+        # Extract resolution source
+        source_patterns = [
+            r'resolution source[:\s]+([^.]+)',
+            r'will resolve based on[:\s]+([^.]+)',
+            r'official.*?from[:\s]+([^.]+)',
+            r'according to[:\s]+([^.]+)',
+        ]
+        import re
+        for pattern in source_patterns:
+            match = re.search(pattern, desc_lower)
+            if match:
+                criteria['resolution_source'] = match.group(1).strip()
+                break
+        
+        # Extract key phrases that define resolution
+        key_phrases = []
+        
+        # "Will resolve to X if Y"
+        resolve_if = re.findall(r'will resolve to ["\']?(\w+)["\']? if ([^.]+)', desc_lower)
+        for outcome, condition in resolve_if:
+            key_phrases.append(f"Resolves {outcome.upper()} if: {condition.strip()}")
+        
+        # "This market will resolve to..."
+        resolve_to = re.findall(r'this market will resolve to[:\s]+([^.]+)', desc_lower)
+        for resolution in resolve_to:
+            key_phrases.append(f"Resolution: {resolution.strip()}")
+        
+        # Extract time ranges / measurement periods
+        time_patterns = [
+            r'from ([^to]+) to ([^.,]+)',
+            r'between ([^and]+) and ([^.,]+)',
+            r'during ([^.,]+)',
+            r'by ([^.,]+)',
+        ]
+        for pattern in time_patterns:
+            matches = re.findall(pattern, desc_lower)
+            for match in matches:
+                if isinstance(match, tuple):
+                    time_info = ' to '.join(match)
+                else:
+                    time_info = match
+                key_phrases.append(f"Time period: {time_info.strip()}")
+        
+        # Extract thresholds / numeric criteria
+        threshold_patterns = [
+            r'(\d+[+\-]?\s*(?:bps|basis points|percent|%|points|wins|goals))',
+            r'(?:above|below|over|under|at least|more than|less than)\s+[\$€£]?(\d+[,\d]*(?:\.\d+)?[KMB]?)',
+        ]
+        for pattern in threshold_patterns:
+            matches = re.findall(pattern, desc_lower)
+            for threshold in matches:
+                key_phrases.append(f"Threshold: {threshold}")
+        
+        # Detect special resolution cases
+        special_keywords = [
+            ('cancel', 'Market may resolve "Other" if event is canceled'),
+            ('mathematically eliminated', 'Resolves NO if mathematically eliminated'),
+            ('rounded', 'Values will be rounded before resolution'),
+            ('earliest', 'Resolves based on earliest occurrence'),
+            ('official', 'Requires official confirmation'),
+        ]
+        for keyword, explanation in special_keywords:
+            if keyword in desc_lower:
+                criteria['special_cases'].append(explanation)
+        
+        criteria['key_points'] = key_phrases[:5]  # Top 5 most important
+        
+        # Generate summary
+        if key_phrases:
+            criteria['summary'] = f"RESOLUTION CRITERIA: {'; '.join(key_phrases[:3])}"
+        else:
+            # Fallback: use first 200 chars of description
+            criteria['summary'] = f"RESOLUTION: {description[:200].strip()}..."
+        
+        return criteria
+
     def _log(self, level, message):
         ts = datetime.now().strftime('%H:%M:%S')
         print(f"[{ts}] [{level}] {message}")
@@ -235,6 +335,9 @@ Include the source for each fact."""
         end_date = market_data.get('end_date', 'Unknown')
         resolution_rules = market_data.get('description', '')
         
+        # Parse resolution criteria for clarity
+        resolution_info = self._parse_resolution_criteria(resolution_rules, question)
+        
         # Current time context (CRITICAL for timestamp awareness)
         current_time_utc = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
 
@@ -319,12 +422,37 @@ You MUST respond in EXACTLY this JSON format and nothing else:
         if whale_text and "No significant whale activity" not in whale_text:
             whale_section = f"\n{whale_text}\n"
 
-        # Build resolution rules section
+        # Build resolution rules section with parsed criteria
         rules_section = ""
-        if resolution_rules:
+        if resolution_info['has_criteria']:
+            criteria_bullets = '\n'.join([f"  • {point}" for point in resolution_info['key_points']])
+            special_cases = '\n'.join([f"  ⚠️ {case}" for case in resolution_info['special_cases']]) if resolution_info['special_cases'] else ''
+            
             rules_section = f"""
-RESOLUTION RULES (CRITICAL - Read carefully before assessing):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ RESOLUTION CRITERIA (CRITICAL - READ FIRST) ⚡
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 SUMMARY: {resolution_info['summary']}
+
+🔑 KEY RESOLUTION POINTS:
+{criteria_bullets}
+
+📊 RESOLUTION SOURCE: {resolution_info['resolution_source']}
+
+{special_cases}
+
+⚠️ YOUR PROBABILITY MUST BE BASED ON THESE EXACT CRITERIA, NOT THE QUESTION TITLE ALONE.
+
+FULL RESOLUTION RULES:
 {resolution_rules}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+        else:
+            # Fallback if no criteria parsed
+            rules_section = f"""
+RESOLUTION RULES:
+{resolution_info['summary']}
 """
 
         # Build sports section
