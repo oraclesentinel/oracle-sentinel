@@ -310,6 +310,70 @@ def get_market_detail(market_id):
     finally:
         db.close()
 
+# ─── PREDICTION DETAIL ───────────────────────────────────────
+@app.route("/api/prediction/<int:opp_id>")
+def get_prediction_detail(opp_id):
+    """Detailed view of a single prediction/opportunity."""
+    db = get_db()
+    try:
+        opp = db.execute("""
+            SELECT o.*, m.question, m.description, m.outcome_prices, m.volume,
+                   m.liquidity, m.slug, m.polymarket_id, m.end_date, m.resolution_source
+            FROM opportunities o
+            JOIN markets m ON o.market_id = m.id
+            WHERE o.id = ?
+        """, (opp_id,)).fetchone()
+        if not opp:
+            return jsonify({"error": "Prediction not found"}), 404
+
+        raw = json.loads(opp["raw_data"]) if opp["raw_data"] else {}
+        prices = json.loads(opp["outcome_prices"]) if opp["outcome_prices"] else []
+
+        tracking = db.execute("""
+            SELECT * FROM prediction_tracking WHERE opportunity_id = ?
+        """, (opp_id,)).fetchone()
+
+        news = db.execute("""
+            SELECT * FROM signals WHERE market_id = ? ORDER BY timestamp DESC LIMIT 5
+        """, (opp["market_id"],)).fetchall()
+
+        whales = db.execute("""
+            SELECT * FROM whale_trades_alerted
+            WHERE market_id = ? ORDER BY alerted_at DESC LIMIT 10
+        """, (opp["market_id"],)).fetchall()
+
+        return jsonify({
+            "id": opp["id"],
+            "market_id": opp["market_id"],
+            "question": opp["question"],
+            "description": opp["description"],
+            "signal_type": raw.get("llm_original_recommendation", "NO_TRADE"),
+            "ai_probability": opp["ai_estimate"],
+            "edge": opp["edge"],
+            "confidence": raw.get("confidence", "MEDIUM"),
+            "reasoning": raw.get("reasoning", ""),
+            "recommendation": raw.get("recommendation", ""),
+            "key_factors_for": raw.get("key_factors_for", []),
+            "key_factors_against": raw.get("key_factors_against", []),
+            "risks": raw.get("risks", ""),
+            "market_yes_price": float(prices[0]) if len(prices) > 0 else 0,
+            "market_no_price": float(prices[1]) if len(prices) > 1 else 0,
+            "volume": opp["volume"],
+            "liquidity": opp["liquidity"],
+            "slug": opp["slug"],
+            "polymarket_id": opp["polymarket_id"],
+            "end_date": opp["end_date"],
+            "resolution_source": opp["resolution_source"],
+            "created_at": opp["created_at"],
+            "tracking": dict(tracking) if tracking else None,
+            "news": [dict(n) for n in news],
+            "whales": [dict(w) for w in whales],
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
 # ─── WHALE CORNER ────────────────────────────────────────────
 @app.route("/api/whales")
 def get_whales():

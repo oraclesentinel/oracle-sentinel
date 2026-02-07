@@ -658,6 +658,9 @@ export default function OracleSentinelDashboard() {
   const [streamLogs, setStreamLogs] = useState([]);
   const [sseOk, setSseOk] = useState(false);
   const [whaleData, setWhaleData] = useState(null);
+  const [selectedSignal, setSelectedSignal] = useState(null);
+  const [signalDetail, setSignalDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const logEndRef = useRef(null);
 
   useEffect(() => {
@@ -801,8 +804,22 @@ export default function OracleSentinelDashboard() {
                   const status = p.direction_correct === 1 ? { color: TEAL, label: "CORRECT" } 
                                : p.direction_correct === 0 ? { color: RED_COLD, label: "WRONG" } 
                                : { color: AMBER_COLD, label: "TRACKING" };
+                  // Find matching signal for detail view
+                  const matchingSignal = signals.find(s => s.question === p.question);
                   return (
-                    <div key={p.id || i} className="row-hover" style={{ display: "grid", gridTemplateColumns: "60px 1fr 60px 60px 80px", gap: "8px", alignItems: "center", padding: "7px 10px", fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.04}s both` }}>
+                    <div key={p.id || i} className="row-hover" onClick={() => {
+                      const sig = matchingSignal || { id: null, question: p.question, reasoning: "", signal_type: p.signal_type, edge: p.edge_at_signal, confidence: p.confidence };
+                      setSelectedSignal(sig);
+                      if (sig.id) {
+                        setDetailLoading(true);
+                        fetch(API_BASE + "/prediction/" + sig.id)
+                          .then(r => r.json())
+                          .then(d => { setSignalDetail(d); setDetailLoading(false); })
+                          .catch(() => { setSignalDetail(null); setDetailLoading(false); });
+                      } else {
+                        setSignalDetail(null);
+                      }
+                    }} style={{ display: "grid", gridTemplateColumns: "60px 1fr 60px 60px 80px", gap: "8px", alignItems: "center", padding: "7px 10px", fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.04}s both`, cursor: "pointer" }}>
                       <span style={{ color: p.signal_type === "BUY_YES" ? TEAL : RED_COLD, fontWeight: 600, fontSize: "10px" }}>{p.signal_type === "BUY_YES" ? "▲ YES" : "▼ NO"}</span>
                       <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.question}</span>
                       <span style={{ color: FROST, textAlign: "right", fontWeight: 500 }}>{p.edge_at_signal}%</span>
@@ -1008,6 +1025,153 @@ export default function OracleSentinelDashboard() {
           </Panel>
         )}
       </div>
+
+      {/* Signal Detail Modal */}
+      {selectedSignal && (
+        <div onClick={() => { setSelectedSignal(null); setSignalDetail(null); }} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.75)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: BG_PANEL, border: `1px solid ${BORDER_LIGHT}`, borderRadius: "6px", width: "720px", maxHeight: "85vh", overflowY: "auto", fontFamily: "'JetBrains Mono', monospace" }}>
+            {/* Modal Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "16px 20px", borderBottom: `1px solid ${BORDER}`, background: `linear-gradient(90deg, ${BLUE_DARK}30, transparent)` }}>
+              <div style={{ flex: 1, marginRight: "16px" }}>
+                <div style={{ color: ICE, fontSize: "13px", fontWeight: 600, lineHeight: "1.4" }}>{selectedSignal.question}</div>
+                <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                  <span style={{ color: (signalDetail?.signal_type || selectedSignal.signal_type) === "BUY_YES" ? TEAL : RED_COLD, fontSize: "11px", fontWeight: 600 }}>{(signalDetail?.signal_type || selectedSignal.signal_type) === "BUY_YES" ? "▲ BUY YES" : "▼ BUY NO"}</span>
+                  <span style={{ color: AMBER_COLD, fontSize: "10px" }}>EDGE: {signalDetail?.edge || selectedSignal.edge}%</span>
+                  <span style={{ color: BLUE_BRIGHT, fontSize: "10px" }}>CONF: {signalDetail?.confidence || selectedSignal.confidence}</span>
+                </div>
+              </div>
+              <div onClick={() => { setSelectedSignal(null); setSignalDetail(null); }} style={{ color: SLATE, cursor: "pointer", fontSize: "16px", padding: "2px 6px" }}>✕</div>
+            </div>
+
+            {detailLoading ? (
+              <div style={{ padding: "40px", textAlign: "center", color: FROST, fontSize: "12px" }}>
+                <span style={{ animation: "pulse 1s infinite" }}>●</span> Loading analysis...
+              </div>
+            ) : (
+              <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                {/* Market Data */}
+                {signalDetail && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "12px", padding: "12px", background: BG, borderRadius: "4px" }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ color: TEAL, fontSize: "16px", fontWeight: 600 }}>{(signalDetail.market_yes_price * 100).toFixed(1)}¢</div>
+                      <div style={{ color: SLATE, fontSize: "9px", marginTop: "2px" }}>YES PRICE</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ color: RED_COLD, fontSize: "16px", fontWeight: 600 }}>{(signalDetail.market_no_price * 100).toFixed(1)}¢</div>
+                      <div style={{ color: SLATE, fontSize: "9px", marginTop: "2px" }}>NO PRICE</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ color: BLUE_BRIGHT, fontSize: "16px", fontWeight: 600 }}>{((signalDetail.ai_probability || 0) * 100).toFixed(0)}%</div>
+                      <div style={{ color: SLATE, fontSize: "9px", marginTop: "2px" }}>AI ESTIMATE</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ color: FROST, fontSize: "16px", fontWeight: 600 }}>${formatNum(signalDetail.volume || 0)}</div>
+                      <div style={{ color: SLATE, fontSize: "9px", marginTop: "2px" }}>VOLUME</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Reasoning */}
+                <div>
+                  <div style={{ color: BLUE_BRIGHT, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>AI ANALYSIS</div>
+                  <div style={{ color: FROST, fontSize: "11px", lineHeight: "1.7", whiteSpace: "pre-wrap", background: BG, padding: "12px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
+                    {signalDetail?.reasoning || selectedSignal.reasoning || "No reasoning available for this prediction."}
+                  </div>
+                </div>
+
+                {/* Recommendation */}
+                {signalDetail?.recommendation && (
+                  <div>
+                    <div style={{ color: TEAL, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>RECOMMENDATION</div>
+                    <div style={{ color: ICE, fontSize: "11px", lineHeight: "1.6", background: BG, padding: "12px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
+                      {signalDetail.recommendation}
+                    </div>
+                  </div>
+                )}
+
+                {/* Key Factors */}
+                {((signalDetail?.key_factors_for?.length > 0) || (signalDetail?.key_factors_against?.length > 0)) && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    <div>
+                      <div style={{ color: TEAL, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>FACTORS FOR</div>
+                      <div style={{ background: BG, padding: "10px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
+                        {(signalDetail.key_factors_for || []).map((f, i) => (
+                          <div key={i} style={{ color: FROST, fontSize: "10px", lineHeight: "1.6", padding: "3px 0" }}>+ {f}</div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ color: RED_COLD, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>FACTORS AGAINST</div>
+                      <div style={{ background: BG, padding: "10px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
+                        {(signalDetail.key_factors_against || []).map((f, i) => (
+                          <div key={i} style={{ color: FROST, fontSize: "10px", lineHeight: "1.6", padding: "3px 0" }}>- {f}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Risks */}
+                {signalDetail?.risks && (
+                  <div>
+                    <div style={{ color: AMBER_COLD, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>RISKS</div>
+                    <div style={{ color: FROST, fontSize: "11px", lineHeight: "1.6", background: BG, padding: "12px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
+                      {signalDetail.risks}
+                    </div>
+                  </div>
+                )}
+
+                {/* Price Tracking */}
+                {signalDetail?.tracking && (
+                  <div>
+                    <div style={{ color: BLUE_BRIGHT, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>PRICE TRACKING</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
+                      {[
+                        { label: "At Signal", value: signalDetail.tracking.market_price_at_signal, color: FROST },
+                        { label: "After 1H", value: signalDetail.tracking.price_after_1h, color: BLUE_MID },
+                        { label: "After 6H", value: signalDetail.tracking.price_after_6h, color: BLUE_BRIGHT },
+                        { label: "After 24H", value: signalDetail.tracking.price_after_24h, color: AMBER_COLD },
+                        { label: "After 48H", value: signalDetail.tracking.price_after_48h, color: TEAL },
+                      ].map(t => (
+                        <div key={t.label} style={{ textAlign: "center", background: BG, padding: "8px", borderRadius: "4px" }}>
+                          <div style={{ color: t.value ? t.color : SLATE, fontSize: "14px", fontWeight: 600 }}>
+                            {t.value ? (t.value * 100).toFixed(1) + "¢" : "—"}
+                          </div>
+                          <div style={{ color: SLATE, fontSize: "8px", marginTop: "2px" }}>{t.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Whale Activity */}
+                {signalDetail?.whales?.length > 0 && (
+                  <div>
+                    <div style={{ color: AMBER_COLD, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>WHALE ACTIVITY</div>
+                    {signalDetail.whales.map((w, i) => (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", fontSize: "10px", borderBottom: `1px solid ${GRID_LINE}` }}>
+                        <span style={{ color: w.trade_side === "BUY" ? TEAL : RED_COLD }}>{w.trade_side}</span>
+                        <span style={{ color: FROST }}>${formatNum(w.trade_size)}</span>
+                        <span style={{ color: SLATE }}>{w.trader_name?.slice(0,12)}</span>
+                        <span style={{ color: SLATE }}>{(w.alerted_at || "").split(" ")[1]?.slice(0,5)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Polymarket Link */}
+                {signalDetail?.slug && (
+                  <div style={{ textAlign: "center", paddingTop: "4px" }}>
+                    <a href={`https://polymarket.com/event/${signalDetail.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: BLUE_MID, fontSize: "10px", textDecoration: "none" }}>
+                      View on Polymarket →
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: BG_PANEL, borderTop: `1px solid ${BORDER}`, padding: "5px 20px", display: "flex", justifyContent: "space-between", fontSize: "9px", color: SLATE }}>
