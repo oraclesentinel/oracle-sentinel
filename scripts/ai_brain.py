@@ -8,7 +8,7 @@ import os
 import json
 import sqlite3
 import requests
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from whale_tracker import WhaleTracker, get_market_tokens
 from sports_data import SportsData
@@ -51,6 +51,33 @@ class AIBrain:
 
     def _get_db(self):
         return sqlite3.connect(DB_PATH)
+
+    def _is_market_still_open(self, end_date_str: str) -> bool:
+        """
+        Check if market is still open for trading.
+        Returns False if market has already closed.
+        Provides 2-hour buffer to avoid analyzing markets about to close.
+        """
+        if not end_date_str or end_date_str == 'Unknown':
+            return True  # Unknown end date, assume open
+        
+        try:
+            # Parse end date (format: 2026-02-02T17:00:00Z)
+            end_dt = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+            now = datetime.now(timezone.utc)
+            
+            # Market must close at least 2 hours from now
+            buffer_time = now + timedelta(hours=2)
+            
+            if end_dt <= now:
+                return False  # Market already closed
+            elif end_dt <= buffer_time:
+                return False  # Market closes too soon (within 2 hours)
+            else:
+                return True  # Market still open with enough time
+        except Exception as e:
+            self._log('WARN', f'Failed to parse end_date "{end_date_str}": {e}')
+            return True  # If parsing fails, don't skip (cautious approach)
 
     def _log(self, level, message):
         ts = datetime.now().strftime('%H:%M:%S')
@@ -183,6 +210,22 @@ Include the source for each fact."""
         Now includes on-chain whale intelligence, resolution rules, and live sports data.
         """
         self._log('INFO', f'  Stage 2: Assessing probability...')
+        
+        # VALIDATION: Check if market is still open
+        end_date = market_data.get('end_date', 'Unknown')
+        if not self._is_market_still_open(end_date):
+            self._log('WARN', f'  Market already closed or closes too soon (end_date: {end_date}). Skipping analysis.')
+            return {
+                'probability': market_data.get('yes_price', 0.5),
+                'confidence': 'SKIP',
+                'reasoning': f'Market end date ({end_date}) has already passed or is within 2 hours. Cannot analyze closed markets.',
+                'recommendation': 'SKIP',
+                'key_factors_for': [],
+                'key_factors_against': [],
+                'risks': 'N/A - Market closed',
+                'edge_assessment': 'N/A - Market closed',
+                'whale_interpretation': 'N/A - Market closed'
+            }
 
         # Market context
         yes_price = market_data.get('yes_price', 0)
@@ -191,8 +234,13 @@ Include the source for each fact."""
         liquidity = market_data.get('liquidity', 0)
         end_date = market_data.get('end_date', 'Unknown')
         resolution_rules = market_data.get('description', '')
+        
+        # Current time context (CRITICAL for timestamp awareness)
+        current_time_utc = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
 
-        system_prompt = """You are Oracle Sentinel, an elite prediction market analyst.
+        system_prompt = f"""You are Oracle Sentinel, an elite prediction market analyst.
+CURRENT TIME: {current_time_utc}
+CRITICAL: If the market's end date has already passed, or if the event in question has already occurred based on the current time, you MUST output recommendation: "SKIP" with reasoning explaining the market is already closed or resolved.
 You assess the probability of events based on factual evidence AND on-chain market intelligence.
 
 RULES:
