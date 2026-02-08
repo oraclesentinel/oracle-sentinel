@@ -71,15 +71,15 @@ def get_predictions_near_close() -> list:
     """
     conn = get_db()
     cursor = conn.cursor()
-    
+
     now = datetime.now(timezone.utc)
     window_start = now + timedelta(hours=HOURS_BEFORE_CLOSE_MIN)
     window_end = now + timedelta(hours=HOURS_BEFORE_CLOSE_MAX)
-    
+
     log(f"Checking for markets closing between {window_start.isoformat()} and {window_end.isoformat()}")
-    
+
     cursor.execute('''
-        SELECT 
+        SELECT
             pt.id,
             pt.market_id,
             pt.polymarket_id,
@@ -92,14 +92,15 @@ def get_predictions_near_close() -> list:
             pt.market_end_date,
             pt.revised_at,
             m.slug,
-            m.description
+            m.description,
+            pt.signal_source
         FROM prediction_tracking pt
         JOIN markets m ON m.id = pt.market_id
         WHERE pt.final_resolution IS NULL
           AND pt.revised_at IS NULL
           AND pt.market_end_date IS NOT NULL
     ''')
-    
+
     predictions = []
     for row in cursor.fetchall():
         pred = {
@@ -115,9 +116,10 @@ def get_predictions_near_close() -> list:
             'market_end_date': row[9],
             'revised_at': row[10],
             'slug': row[11],
-            'description': row[12]
+            'description': row[12],
+            'signal_source': row[13] if len(row) > 13 else 'scan'
         }
-        
+
         # Parse end date and check if in window
         try:
             end_date_str = pred['market_end_date']
@@ -126,14 +128,14 @@ def get_predictions_near_close() -> list:
                     end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
                 else:
                     end_date = datetime.fromisoformat(end_date_str + 'T00:00:00+00:00')
-                
+
                 if window_start <= end_date <= window_end:
                     pred['end_date_parsed'] = end_date
                     predictions.append(pred)
                     log(f"  → Found: {pred['question'][:50]}... (closes {end_date.isoformat()})")
         except Exception as e:
             log(f"  ⚠ Failed to parse end_date '{pred.get('market_end_date')}': {e}")
-    
+
     conn.close()
     return predictions
 
@@ -143,7 +145,7 @@ def call_openclaw_reanalysis(question: str, slug: str, description: str, origina
     Call OpenClaw to re-analyze a market with fresh news
     """
     polymarket_url = f"https://polymarket.com/event/{slug}" if slug else ""
-    
+
     prompt = f"""URGENT RE-ANALYSIS REQUEST - Market closing in 5-6 hours
 
 MARKET: {question}
@@ -191,11 +193,11 @@ Only change if there's a genuine reason based on new facts."""
             timeout=180,
             env={**os.environ, "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/lib/node_modules/.bin"}
         )
-        
+
         if result.returncode != 0:
             log(f"  ⚠ OpenClaw failed: {result.stderr[:200]}")
             return None
-        
+
         try:
             response_data = json.loads(result.stdout)
             # Get response text from payloads array
@@ -204,13 +206,13 @@ Only change if there's a genuine reason based on new facts."""
                 log(f"  ⚠ No payloads in response")
                 return None
             response_text = payloads[0].get('text', '')
-            
+
             # Strip markdown code blocks if present
             if "```json" in response_text:
                 response_text = response_text.replace("```json", "").replace("```", "").strip()
             elif "```" in response_text:
                 response_text = response_text.replace("```", "").strip()
-            
+
             if '{' in response_text and '}' in response_text:
                 json_start = response_text.find('{')
                 json_end = response_text.rfind('}') + 1
@@ -219,11 +221,11 @@ Only change if there's a genuine reason based on new facts."""
             else:
                 log(f"  ⚠ No JSON found in response")
                 return None
-                
+
         except json.JSONDecodeError as e:
             log(f"  ⚠ JSON parse error: {e}")
             return None
-            
+
     except subprocess.TimeoutExpired:
         log(f"  ⚠ OpenClaw timeout (180s)")
         return None
@@ -234,23 +236,43 @@ Only change if there's a genuine reason based on new facts."""
 
 def update_prediction_tracking(pred_id: int, original: dict, revised: dict):
     """
-    Update prediction_tracking with revised analysis
+    Update prediction_tracking with revised analysis.
+    Handles whale_confirmed signals - changes to whale_reanalyzed if signal changes.
     """
     conn = get_db()
     cursor = conn.cursor()
-    
+
     now = datetime.now().isoformat()
-    
+
+    # Determine new signal_source based on whale handling
+    old_signal = original['signal_type']
+    new_signal = revised.get('revised_signal', old_signal)
+    old_source = original.get('signal_source', 'scan')
+
+    # If signal changed and was whale_confirmed, mark as whale_reanalyzed
+    if old_source == 'whale_confirmed' and old_signal != new_signal:
+        new_source = 'whale_reanalyzed'
+        revision_reason = f"AI override whale signal: {old_signal} -> {new_signal}"
+        log(f"  ⚠️ Whale signal overridden: {old_signal} -> {new_signal}")
+    elif old_source == 'whale_confirmed':
+        new_source = 'whale_confirmed'
+        revision_reason = revised.get('change_reason', 'Reanalysis confirms whale signal')
+        log(f"  ✅ Whale signal confirmed by reanalysis")
+    else:
+        new_source = old_source
+        revision_reason = revised.get('change_reason', 'Re-analysis completed')
+
     cursor.execute('''
         UPDATE prediction_tracking
-        SET 
-            original_signal_type = ?,
-            original_ai_probability = ?,
-            original_edge = ?,
+        SET
+            original_signal_type = COALESCE(original_signal_type, ?),
+            original_ai_probability = COALESCE(original_ai_probability, ?),
+            original_edge = COALESCE(original_edge, ?),
             signal_type = ?,
             ai_probability = ?,
             edge_at_signal = ?,
             confidence = ?,
+            signal_source = ?,
             revised_at = ?,
             revision_reason = ?
         WHERE id = ?
@@ -258,17 +280,18 @@ def update_prediction_tracking(pred_id: int, original: dict, revised: dict):
         original['signal_type'],
         original['ai_probability'],
         original['edge_at_signal'],
-        revised.get('revised_signal', original['signal_type']),
+        new_signal,
         revised.get('revised_probability', original['ai_probability']),
         round((revised.get('revised_probability', original['ai_probability']) - revised.get('current_market_price', original['market_price_at_signal'])) * 100, 2),
         revised.get('revised_confidence', original['confidence']),
+        new_source,
         now,
-        revised.get('change_reason', 'Re-analysis completed')[:500]
+        revision_reason[:500]
     ))
-    
+
     conn.commit()
     conn.close()
-    
+
     log(f"  ✓ Updated prediction #{pred_id}")
 
 
@@ -276,7 +299,7 @@ def send_signal_change_alert(pred: dict, revised: dict):
     """Send Telegram alert when signal changes"""
     old_signal = pred['signal_type']
     new_signal = revised.get('revised_signal', old_signal)
-    
+
     # Emoji based on signal
     if new_signal == 'BUY_YES':
         signal_emoji = "🟢"
@@ -284,7 +307,7 @@ def send_signal_change_alert(pred: dict, revised: dict):
         signal_emoji = "🔴"
     else:
         signal_emoji = "⚪"
-    
+
     msg = f"""⚡ <b>SIGNAL REVISED</b>
 
 📊 <b>Market:</b> {pred['question'][:100]}
@@ -308,21 +331,21 @@ def run_reanalysis():
     log("=" * 60)
     log("🔄 Re-analysis Scheduler Started")
     log("=" * 60)
-    
+
     predictions = get_predictions_near_close()
-    
+
     if not predictions:
         log("No predictions found in 5-6 hour window. Exiting.")
         return
-    
+
     log(f"\nFound {len(predictions)} prediction(s) to re-analyze\n")
-    
+
     for pred in predictions:
         log(f"\n{'─' * 50}")
         log(f"Re-analyzing: {pred['question'][:60]}...")
         log(f"  Original signal: {pred['signal_type']} ({pred['ai_probability']*100:.1f}%)")
         log(f"  Market closes: {pred['market_end_date']}")
-        
+
         revised = call_openclaw_reanalysis(
             question=pred['question'],
             slug=pred['slug'],
@@ -330,7 +353,7 @@ def run_reanalysis():
             original_signal=pred['signal_type'],
             original_prob=pred['ai_probability']
         )
-        
+
         if not revised:
             log(f"  ⚠ Re-analysis failed - keeping original signal")
             conn = get_db()
@@ -343,25 +366,25 @@ def run_reanalysis():
             conn.commit()
             conn.close()
             continue
-        
+
         # Check if signal changed
         old_signal = pred['signal_type']
         new_signal = revised.get('revised_signal', old_signal)
         signal_changed = revised.get('signal_changed', False) or (old_signal != new_signal)
-        
+
         if signal_changed:
             log(f"  ⚡ SIGNAL CHANGED: {old_signal} → {new_signal}")
             log(f"     Reason: {revised.get('change_reason', 'Unknown')}")
             log(f"     New info: {revised.get('new_information', 'None')}")
-            
+
             # Send Telegram alert
             send_signal_change_alert(pred, revised)
         else:
             log(f"  ✓ Signal confirmed: {old_signal} (no change)")
-        
+
         # Update database
         update_prediction_tracking(pred['id'], pred, revised)
-    
+
     log(f"\n{'=' * 60}")
     log(f"Re-analysis complete. Processed {len(predictions)} prediction(s)")
     log(f"{'=' * 60}\n")

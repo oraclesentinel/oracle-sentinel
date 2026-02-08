@@ -138,12 +138,13 @@ class AccuracyTracker:
             return None
 
         try:
+            signal_source = result.get('signal_source', 'scan')
             cursor.execute('''
                 INSERT INTO prediction_tracking (
                     opportunity_id, market_id, polymarket_id, question,
                     signal_type, ai_probability, market_price_at_signal,
-                    edge_at_signal, confidence, market_end_date
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    edge_at_signal, confidence, market_end_date, signal_source
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 opportunity_id, market_id, polymarket_id, question,
                 recommendation,
@@ -151,7 +152,8 @@ class AccuracyTracker:
                 result.get('market_price', 0),
                 result.get('edge', 0),
                 result.get('confidence', 'LOW'),
-                end_date
+                end_date,
+                signal_source
             ))
             conn.commit()
             track_id = cursor.lastrowid

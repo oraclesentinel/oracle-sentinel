@@ -62,7 +62,7 @@ def dashboard_summary():
             no_price = float(prices[1]) if len(prices) > 1 else 0
 
             signal_type = raw.get("llm_original_recommendation", "NO_TRADE")
-            if signal_type == "NO_TRADE":
+            if signal_type in ("NO_TRADE", "SKIP"):
                 continue
 
             active_signals.append({
@@ -343,13 +343,30 @@ def get_prediction_detail(opp_id):
             WHERE market_title = ? ORDER BY alerted_at DESC LIMIT 10
         """, (opp["question"],)).fetchall()
 
+        # Prioritize prediction_tracking signal if exists (whale_confirmed, etc)
+        if tracking:
+            final_signal = tracking["signal_type"]
+            final_ai_prob = tracking["ai_probability"]
+            signal_source = tracking["signal_source"] or "scan"
+            whale_trader = tracking["whale_trader"]
+            whale_trade_size = tracking["whale_trade_size"]
+        else:
+            final_signal = raw.get("llm_original_recommendation", "NO_TRADE")
+            final_ai_prob = opp["ai_estimate"]
+            signal_source = "scan"
+            whale_trader = None
+            whale_trade_size = None
+
         return jsonify({
             "id": opp["id"],
             "market_id": opp["market_id"],
             "question": opp["question"],
             "description": opp["description"],
-            "signal_type": raw.get("llm_original_recommendation", "NO_TRADE"),
-            "ai_probability": opp["ai_estimate"],
+            "signal_type": final_signal,
+            "signal_source": signal_source,
+            "whale_trader": whale_trader,
+            "whale_trade_size": whale_trade_size,
+            "ai_probability": final_ai_prob,
             "edge": opp["edge"],
             "confidence": raw.get("confidence", "MEDIUM"),
             "reasoning": raw.get("reasoning", ""),
