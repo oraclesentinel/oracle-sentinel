@@ -19,7 +19,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', 'config', '.env'))
 
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'polymarket.db')
 LOG_PATH = os.path.join(os.path.dirname(__file__), '..', 'logs', 'reanalysis.log')
-OPENCLAW_SESSION_ID = "oracle-sentinel-reanalysis"
+OPENCLAW_SESSION_ID = "agent:main:main"
 
 # Telegram Config
 from config_loader import BOT_TOKEN, CHAT_IDS
@@ -198,7 +198,18 @@ Only change if there's a genuine reason based on new facts."""
         
         try:
             response_data = json.loads(result.stdout)
-            response_text = response_data.get('result', {}).get('response', '')
+            # Get response text from payloads array
+            payloads = response_data.get('result', {}).get('payloads', [])
+            if not payloads:
+                log(f"  ⚠ No payloads in response")
+                return None
+            response_text = payloads[0].get('text', '')
+            
+            # Strip markdown code blocks if present
+            if "```json" in response_text:
+                response_text = response_text.replace("```json", "").replace("```", "").strip()
+            elif "```" in response_text:
+                response_text = response_text.replace("```", "").strip()
             
             if '{' in response_text and '}' in response_text:
                 json_start = response_text.find('{')

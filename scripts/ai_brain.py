@@ -463,7 +463,7 @@ Example: Market YES=$0.60, your estimate=0.68, MEDIUM confidence → edge +8% �
 Example: Market YES=$0.50, your estimate=0.65 → coin-flip zone → NO_TRADE
 
 You MUST respond in EXACTLY this JSON format and nothing else:
-{
+{{
     "probability": 0.XX,
     "confidence": "LOW|MEDIUM|HIGH",
     "reasoning": "2-3 sentence explanation of your assessment",
@@ -473,7 +473,7 @@ You MUST respond in EXACTLY this JSON format and nothing else:
     "recommendation": "BUY_YES|BUY_NO|NO_TRADE|SKIP",
     "edge_assessment": "Is there an edge vs market price? Explain.",
     "whale_interpretation": "How do on-chain signals align with your analysis?"
-}"""
+}}"""
 
         # Build whale section
         whale_section = ""
