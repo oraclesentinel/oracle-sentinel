@@ -1165,7 +1165,7 @@ export default function OracleSentinelDashboard() {
 
       {/* Footer */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: BG_PANEL, borderTop: `1px solid ${BORDER}`, padding: "5px 20px", display: "flex", justifyContent: "space-between", fontSize: "9px", color: SLATE }}>
-        <span>ORACLE SENTINEL v3.0 — OpenRouter + Claude Sonnet 4.5</span>
+        <span>ORACLE SENTINEL v2.0 — Claude Sonnet 4.5</span>
         <span style={{ display: "flex", gap: "16px" }}>
           <span>OpenClaw 2026.1.30</span><span>@oraclesentinel_pm_bot</span>
           <span style={{ color: apiOk ? TEAL : RED_COLD }}>{apiOk ? "API: connected" : "API: offline"}</span>

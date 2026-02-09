@@ -27,6 +27,11 @@ except ImportError:
     print("Install: pip install trafilatura")
     exit(1)
 
+# For Google News RSS backup
+import xml.etree.ElementTree as ET
+from urllib.parse import quote_plus
+from urllib.request import urlopen, Request
+
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'polymarket.db')
 
 
@@ -105,23 +110,75 @@ class NewsFetcher:
         return queries[:self.max_queries_per_market]
 
     # =========================================================
+    # STEP 2a: Search Google News RSS (Complement)
+    # =========================================================
+    def search_google_news_rss(self, query: str, seen_urls: set) -> list:
+        """
+        Complementary search using Google News RSS feed.
+        Provides additional coverage alongside DuckDuckGo.
+        """
+        results = []
+        try:
+            # Google News RSS URL
+            encoded_query = quote_plus(query)
+            url = f"https://news.google.com/rss/search?q={encoded_query}&hl=en-US&gl=US&ceid=US:en"
+            
+            # Fetch RSS
+            req = Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+            response = urlopen(req, timeout=10)
+            xml_data = response.read().decode('utf-8')
+            
+            # Parse XML
+            root = ET.fromstring(xml_data)
+            
+            # Find all items
+            for item in root.findall('.//item')[:self.max_results_per_query]:
+                title_elem = item.find('title')
+                link_elem = item.find('link')
+                pub_date_elem = item.find('pubDate')
+                source_elem = item.find('source')
+                
+                if link_elem is not None and link_elem.text:
+                    url = link_elem.text
+                    # Skip if already seen
+                    if url in seen_urls:
+                        continue
+                    
+                    results.append({
+                        'title': title_elem.text if title_elem is not None else '',
+                        'url': url,
+                        'snippet': '',  # RSS doesn't provide snippet
+                        'source': source_elem.text if source_elem is not None else 'Google News',
+                        'date': pub_date_elem.text if pub_date_elem is not None else '',
+                        'query': query
+                    })
+                    
+        except Exception as e:
+            self._log('WARN', f'Google News RSS error for "{query[:30]}...": {e}')
+        
+        return results
+
+    # =========================================================
     # STEP 2: Search DuckDuckGo
     # =========================================================
     def search_news(self, queries: list) -> list:
         """
-        Search DuckDuckGo with multiple queries.
-        Returns deduplicated list of results.
+        Search multiple sources for comprehensive news coverage.
+        Runs both DuckDuckGo AND Google News RSS, then deduplicates.
         """
         all_results = []
         seen_urls = set()
+        ddg_count = 0
+        google_count = 0
 
         for query in queries:
+            # === SOURCE 1: DuckDuckGo ===
             try:
                 with DDGS() as ddgs:
                     results = list(ddgs.news(
                         keywords=query,
                         max_results=self.max_results_per_query,
-                        region='wt-wt',       # Worldwide
+                        region='wt-wt',
                         safesearch='off'
                     ))
 
@@ -137,10 +194,25 @@ class NewsFetcher:
                                 'date': r.get('date', ''),
                                 'query': query
                             })
+                            ddg_count += 1
 
             except Exception as e:
-                self._log('WARN', f'Search failed for "{query}": {e}')
-                continue
+                self._log('WARN', f'DuckDuckGo failed for "{query}": {e}')
+
+            # === SOURCE 2: Google News RSS (Complement) ===
+            try:
+                google_results = self.search_google_news_rss(query, seen_urls)
+                for r in google_results:
+                    url = r.get('url', '')
+                    if url and url not in seen_urls:
+                        seen_urls.add(url)
+                        all_results.append(r)
+                        google_count += 1
+            except Exception as e:
+                self._log('WARN', f'Google News RSS failed for "{query}": {e}')
+
+        # Log summary
+        self._log('INFO', f'  Search results: {len(all_results)} total (DuckDuckGo: {ddg_count}, Google News: {google_count})')
 
         return all_results
 

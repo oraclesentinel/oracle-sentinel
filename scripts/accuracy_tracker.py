@@ -229,6 +229,7 @@ class AccuracyTracker:
         conn.commit()
         conn.close()
 
+        self.update_daily_stats()
         self._log('INFO', f'Snapshots: {updated} updated, {resolved} resolved (of {len(predictions)} tracked)')
         return {'updated': updated, 'resolved': resolved, 'total_tracked': len(predictions)}
 
@@ -302,6 +303,66 @@ class AccuracyTracker:
             no_price = 1.0 - entry_price
             return round(bet * (1.0 - no_price) / no_price, 2) if resolution == 'NO' else -bet
         return 0.0
+
+
+    # =========================================================
+    # UPDATE DAILY STATS
+    # =========================================================
+    def update_daily_stats(self):
+        """
+        Aggregate prediction data into accuracy_daily table.
+        Called after resolutions are checked.
+        """
+        conn = self._get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT DISTINCT DATE(created_at) as date FROM prediction_tracking ORDER BY date')
+        dates = [row['date'] for row in cursor.fetchall()]
+        updated = 0
+        
+        for date in dates:
+            cursor.execute('''
+                SELECT 
+                    COUNT(*) as total_signals,
+                    SUM(CASE WHEN signal_type = 'BUY_YES' THEN 1 ELSE 0 END) as buy_yes_count,
+                    SUM(CASE WHEN signal_type = 'BUY_NO' THEN 1 ELSE 0 END) as buy_no_count,
+                    SUM(CASE WHEN final_resolution IS NOT NULL THEN 1 ELSE 0 END) as resolved_count,
+                    SUM(CASE WHEN direction_correct = 1 THEN 1 ELSE 0 END) as correct_count,
+                    SUM(COALESCE(hypothetical_pnl, 0)) as total_pnl,
+                    AVG(edge_at_signal) as avg_edge
+                FROM prediction_tracking
+                WHERE DATE(created_at) = ?
+            ''', (date,))
+            
+            row = cursor.fetchone()
+            if not row or row['total_signals'] == 0:
+                continue
+            
+            resolved = row['resolved_count'] or 0
+            correct = row['correct_count'] or 0
+            accuracy_pct = (correct / resolved * 100) if resolved > 0 else None
+            
+            cursor.execute('''
+                INSERT INTO accuracy_daily (date, total_signals, buy_yes_count, buy_no_count,
+                    resolved_count, correct_count, accuracy_pct, total_pnl, avg_edge)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(date) DO UPDATE SET
+                    total_signals = excluded.total_signals,
+                    buy_yes_count = excluded.buy_yes_count,
+                    buy_no_count = excluded.buy_no_count,
+                    resolved_count = excluded.resolved_count,
+                    correct_count = excluded.correct_count,
+                    accuracy_pct = excluded.accuracy_pct,
+                    total_pnl = excluded.total_pnl,
+                    avg_edge = excluded.avg_edge
+            ''', (date, row['total_signals'], row['buy_yes_count'] or 0, row['buy_no_count'] or 0,
+                  resolved, correct, accuracy_pct, row['total_pnl'] or 0, row['avg_edge']))
+            updated += 1
+        
+        conn.commit()
+        conn.close()
+        self._log('INFO', f'Daily stats updated: {updated} days')
+        return updated
 
     # =========================================================
     # REPORT
