@@ -12,6 +12,7 @@ from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from whale_tracker import WhaleTracker, get_market_tokens
 from sports_data import SportsData
+from agent_config_loader import get_agent_config
 
 # Load environment
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', 'config', '.env'))
@@ -48,6 +49,7 @@ class AIBrain:
         self.max_facts_tokens = 2000     # Facts summary sent to Stage 2
         self.whale_tracker = WhaleTracker()
         self.sports_data = SportsData()
+        self.agent_config = get_agent_config()  # Self-improvement config
 
     def _get_db(self):
         return sqlite3.connect(DB_PATH)
@@ -389,6 +391,11 @@ Include the source for each fact."""
         
         # Current time context (CRITICAL for timestamp awareness)
         current_time_utc = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+        
+        # Get lessons learned from self-improvement config
+        lessons_section = ""
+        if hasattr(self, 'agent_config'):
+            lessons_section = self.agent_config.get_lessons_for_prompt()
 
         system_prompt = f"""You are Oracle Sentinel, an elite prediction market analyst.
 CURRENT TIME: {current_time_utc}
@@ -461,6 +468,8 @@ Example: Market YES=$0.60, your estimate=0.75, HIGH confidence → edge +15% →
 Example: Market YES=$0.80, your estimate=0.50, HIGH confidence → edge -30% → BUY_NO
 Example: Market YES=$0.60, your estimate=0.68, MEDIUM confidence → edge +8% → NO_TRADE (need HIGH confidence)
 Example: Market YES=$0.50, your estimate=0.65 → coin-flip zone → NO_TRADE
+
+{lessons_section}
 
 You MUST respond in EXACTLY this JSON format and nothing else:
 {{
@@ -581,7 +590,12 @@ Respond ONLY with the JSON object, no other text."""
             # FORCE RECOMMENDATION RULES AT CODE LEVEL
             # Don't trust LLM's recommendation — recalculate
             # ==============================================
-            result = self._force_recommendation(result, yes_price)
+            # Detect category for self-improvement adjustments
+            from market_categorizer import MarketCategorizer
+            categorizer = MarketCategorizer()
+            market_category = categorizer.categorize(question)
+            
+            result = self._force_recommendation(result, yes_price, category=market_category)
             
             return result
 
@@ -628,15 +642,15 @@ Respond ONLY with the JSON object, no other text."""
             self._log('INFO', f'  ⚠️ Coin-flip zone ({market_yes_price*100:.1f}%) → NO_TRADE')
 
         # Rule 4-5: Big edge (>=10%) with HIGH confidence
-        elif abs(edge) >= 10 and confidence == 'HIGH':
+        elif abs(edge) >= min_edge_threshold * 2 and confidence == 'HIGH':  # 2x threshold for high confidence
             new_rec = 'BUY_YES' if edge > 0 else 'BUY_NO'
 
         # Rule 6-7: Moderate edge (>=5%) with HIGH confidence only
-        elif abs(edge) >= 5 and confidence == 'HIGH':
+        elif abs(edge) >= min_edge_threshold and confidence == 'HIGH':  # Dynamic threshold
             new_rec = 'BUY_YES' if edge > 0 else 'BUY_NO'
 
         # Rule 8: Small edge → not worth it
-        elif abs(edge) < 5:
+        elif abs(edge) < min_edge_threshold:  # Below dynamic threshold
             new_rec = 'NO_TRADE'
 
         # Rule 9-10: MEDIUM confidence → NO_TRADE always
