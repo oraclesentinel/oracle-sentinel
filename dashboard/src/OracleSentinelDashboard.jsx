@@ -63,11 +63,14 @@ function Styles() {
       @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
       @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
       @keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+      @keyframes aiGlow { 0%, 100% { box-shadow: 0 0 4px #4ecdc4, 0 0 8px #4ecdc420; } 50% { box-shadow: 0 0 8px #4ecdc4, 0 0 16px #4ecdc440; } }
+      .tab-btn.ai-agent-tab { background: linear-gradient(135deg, #0d2847 0%, #1a5a9e20 100%); border-bottom: 2px solid #4ecdc4; color: #4ecdc4; animation: aiGlow 3s ease-in-out infinite; }
+      .tab-btn.ai-agent-tab:hover { background: linear-gradient(135deg, #0d284790 0%, #1a5a9e40 100%); }
       .panel { background: ${BG_PANEL}; border: 1px solid ${BORDER}; border-radius: 3px; overflow: hidden; transition: border-color 0.3s; }
       .panel:hover { border-color: ${BORDER_LIGHT}; }
       .panel-head { background: linear-gradient(90deg, ${BLUE_DARK}25, transparent 70%); border-bottom: 1px solid ${BORDER}; padding: 7px 14px; display: flex; align-items: center; gap: 8px; }
       .row-hover:hover { background: ${BLUE_DARK}18 !important; }
-      .tab-btn { background: transparent; border: none; border-bottom: 2px solid transparent; color: ${SLATE}; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.5px; padding: 10px 20px; cursor: pointer; transition: all 0.2s; }
+      .tab-btn { background: transparent; border: none; border-bottom: 2px solid transparent; color: ${SLATE}; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; letter-spacing: 0.5px; padding: 10px 20px; cursor: pointer; transition: all 0.2s; }
       .tab-btn:hover { color: ${FROST}; background: ${BLUE_DARK}15; }
       .tab-btn.active { color: ${BLUE_BRIGHT}; border-bottom-color: ${BLUE_MID}; background: ${BLUE_DARK}20; }
       ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: ${BG}; } ::-webkit-scrollbar-thumb { background: ${BORDER_LIGHT}; border-radius: 3px; }
@@ -81,7 +84,7 @@ function Header() {
       <div style={{ color: BLUE_BRIGHT, fontFamily: "'JetBrains Mono', monospace", fontSize: "16px", fontWeight: 700, letterSpacing: "4px" }}>
         ORACLE SENTINEL
       </div>
-      <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "10px", letterSpacing: "3px", marginTop: "4px" }}>
+      <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", letterSpacing: "3px", marginTop: "4px" }}>
         POLYMARKET PREDICTION INTELLIGENCE v2.0
       </div>
     </div>
@@ -92,9 +95,9 @@ function StatusBar({ scanCount, nextScan, uptime }) {
   const [time, setTime] = useState(new Date());
   useEffect(() => { const iv = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(iv); }, []);
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 20px", background: `linear-gradient(90deg, ${BLUE_DARK}12, ${BG_PANEL}, ${BLUE_DARK}12)`, borderBottom: `1px solid ${BORDER}`, fontFamily: "'JetBrains Mono', monospace", fontSize: "11px" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 20px", background: `linear-gradient(90deg, ${BLUE_DARK}12, ${BG_PANEL}, ${BLUE_DARK}12)`, borderBottom: `1px solid ${BORDER}`, fontFamily: "'JetBrains Mono', monospace", fontSize: "13px" }}>
       <div style={{ display: "flex", gap: "28px", alignItems: "center" }}>
-        <span style={{ color: TEAL, display: "flex", alignItems: "center", gap: "6px" }}><span style={{ animation: "pulse 2s infinite", fontSize: "8px" }}>●</span>ONLINE</span>
+        <span style={{ color: TEAL, display: "flex", alignItems: "center", gap: "6px" }}><span style={{ animation: "pulse 2s infinite", fontSize: "12px" }}>●</span>ONLINE</span>
         <span style={{ color: SLATE }}>UPTIME <span style={{ color: FROST }}>{uptime}</span></span>
         <span style={{ color: SLATE }}>SCANS <span style={{ color: FROST }}>{scanCount}</span></span>
       </div>
@@ -110,7 +113,7 @@ function Panel({ title, children, style = {}, headerRight = null }) {
   return (
     <div className="panel" style={style}>
       <div className="panel-head">
-        <span style={{ color: BLUE_BRIGHT, fontFamily: "'JetBrains Mono', monospace", fontSize: "10px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase" }}>{title}</span>
+        <span style={{ color: BLUE_BRIGHT, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase" }}>{title}</span>
         {headerRight && <div style={{ marginLeft: "auto" }}>{headerRight}</div>}
       </div>
       <div style={{ padding: "10px 14px" }}>{children}</div>
@@ -122,7 +125,7 @@ function Metric({ label, value, color = BLUE_BRIGHT, suffix = "", size = "20px" 
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{ color, fontFamily: "'JetBrains Mono', monospace", fontSize: size, fontWeight: 600 }}>{value}{suffix}</div>
-      <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "9px", letterSpacing: "1px", marginTop: "3px", textTransform: "uppercase" }}>{label}</div>
+      <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "13px", letterSpacing: "1px", marginTop: "3px", textTransform: "uppercase" }}>{label}</div>
     </div>
   );
 }
@@ -140,14 +143,14 @@ function SignalRow({ signal, index }) {
   const signalColor = isYes ? TEAL : RED_COLD;
   const st = { TRACKING: { color: AMBER_COLD, label: "TRACKING" }, RESOLVED_WIN: { color: TEAL, label: "CORRECT" }, RESOLVED_LOSS: { color: RED_COLD, label: "WRONG" } }[signal.status];
   return (
-    <div className="row-hover" style={{ display: "grid", gridTemplateColumns: "64px 54px 1fr 62px 54px 50px 72px", gap: "8px", alignItems: "center", padding: "7px 10px", fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${index * 0.04}s both`, cursor: "default" }}>
-      <span style={{ color: SLATE, fontSize: "10px" }}>{signal.time}</span>
-      <span style={{ color: signalColor, fontWeight: 600, fontSize: "10px" }}>{isYes ? "▲ YES" : "▼ NO"}</span>
+    <div className="row-hover" style={{ display: "grid", gridTemplateColumns: "64px 54px 1fr 62px 54px 50px 72px", gap: "8px", alignItems: "center", padding: "7px 10px", fontSize: "13px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${index * 0.04}s both`, cursor: "default" }}>
+      <span style={{ color: SLATE, fontSize: "12px" }}>{signal.time}</span>
+      <span style={{ color: signalColor, fontWeight: 600, fontSize: "12px" }}>{isYes ? "▲ YES" : "▼ NO"}</span>
       <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{signal.market}</span>
       <span style={{ color: signal.edge > 0 ? TEAL : RED_COLD, textAlign: "right", fontWeight: 500 }}>{signal.edge > 0 ? "+" : ""}{signal.edge}%</span>
       <span style={{ color: FROST, textAlign: "right" }}>${signal.price.toFixed(2)}</span>
-      <span style={{ color: signal.confidence === "HIGH" ? BLUE_BRIGHT : AMBER_COLD, textAlign: "center", fontSize: "9px", fontWeight: 500 }}>{signal.confidence}</span>
-      <span style={{ color: st.color, textAlign: "right", fontSize: "9px", fontWeight: 500 }}>{st.label}</span>
+      <span style={{ color: signal.confidence === "HIGH" ? BLUE_BRIGHT : AMBER_COLD, textAlign: "center", fontSize: "13px", fontWeight: 500 }}>{signal.confidence}</span>
+      <span style={{ color: st.color, textAlign: "right", fontSize: "13px", fontWeight: 500 }}>{st.label}</span>
     </div>
   );
 }
@@ -158,7 +161,7 @@ function LiveLog({ logs }) {
   useEffect(() => { let i = 0; const iv = setInterval(() => { if (i < logs.length) { setVisibleLogs(prev => [...prev, logs[i]]); i++; } else clearInterval(iv); }, 160); return () => clearInterval(iv); }, []);
   useEffect(() => { if (ref.current) ref.current.scrollTop = ref.current.scrollHeight; }, [visibleLogs]);
   return (
-    <div ref={ref} style={{ height: "280px", overflowY: "auto", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px" }}>
+    <div ref={ref} style={{ height: "280px", overflowY: "auto", fontFamily: "'JetBrains Mono', monospace", fontSize: "13px" }}>
       {visibleLogs.map((log, i) => {
         let color = SLATE;
         if (log.includes("✓")) color = TEAL;
@@ -185,7 +188,7 @@ function MarketRow({ market, index }) {
   const priceData = Array.from({ length: 12 }, () => market.price_yes + (Math.random() - 0.5) * 0.08);
   priceData.push(market.price_yes);
   return (
-    <div className="row-hover" style={{ display: "grid", gridTemplateColumns: "1fr 90px 90px 70px", gap: "8px", alignItems: "center", padding: "8px 10px", fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${index * 0.05}s both` }}>
+    <div className="row-hover" style={{ display: "grid", gridTemplateColumns: "1fr 90px 90px 70px", gap: "8px", alignItems: "center", padding: "8px 10px", fontSize: "13px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${index * 0.05}s both` }}>
       <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{market.question}</span>
       <div style={{ display: "flex", justifyContent: "flex-end" }}><Sparkline data={priceData} color={market.price_yes > 0.5 ? TEAL : BLUE_MID} /></div>
       <div style={{ textAlign: "right" }}><span style={{ color: TEAL }}>Y:{market.price_yes.toFixed(2)}</span><span style={{ color: BORDER_LIGHT, margin: "0 4px" }}>│</span><span style={{ color: RED_COLD }}>N:{market.price_no.toFixed(2)}</span></div>
@@ -205,7 +208,7 @@ function AccuracyGauge({ accuracy }) {
       </svg>
       <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
         <div style={{ color, fontFamily: "'JetBrains Mono', monospace", fontSize: "24px", fontWeight: 700 }}>{accuracy}%</div>
-        <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "8px", letterSpacing: "1.5px" }}>ACCURACY</div>
+        <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", letterSpacing: "1.5px" }}>ACCURACY</div>
       </div>
     </div>
   );
@@ -221,9 +224,9 @@ function WeeklyAccuracyChart({ data }) {
           const color = d.pct >= 70 ? TEAL : d.pct >= 50 ? AMBER_COLD : RED_COLD;
           return (
             <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-              <div style={{ fontSize: "9px", fontFamily: "'JetBrains Mono', monospace", color, fontWeight: 500 }}>{d.pct}%</div>
+              <div style={{ fontSize: "13px", fontFamily: "'JetBrains Mono', monospace", color, fontWeight: 500 }}>{d.pct}%</div>
               <div style={{ width: "20px", height: `${h}px`, background: `linear-gradient(180deg, ${color}, ${color}40)`, borderRadius: "2px 2px 0 0", animation: `barGrow 0.5s ease-out ${i * 0.08}s both`, transformOrigin: "bottom" }} />
-              <span style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "9px" }}>{d.day}</span>
+              <span style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "13px" }}>{d.day}</span>
             </div>
           );
         })}
@@ -234,19 +237,19 @@ function WeeklyAccuracyChart({ data }) {
           <div style={{ color: FROST, fontFamily: "'JetBrains Mono', monospace", fontSize: "13px", fontWeight: 600 }}>
             {data.reduce((s, d) => s + d.resolved, 0)}
           </div>
-          <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "8px", letterSpacing: "1px", marginTop: "2px" }}>RESOLVED</div>
+          <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", letterSpacing: "1px", marginTop: "2px" }}>RESOLVED</div>
         </div>
         <div style={{ textAlign: "center" }}>
           <div style={{ color: TEAL, fontFamily: "'JetBrains Mono', monospace", fontSize: "13px", fontWeight: 600 }}>
             {data.reduce((s, d) => s + d.correct, 0)}
           </div>
-          <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "8px", letterSpacing: "1px", marginTop: "2px" }}>CORRECT</div>
+          <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", letterSpacing: "1px", marginTop: "2px" }}>CORRECT</div>
         </div>
         <div style={{ textAlign: "center" }}>
           <div style={{ color: BLUE_BRIGHT, fontFamily: "'JetBrains Mono', monospace", fontSize: "13px", fontWeight: 600 }}>
             {Math.round(data.reduce((s, d) => s + d.correct, 0) / data.reduce((s, d) => s + d.resolved, 0) * 100)}%
           </div>
-          <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "8px", letterSpacing: "1px", marginTop: "2px" }}>7D AVG</div>
+          <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", letterSpacing: "1px", marginTop: "2px" }}>7D AVG</div>
         </div>
       </div>
     </div>
@@ -290,7 +293,7 @@ function BootSequence({ onComplete }) {
 
 function ColHeaders({ columns }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: columns.map(c => c.w).join(" "), gap: "8px", padding: "6px 10px", fontSize: "9px", color: SLATE, letterSpacing: "1px", fontWeight: 500, borderBottom: `1px solid ${BORDER}`, fontFamily: "'JetBrains Mono', monospace" }}>
+    <div style={{ display: "grid", gridTemplateColumns: columns.map(c => c.w).join(" "), gap: "8px", padding: "6px 10px", fontSize: "13px", color: SLATE, letterSpacing: "1px", fontWeight: 500, borderBottom: `1px solid ${BORDER}`, fontFamily: "'JetBrains Mono', monospace" }}>
       {columns.map(c => <span key={c.l} style={{ textAlign: c.a || "left" }}>{c.l}</span>)}
     </div>
   );
@@ -417,7 +420,7 @@ function AIAgentChat() {
           <span style={{ fontSize: "20px" }}>🤖</span>
           <div>
             <div style={{ color: BLUE_BRIGHT, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", fontWeight: 600, letterSpacing: "1px" }}>AI AGENT</div>
-            <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "9px" }}>Prediction Market Analyst</div>
+            <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "13px" }}>Prediction Market Analyst</div>
           </div>
         </div>
         <div
@@ -447,7 +450,7 @@ function AIAgentChat() {
         gap: "12px",
       }}>
         {messages.length === 0 && (
-          <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textAlign: "center", padding: "40px 20px" }}>
+          <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "13px", textAlign: "center", padding: "40px 20px" }}>
             <div style={{ fontSize: "32px", marginBottom: "12px" }}>🤖</div>
             <div style={{ color: FROST, marginBottom: "8px" }}>Oracle Sentinel AI Agent</div>
             <div style={{ lineHeight: "1.6" }}>
@@ -468,7 +471,7 @@ function AIAgentChat() {
               padding: "10px 14px",
               color: msg.isError ? RED_COLD : ICE,
               fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "11px",
+              fontSize: "13px",
               lineHeight: "1.6",
               whiteSpace: "pre-wrap",
               wordBreak: "break-word",
@@ -477,7 +480,7 @@ function AIAgentChat() {
             </div>
             <div style={{
               color: SLATE,
-              fontSize: "9px",
+              fontSize: "13px",
               fontFamily: "'JetBrains Mono', monospace",
               marginTop: "4px",
               textAlign: msg.role === "user" ? "right" : "left",
@@ -495,7 +498,7 @@ function AIAgentChat() {
               padding: "10px 14px",
               color: FROST,
               fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "11px",
+              fontSize: "13px",
               display: "flex",
               alignItems: "center",
               gap: "8px",
@@ -529,7 +532,7 @@ function AIAgentChat() {
               padding: "10px 12px",
               color: ICE,
               fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "11px",
+              fontSize: "13px",
               resize: "none",
               height: "40px",
               outline: "none",
@@ -547,7 +550,7 @@ function AIAgentChat() {
               padding: "0 16px",
               color: isLoading || !input.trim() ? SLATE : ICE,
               fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "11px",
+              fontSize: "13px",
               fontWeight: 600,
               cursor: isLoading || !input.trim() ? "not-allowed" : "pointer",
               transition: "all 0.2s",
@@ -609,7 +612,7 @@ function AIAgentPanel() {
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 320px)" }}>
       <div style={{ flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "12px", background: BG, borderRadius: "4px", marginBottom: "12px" }}>
         {messages.length === 0 && (
-          <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textAlign: "center", padding: "60px 20px" }}>
+          <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "13px", textAlign: "center", padding: "60px 20px" }}>
             <div style={{ fontSize: "48px", marginBottom: "16px" }}>🤖</div>
             <div style={{ color: FROST, marginBottom: "12px", fontSize: "14px" }}>Oracle Sentinel AI Agent</div>
             <div style={{ lineHeight: "1.8", maxWidth: "500px", margin: "0 auto" }}>
@@ -626,7 +629,7 @@ function AIAgentPanel() {
             <div style={{ background: msg.role === "user" ? BLUE_DARK : BG_PANEL, border: `1px solid ${msg.isError ? RED_COLD : (msg.role === "user" ? BLUE_MID : BORDER)}`, borderRadius: msg.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px", padding: "12px 16px", color: msg.isError ? RED_COLD : ICE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", lineHeight: "1.7", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
               {msg.content}
             </div>
-            <div style={{ color: SLATE, fontSize: "9px", fontFamily: "'JetBrains Mono', monospace", marginTop: "4px", textAlign: msg.role === "user" ? "right" : "left" }}>
+            <div style={{ color: SLATE, fontSize: "13px", fontFamily: "'JetBrains Mono', monospace", marginTop: "4px", textAlign: msg.role === "user" ? "right" : "left" }}>
               {msg.role === "user" ? "You" : "AI Agent"}
             </div>
           </div>
@@ -783,10 +786,10 @@ export default function OracleSentinelDashboard() {
       {/* Tabs */}
       <div style={{ display: "flex", borderBottom: `1px solid ${BORDER}`, background: BG_PANEL }}>
         {["signals", "markets", "accuracy", "log", "whales", "ai agent"].map(t => (
-          <button key={t} className={`tab-btn ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>{t.toUpperCase()}</button>
+          <button key={t} className={`tab-btn ${activeTab === t ? "active" : ""} ${t === "ai agent" ? "ai-agent-tab" : ""}`} onClick={() => setActiveTab(t)}>{t.toUpperCase()}</button>
         ))}
-        <div style={{ marginLeft: "auto", padding: "10px 20px", fontSize: "10px", color: SLATE, display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ color: apiOk ? TEAL : RED_COLD, animation: "pulse 2s infinite", fontSize: "8px" }}>●</span>{apiOk ? "LIVE" : "OFFLINE"}
+        <div style={{ marginLeft: "auto", padding: "10px 20px", fontSize: "12px", color: SLATE, display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ color: apiOk ? TEAL : RED_COLD, animation: "pulse 2s infinite", fontSize: "12px" }}>●</span>{apiOk ? "LIVE" : "OFFLINE"}
         </div>
       </div>
 
@@ -795,10 +798,10 @@ export default function OracleSentinelDashboard() {
         {/* ── SIGNALS ── */}
         {activeTab === "signals" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "14px" }}>
-            <Panel title="PREDICTION SIGNALS" headerRight={<span style={{ color: SLATE, fontSize: "10px", fontFamily: "'JetBrains Mono', monospace" }}>{predictions.length} tracked</span>}>
+            <Panel title="PREDICTION SIGNALS" headerRight={<span style={{ color: SLATE, fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>{predictions.length} tracked</span>}>
               <ColHeaders columns={[{l:"SIGNAL",w:"60px"},{l:"MARKET",w:"1fr"},{l:"EDGE",w:"60px",a:"right"},{l:"CONF",w:"60px",a:"center"},{l:"STATUS",w:"80px",a:"right"}]} />
               {predictions.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "30px 0", color: SLATE, fontSize: "11px" }}>No predictions tracked yet. Scanning every 4 hours.</div>
+                <div style={{ textAlign: "center", padding: "30px 0", color: SLATE, fontSize: "13px" }}>No predictions tracked yet. Scanning every 4 hours.</div>
               ) : (
                 predictions.map((p, i) => {
                   const status = p.direction_correct === 1 ? { color: TEAL, label: "CORRECT" } 
@@ -816,12 +819,12 @@ export default function OracleSentinelDashboard() {
                       } else {
                         setSignalDetail(null);
                       }
-                    }} style={{ display: "grid", gridTemplateColumns: "60px 1fr 60px 60px 80px", gap: "8px", alignItems: "center", padding: "7px 10px", fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.04}s both`, cursor: "pointer" }}>
-                      <span style={{ color: p.signal_type === "BUY_YES" ? TEAL : RED_COLD, fontWeight: 600, fontSize: "10px" }}>{p.signal_type === "BUY_YES" ? "▲ YES" : "▼ NO"}</span>
+                    }} style={{ display: "grid", gridTemplateColumns: "60px 1fr 60px 60px 80px", gap: "8px", alignItems: "center", padding: "7px 10px", fontSize: "13px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.04}s both`, cursor: "pointer" }}>
+                      <span style={{ color: p.signal_type === "BUY_YES" ? TEAL : RED_COLD, fontWeight: 600, fontSize: "12px" }}>{p.signal_type === "BUY_YES" ? "▲ YES" : "▼ NO"}</span>
                       <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.question}</span>
                       <span style={{ color: FROST, textAlign: "right", fontWeight: 500 }}>{p.edge_at_signal}%</span>
-                      <span style={{ color: p.confidence === "HIGH" ? BLUE_BRIGHT : AMBER_COLD, textAlign: "center", fontSize: "9px", fontWeight: 500 }}>{p.confidence || "—"}</span>
-                      <span style={{ color: status.color, textAlign: "right", fontSize: "9px", fontWeight: 500 }}>{status.label}</span>
+                      <span style={{ color: p.confidence === "HIGH" ? BLUE_BRIGHT : AMBER_COLD, textAlign: "center", fontSize: "13px", fontWeight: 500 }}>{p.confidence || "—"}</span>
+                      <span style={{ color: status.color, textAlign: "right", fontSize: "13px", fontWeight: 500 }}>{status.label}</span>
                     </div>
                   );
                 })
@@ -835,7 +838,7 @@ export default function OracleSentinelDashboard() {
                       <div style={{ width: "52px", height: "52px", borderRadius: "50%", border: `2px solid ${d.color}50`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
                         <span style={{ color: d.color, fontSize: "18px", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{d.value}</span>
                       </div>
-                      <span style={{ color: SLATE, fontSize: "9px", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>{d.label}</span>
+                      <span style={{ color: SLATE, fontSize: "13px", letterSpacing: "0.5px", fontFamily: "'JetBrains Mono', monospace" }}>{d.label}</span>
                     </div>
                   ))}
                 </div>
@@ -848,14 +851,25 @@ export default function OracleSentinelDashboard() {
                 </div>
               </Panel>
               <Panel title="SYSTEM">
-                <div style={{ display: "flex", flexDirection: "column", gap: "7px", fontSize: "11px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "7px", fontSize: "13px" }}>
                   {[
                     { l: "Polymarket API", s: apiOk ? "CONNECTED" : "OFFLINE", c: apiOk ? TEAL : RED_COLD },
                     { l: "OpenRouter AI", s: "CONNECTED", c: TEAL },
                     { l: "Telegram Bot", s: "CONNECTED", c: TEAL },
                     { l: "Cron Daemon", s: "4H CYCLE", c: TEAL },
                     { l: "Last Scan", s: timeAgo(stats.last_scan), c: AMBER_COLD },
-                  ].map(x => <div key={x.l} style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SLATE }}>{x.l}</span><span style={{ color: x.c, fontSize: "10px", fontWeight: 500 }}>{x.s}</span></div>)}
+                  ].map(x => <div key={x.l} style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SLATE }}>{x.l}</span><span style={{ color: x.c, fontSize: "12px", fontWeight: 500 }}>{x.s}</span></div>)}
+                </div>
+              </Panel>
+              <Panel title="HOW TO USE">
+                <div style={{ color: FROST, fontSize: "12px", lineHeight: "1.7", fontFamily: "'JetBrains Mono', monospace" }}>
+                  <div style={{ color: BLUE_BRIGHT, fontWeight: 600, marginBottom: "8px" }}>DASHBOARD GUIDE</div>
+                  <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>SIGNALS</span> — AI-generated signals with rigorous multi-factor analysis.</div>
+                  <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>MARKETS</span> — Browse tracked Polymarket markets with real-time prices.</div>
+                  <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>ACCURACY</span> — Monitor prediction performance and win rate.</div>
+                  <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>WHALES</span> — Track large trades ($5K+) from whales.</div>
+                  <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>AI AGENT</span> — Ask for instant analysis of any Polymarket URL.</div>
+                  <div style={{ color: AMBER_COLD, fontSize: "13px", marginTop: "8px", padding: "8px", background: BG, borderRadius: "4px" }}>💡 Can't find your market? Use the AI Agent tab for instant analysis.</div>
                 </div>
               </Panel>
             </div>
@@ -864,10 +878,10 @@ export default function OracleSentinelDashboard() {
 
         {/* ── MARKETS ── */}
         {activeTab === "markets" && (
-          <Panel title="MARKET WATCHLIST" headerRight={<span style={{ color: SLATE, fontSize: "10px", fontFamily: "'JetBrains Mono', monospace" }}>{markets.length} monitored</span>}>
+          <Panel title="MARKET WATCHLIST" headerRight={<span style={{ color: SLATE, fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>{markets.length} monitored</span>}>
             <ColHeaders columns={[{l:"MARKET",w:"1fr"},{l:"YES",w:"60px",a:"right"},{l:"NO",w:"60px",a:"right"},{l:"VOLUME",w:"80px",a:"right"},{l:"LIQUIDITY",w:"80px",a:"right"}]} />
             {markets.map((m, i) => (
-              <div key={m.id} className="row-hover" style={{ display: "grid", gridTemplateColumns: "1fr 60px 60px 80px 80px", gap: "8px", alignItems: "center", padding: "8px 10px", fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.03}s both` }}>
+              <div key={m.id} className="row-hover" style={{ display: "grid", gridTemplateColumns: "1fr 60px 60px 80px 80px", gap: "8px", alignItems: "center", padding: "8px 10px", fontSize: "13px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.03}s both` }}>
                 <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.question}</span>
                 <span style={{ color: TEAL, textAlign: "right", fontWeight: 500 }}>{(m.yes_price * 100).toFixed(1)}¢</span>
                 <span style={{ color: RED_COLD, textAlign: "right", fontWeight: 500 }}>{(m.no_price * 100).toFixed(1)}¢</span>
@@ -899,14 +913,14 @@ export default function OracleSentinelDashboard() {
                     { label: "HIGH CONFIDENCE", total: highConf.length, resolved: highResolved.length, correct: highCorrect.length, accuracy: highResolved.length > 0 ? Math.round(highCorrect.length / highResolved.length * 100) : 0, color: BLUE_BRIGHT },
                     { label: "MEDIUM CONFIDENCE", total: medConf.length, resolved: medResolved.length, correct: medCorrect.length, accuracy: medResolved.length > 0 ? Math.round(medCorrect.length / medResolved.length * 100) : 0, color: AMBER_COLD },
                   ].map(d => (
-                    <div key={d.label} style={{ fontSize: "11px", marginBottom: "16px" }}>
+                    <div key={d.label} style={{ fontSize: "13px", marginBottom: "16px" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                        <span style={{ color: d.color, fontSize: "10px", fontWeight: 500, letterSpacing: "0.5px" }}>{d.label}</span>
-                        <span style={{ color: SLATE, fontSize: "10px" }}>{d.correct}/{d.resolved} of {d.total}</span>
+                        <span style={{ color: d.color, fontSize: "12px", fontWeight: 500, letterSpacing: "0.5px" }}>{d.label}</span>
+                        <span style={{ color: SLATE, fontSize: "12px" }}>{d.correct}/{d.resolved} of {d.total}</span>
                       </div>
                       <ProgressBar value={d.resolved > 0 ? d.accuracy : 0} color={d.color} />
                       <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
-                        <span style={{ color: SLATE, fontSize: "9px" }}>
+                        <span style={{ color: SLATE, fontSize: "13px" }}>
                           {d.resolved > 0 ? `${d.correct} correct, ${d.resolved - d.correct} wrong` : "No resolved predictions yet"}
                         </span>
                         <span style={{ color: d.color, fontSize: "13px", fontWeight: 600 }}>
@@ -919,12 +933,12 @@ export default function OracleSentinelDashboard() {
               </Panel>
               <Panel title="PREDICTION HISTORY">
                 {predictions.length === 0 ? (
-                  <div style={{ color: SLATE, textAlign: "center", padding: "20px 0", fontSize: "11px" }}>No predictions tracked yet</div>
+                  <div style={{ color: SLATE, textAlign: "center", padding: "20px 0", fontSize: "13px" }}>No predictions tracked yet</div>
                 ) : predictions.map((p, i) => {
                   const change1h = p.price_after_1h && p.market_price_at_signal ? ((p.price_after_1h - p.market_price_at_signal) * 100).toFixed(1) : null;
                   return (
-                    <div key={i} className="row-hover" style={{ display: "flex", justifyContent: "space-between", padding: "7px 6px", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.06}s both`, fontSize: "11px", fontFamily: "'JetBrains Mono', monospace" }}>
-                      <span style={{ color: p.signal_type === "BUY_YES" ? TEAL : RED_COLD, width: "50px", fontWeight: 600, fontSize: "9px" }}>{p.signal_type === "BUY_YES" ? "▲ YES" : "▼ NO"}</span>
+                    <div key={i} className="row-hover" style={{ display: "flex", justifyContent: "space-between", padding: "7px 6px", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.06}s both`, fontSize: "13px", fontFamily: "'JetBrains Mono', monospace" }}>
+                      <span style={{ color: p.signal_type === "BUY_YES" ? TEAL : RED_COLD, width: "50px", fontWeight: 600, fontSize: "13px" }}>{p.signal_type === "BUY_YES" ? "▲ YES" : "▼ NO"}</span>
                       <span style={{ color: ICE, flex: 1, margin: "0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.question}</span>
                       <span style={{ color: FROST, width: "50px", textAlign: "right" }}>{p.edge_at_signal}%</span>
                       <span style={{ color: FROST, width: "50px", textAlign: "right" }}>{(p.market_price_at_signal * 100).toFixed(1)}¢</span>
@@ -946,8 +960,8 @@ export default function OracleSentinelDashboard() {
 
         {/* ── LOG ── */}
         {activeTab === "log" && (
-          <Panel title="SYSTEM LOG" headerRight={<span style={{ color: sseOk ? TEAL : AMBER_COLD, fontSize: "10px", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: "6px" }}><span style={{ animation: "pulse 1.5s infinite", fontSize: "8px" }}>●</span>{sseOk ? "STREAMING" : "CONNECTING..."}</span>}>
-            <div style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px" }}>
+          <Panel title="SYSTEM LOG" headerRight={<span style={{ color: sseOk ? TEAL : AMBER_COLD, fontSize: "12px", fontFamily: "'JetBrains Mono', monospace", display: "flex", alignItems: "center", gap: "6px" }}><span style={{ animation: "pulse 1.5s infinite", fontSize: "12px" }}>●</span>{sseOk ? "STREAMING" : "CONNECTING..."}</span>}>
+            <div style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto", fontFamily: "'JetBrains Mono', monospace", fontSize: "13px" }}>
               {streamLogs.length === 0 ? (
                 <div style={{ color: SLATE, textAlign: "center", padding: "30px 0" }}>Connecting to log stream...</div>
               ) : streamLogs.map((l, i) => {
@@ -969,22 +983,22 @@ export default function OracleSentinelDashboard() {
         {/* ── WHALES ── */}
         {activeTab === "whales" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "14px" }}>
-            <Panel title="RECENT WHALE TRADES" headerRight={<span style={{ color: SLATE, fontSize: "10px", fontFamily: "'JetBrains Mono', monospace" }}>{whaleData?.trades?.length || 0} trades</span>}>
+            <Panel title="RECENT WHALE TRADES" headerRight={<span style={{ color: SLATE, fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>{whaleData?.trades?.length || 0} trades</span>}>
               <ColHeaders columns={[{l:"TIME",w:"70px"},{l:"MARKET",w:"1fr"},{l:"SIDE",w:"50px",a:"center"},{l:"OUTCOME",w:"60px",a:"center"},{l:"SIZE",w:"80px",a:"right"},{l:"PRICE",w:"50px",a:"right"},{l:"TRADER",w:"90px",a:"right"},{l:"TX",w:"30px",a:"right"}]} />
               <div style={{ maxHeight: "calc(100vh - 340px)", overflowY: "auto" }}>
                 {!whaleData?.trades?.length ? (
-                  <div style={{ textAlign: "center", padding: "30px 0", color: SLATE, fontSize: "11px" }}>No whale trades detected yet.</div>
+                  <div style={{ textAlign: "center", padding: "30px 0", color: SLATE, fontSize: "13px" }}>No whale trades detected yet.</div>
                 ) : (
                   whaleData.trades.map((t, i) => (
-                    <div key={t.tx_hash} className="row-hover" style={{ display: "grid", gridTemplateColumns: "70px 1fr 50px 60px 80px 50px 90px 30px", gap: "8px", alignItems: "center", padding: "7px 10px", fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.03}s both` }}>
-                      <span style={{ color: SLATE, fontSize: "10px" }}>{(t.time || "").split(" ")[1]?.slice(0,5) || "—"}</span>
+                    <div key={t.tx_hash} className="row-hover" style={{ display: "grid", gridTemplateColumns: "70px 1fr 50px 60px 80px 50px 90px 30px", gap: "8px", alignItems: "center", padding: "7px 10px", fontSize: "13px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.03}s both` }}>
+                      <span style={{ color: SLATE, fontSize: "12px" }}>{(t.time || "").split(" ")[1]?.slice(0,5) || "—"}</span>
                       <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.market}</span>
-                      <span style={{ color: t.side === "BUY" ? TEAL : RED_COLD, fontWeight: 600, textAlign: "center", fontSize: "10px" }}>{t.side}</span>
-                      <span style={{ color: FROST, textAlign: "center", fontSize: "10px" }}>{t.outcome}</span>
+                      <span style={{ color: t.side === "BUY" ? TEAL : RED_COLD, fontWeight: 600, textAlign: "center", fontSize: "12px" }}>{t.side}</span>
+                      <span style={{ color: FROST, textAlign: "center", fontSize: "12px" }}>{t.outcome}</span>
                       <span style={{ color: t.size >= 20000 ? AMBER_COLD : FROST, textAlign: "right", fontWeight: 500 }}>${formatNum(t.size)}</span>
                       <span style={{ color: FROST, textAlign: "right" }}>{(t.price * 100).toFixed(0)}¢</span>
-                      <span style={{ color: SLATE, textAlign: "right", fontSize: "9px", overflow: "hidden", textOverflow: "ellipsis" }}>{t.trader?.slice(0,10)}</span>
-                      <a href={`https://polygonscan.com/tx/${t.tx_hash}`} target="_blank" rel="noopener noreferrer" style={{ color: BLUE_DIM, textAlign: "right", fontSize: "9px", textDecoration: "none" }}>🔗</a>
+                      <span style={{ color: SLATE, textAlign: "right", fontSize: "13px", overflow: "hidden", textOverflow: "ellipsis" }}>{t.trader?.slice(0,10)}</span>
+                      <a href={`https://polygonscan.com/tx/${t.tx_hash}`} target="_blank" rel="noopener noreferrer" style={{ color: BLUE_DIM, textAlign: "right", fontSize: "13px", textDecoration: "none" }}>🔗</a>
                     </div>
                   ))
                 )}
@@ -1000,7 +1014,7 @@ export default function OracleSentinelDashboard() {
               </Panel>
           
               <Panel title="TOP MARKETS (24H)">
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "11px", fontFamily: "'JetBrains Mono', monospace" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px", fontFamily: "'JetBrains Mono', monospace" }}>
                   {!whaleData?.top_markets?.length ? (
                     <div style={{ color: SLATE, textAlign: "center", padding: "16px 0" }}>No data</div>
                   ) : whaleData.top_markets.map((m, i) => (
@@ -1017,7 +1031,7 @@ export default function OracleSentinelDashboard() {
 
         {/* ── AI AGENT ── */}
         {activeTab === "ai agent" && (
-          <Panel title="AI AGENT" headerRight={<span style={{ color: TEAL, fontSize: "10px", fontFamily: "'JetBrains Mono', monospace" }}>Prediction Market Analyst</span>}>
+          <Panel title="AI AGENT" headerRight={<span style={{ color: TEAL, fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>Prediction Market Analyst</span>}>
             <AIAgentPanel />
           </Panel>
         )}
@@ -1032,9 +1046,9 @@ export default function OracleSentinelDashboard() {
               <div style={{ flex: 1, marginRight: "16px" }}>
                 <div style={{ color: ICE, fontSize: "13px", fontWeight: 600, lineHeight: "1.4" }}>{selectedSignal.question}</div>
                 <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
-                  <span style={{ color: (signalDetail?.signal_type || selectedSignal.signal_type) === "BUY_YES" ? TEAL : RED_COLD, fontSize: "11px", fontWeight: 600 }}>{(signalDetail?.signal_type || selectedSignal.signal_type) === "BUY_YES" ? "▲ BUY YES" : "▼ BUY NO"}</span>
-                  <span style={{ color: AMBER_COLD, fontSize: "10px" }}>EDGE: {signalDetail?.edge || selectedSignal.edge}%</span>
-                  <span style={{ color: BLUE_BRIGHT, fontSize: "10px" }}>CONF: {signalDetail?.confidence || selectedSignal.confidence}</span>
+                  <span style={{ color: (signalDetail?.signal_type || selectedSignal.signal_type) === "BUY_YES" ? TEAL : RED_COLD, fontSize: "13px", fontWeight: 600 }}>{(signalDetail?.signal_type || selectedSignal.signal_type) === "BUY_YES" ? "▲ BUY YES" : "▼ BUY NO"}</span>
+                  <span style={{ color: AMBER_COLD, fontSize: "12px" }}>EDGE: {signalDetail?.edge || selectedSignal.edge}%</span>
+                  <span style={{ color: BLUE_BRIGHT, fontSize: "12px" }}>CONF: {signalDetail?.confidence || selectedSignal.confidence}</span>
                 </div>
               </div>
               <div onClick={() => { setSelectedSignal(null); setSignalDetail(null); }} style={{ color: SLATE, cursor: "pointer", fontSize: "16px", padding: "2px 6px" }}>✕</div>
@@ -1051,27 +1065,27 @@ export default function OracleSentinelDashboard() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "12px", padding: "12px", background: BG, borderRadius: "4px" }}>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ color: TEAL, fontSize: "16px", fontWeight: 600 }}>{(signalDetail.market_yes_price * 100).toFixed(1)}¢</div>
-                      <div style={{ color: SLATE, fontSize: "9px", marginTop: "2px" }}>YES PRICE</div>
+                      <div style={{ color: SLATE, fontSize: "13px", marginTop: "2px" }}>YES PRICE</div>
                     </div>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ color: RED_COLD, fontSize: "16px", fontWeight: 600 }}>{(signalDetail.market_no_price * 100).toFixed(1)}¢</div>
-                      <div style={{ color: SLATE, fontSize: "9px", marginTop: "2px" }}>NO PRICE</div>
+                      <div style={{ color: SLATE, fontSize: "13px", marginTop: "2px" }}>NO PRICE</div>
                     </div>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ color: BLUE_BRIGHT, fontSize: "16px", fontWeight: 600 }}>{((signalDetail.ai_probability || 0) * 100).toFixed(0)}%</div>
-                      <div style={{ color: SLATE, fontSize: "9px", marginTop: "2px" }}>AI ESTIMATE</div>
+                      <div style={{ color: SLATE, fontSize: "13px", marginTop: "2px" }}>AI ESTIMATE</div>
                     </div>
                     <div style={{ textAlign: "center" }}>
                       <div style={{ color: FROST, fontSize: "16px", fontWeight: 600 }}>${formatNum(signalDetail.volume || 0)}</div>
-                      <div style={{ color: SLATE, fontSize: "9px", marginTop: "2px" }}>VOLUME</div>
+                      <div style={{ color: SLATE, fontSize: "13px", marginTop: "2px" }}>VOLUME</div>
                     </div>
                   </div>
                 )}
 
                 {/* AI Reasoning */}
                 <div>
-                  <div style={{ color: BLUE_BRIGHT, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>AI ANALYSIS</div>
-                  <div style={{ color: FROST, fontSize: "11px", lineHeight: "1.7", whiteSpace: "pre-wrap", background: BG, padding: "12px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
+                  <div style={{ color: BLUE_BRIGHT, fontSize: "12px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>AI ANALYSIS</div>
+                  <div style={{ color: FROST, fontSize: "13px", lineHeight: "1.7", whiteSpace: "pre-wrap", background: BG, padding: "12px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
                     {signalDetail?.reasoning || selectedSignal.reasoning || "No reasoning available for this prediction."}
                   </div>
                 </div>
@@ -1079,8 +1093,8 @@ export default function OracleSentinelDashboard() {
                 {/* Recommendation */}
                 {signalDetail?.recommendation && (
                   <div>
-                    <div style={{ color: TEAL, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>RECOMMENDATION</div>
-                    <div style={{ color: ICE, fontSize: "11px", lineHeight: "1.6", background: BG, padding: "12px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
+                    <div style={{ color: TEAL, fontSize: "12px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>RECOMMENDATION</div>
+                    <div style={{ color: ICE, fontSize: "13px", lineHeight: "1.6", background: BG, padding: "12px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
                       {signalDetail.recommendation}
                     </div>
                   </div>
@@ -1090,18 +1104,18 @@ export default function OracleSentinelDashboard() {
                 {((signalDetail?.key_factors_for?.length > 0) || (signalDetail?.key_factors_against?.length > 0)) && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     <div>
-                      <div style={{ color: TEAL, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>FACTORS FOR</div>
+                      <div style={{ color: TEAL, fontSize: "12px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>FACTORS FOR</div>
                       <div style={{ background: BG, padding: "10px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
                         {(signalDetail.key_factors_for || []).map((f, i) => (
-                          <div key={i} style={{ color: FROST, fontSize: "10px", lineHeight: "1.6", padding: "3px 0" }}>+ {f}</div>
+                          <div key={i} style={{ color: FROST, fontSize: "12px", lineHeight: "1.6", padding: "3px 0" }}>+ {f}</div>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <div style={{ color: RED_COLD, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>FACTORS AGAINST</div>
+                      <div style={{ color: RED_COLD, fontSize: "12px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>FACTORS AGAINST</div>
                       <div style={{ background: BG, padding: "10px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
                         {(signalDetail.key_factors_against || []).map((f, i) => (
-                          <div key={i} style={{ color: FROST, fontSize: "10px", lineHeight: "1.6", padding: "3px 0" }}>- {f}</div>
+                          <div key={i} style={{ color: FROST, fontSize: "12px", lineHeight: "1.6", padding: "3px 0" }}>- {f}</div>
                         ))}
                       </div>
                     </div>
@@ -1111,8 +1125,8 @@ export default function OracleSentinelDashboard() {
                 {/* Risks */}
                 {signalDetail?.risks && (
                   <div>
-                    <div style={{ color: AMBER_COLD, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>RISKS</div>
-                    <div style={{ color: FROST, fontSize: "11px", lineHeight: "1.6", background: BG, padding: "12px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
+                    <div style={{ color: AMBER_COLD, fontSize: "12px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>RISKS</div>
+                    <div style={{ color: FROST, fontSize: "13px", lineHeight: "1.6", background: BG, padding: "12px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
                       {signalDetail.risks}
                     </div>
                   </div>
@@ -1121,7 +1135,7 @@ export default function OracleSentinelDashboard() {
                 {/* Price Tracking */}
                 {signalDetail?.tracking && (
                   <div>
-                    <div style={{ color: BLUE_BRIGHT, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>PRICE TRACKING</div>
+                    <div style={{ color: BLUE_BRIGHT, fontSize: "12px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>PRICE TRACKING</div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
                       {[
                         { label: "At Signal", value: signalDetail.tracking.market_price_at_signal, color: FROST },
@@ -1134,7 +1148,7 @@ export default function OracleSentinelDashboard() {
                           <div style={{ color: t.value ? t.color : SLATE, fontSize: "14px", fontWeight: 600 }}>
                             {t.value ? (t.value * 100).toFixed(1) + "¢" : "—"}
                           </div>
-                          <div style={{ color: SLATE, fontSize: "8px", marginTop: "2px" }}>{t.label}</div>
+                          <div style={{ color: SLATE, fontSize: "12px", marginTop: "2px" }}>{t.label}</div>
                         </div>
                       ))}
                     </div>
@@ -1144,9 +1158,9 @@ export default function OracleSentinelDashboard() {
                 {/* Whale Activity */}
                 {signalDetail?.whales?.length > 0 && (
                   <div>
-                    <div style={{ color: AMBER_COLD, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>WHALE ACTIVITY</div>
+                    <div style={{ color: AMBER_COLD, fontSize: "12px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>WHALE ACTIVITY</div>
                     {signalDetail.whales.map((w, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", fontSize: "10px", borderBottom: `1px solid ${GRID_LINE}` }}>
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", fontSize: "12px", borderBottom: `1px solid ${GRID_LINE}` }}>
                         <span style={{ color: w.trade_side === "BUY" ? TEAL : RED_COLD }}>{w.trade_side}</span>
                         <span style={{ color: FROST }}>${formatNum(w.trade_size)}</span>
                         <span style={{ color: SLATE }}>{w.trader_name?.slice(0,12)}</span>
@@ -1164,10 +1178,10 @@ export default function OracleSentinelDashboard() {
       )}
 
       {/* Footer */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: BG_PANEL, borderTop: `1px solid ${BORDER}`, padding: "5px 20px", display: "flex", justifyContent: "space-between", fontSize: "9px", color: SLATE }}>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: BG_PANEL, borderTop: `1px solid ${BORDER}`, padding: "5px 20px", display: "flex", justifyContent: "space-between", fontSize: "13px", color: SLATE }}>
         <span>ORACLE SENTINEL v2.0 — Claude Sonnet 4.5</span>
         <span style={{ display: "flex", gap: "16px" }}>
-          <span>OpenClaw 2026.1.30</span><span>@oraclesentinel_pm_bot</span>
+          <span>OpenClaw 2026.1.30</span><a href="https://x.com/oracle_sentinel" target="_blank" rel="noopener noreferrer" style={{ color: AMBER_COLD, textDecoration: "none" }}>$OSAI</a>
           <span style={{ color: apiOk ? TEAL : RED_COLD }}>{apiOk ? "API: connected" : "API: offline"}</span>
         </span>
       </div>

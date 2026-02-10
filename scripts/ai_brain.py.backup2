@@ -595,7 +595,7 @@ Respond ONLY with the JSON object, no other text."""
             categorizer = MarketCategorizer()
             market_category = categorizer.categorize(question)
             
-            result = self._force_recommendation(result, yes_price)
+            result = self._force_recommendation(result, yes_price, category=market_category)
             
             return result
 
@@ -626,10 +626,7 @@ Respond ONLY with the JSON object, no other text."""
         edge = (ai_prob - market_yes_price) * 100  # in percentage points
 
         llm_rec = result.get('recommendation', 'SKIP')
-        # Load dynamic threshold from agent config
-        min_edge_threshold = self.agent_config.min_edge_threshold if self.agent_config else 5
         new_rec = 'SKIP'  # default
-        
 
         # Rule 1: Low confidence → always SKIP
         if confidence == 'LOW':

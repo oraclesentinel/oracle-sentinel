@@ -234,7 +234,34 @@ class SelfImprovement:
         self._log('INFO', "STARTING SELF-IMPROVEMENT CYCLE")
         self._log('INFO', "=" * 50)
         
-        # Step 1: Analyze any new errors
+
+        # Step 0: Check if we have new resolved predictions since last run
+        conn = self._get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT MAX(applied_at) FROM self_improvement_log")
+        last_run = cursor.fetchone()[0]
+        
+        if last_run:
+            cursor.execute("""
+                SELECT COUNT(*) FROM prediction_tracking 
+                WHERE direction_correct IS NOT NULL 
+                AND resolved_at > ?
+            """, (last_run,))
+        else:
+            cursor.execute("SELECT COUNT(*) FROM prediction_tracking WHERE direction_correct IS NOT NULL")
+        
+        new_resolved = cursor.fetchone()[0]
+        conn.close()
+        
+        if new_resolved == 0:
+            self._log('INFO', "No new resolved predictions since last run. SKIPPING.")
+            self._log('INFO', "=" * 50)
+            return {'applied': 0, 'failed': 0, 'skipped': True, 'reason': 'no_new_data'}
+
+        self._log('INFO', f"Found {new_resolved} new resolved predictions - proceeding")
+
+                # Step 1: Analyze any new errors
         self._log('INFO', "\n[Step 1] Analyzing errors...")
         self.diagnosis.error_analyzer.analyze_all_errors()
         
