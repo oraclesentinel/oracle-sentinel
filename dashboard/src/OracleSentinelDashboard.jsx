@@ -64,6 +64,14 @@ function Styles() {
       @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
       @keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
       @keyframes aiGlow { 0%, 100% { box-shadow: 0 0 4px #4ecdc4, 0 0 8px #4ecdc420; } 50% { box-shadow: 0 0 8px #4ecdc4, 0 0 16px #4ecdc440; } }
+      @keyframes whaleSlideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+      @keyframes whaleSlideOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(100%); } }
+      @keyframes whalePulse { 0%, 100% { box-shadow: 0 0 20px rgba(212, 168, 67, 0.3); } 50% { box-shadow: 0 0 40px rgba(212, 168, 67, 0.6); } }
+      @keyframes whaleBounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+      .whale-notification { animation: whaleSlideIn 0.5s ease-out forwards; }
+      .whale-notification.closing { animation: whaleSlideOut 0.4s ease-in forwards; }
+      .whale-icon { animation: whaleBounce 1s ease-in-out infinite; }
+      .mega-whale-notification { animation: whalePulse 2s ease-in-out infinite; }
       .tab-btn.ai-agent-tab { background: linear-gradient(135deg, #0d2847 0%, #1a5a9e20 100%); border-bottom: 2px solid #4ecdc4; color: #4ecdc4; animation: aiGlow 3s ease-in-out infinite; }
       .tab-btn.ai-agent-tab:hover { background: linear-gradient(135deg, #0d284790 0%, #1a5a9e40 100%); }
       .panel { background: ${BG_PANEL}; border: 1px solid ${BORDER}; border-radius: 3px; overflow: hidden; transition: border-color 0.3s; }
@@ -295,6 +303,63 @@ function ColHeaders({ columns }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: columns.map(c => c.w).join(" "), gap: "8px", padding: "6px 10px", fontSize: "13px", color: SLATE, letterSpacing: "1px", fontWeight: 500, borderBottom: `1px solid ${BORDER}`, fontFamily: "'JetBrains Mono', monospace" }}>
       {columns.map(c => <span key={c.l} style={{ textAlign: c.a || "left" }}>{c.l}</span>)}
+    </div>
+  );
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// WHALE ALERT NOTIFICATION COMPONENT
+// ═══════════════════════════════════════════════════════════════
+function WhaleAlertNotification({ notifications, onDismiss, onViewAll }) {
+  if (notifications.length === 0) return null;
+  return (
+    <div style={{ position: "fixed", bottom: "70px", right: "20px", display: "flex", flexDirection: "column", gap: "10px", zIndex: 9997, maxHeight: "calc(100vh - 150px)", overflowY: "auto", paddingRight: "5px" }}>
+      {notifications.slice(0, 5).map((notif, index) => {
+        const isMegaWhale = notif.size >= 20000;
+        const borderColor = isMegaWhale ? AMBER_COLD : TEAL;
+        const bgGradient = isMegaWhale ? `linear-gradient(135deg, ${BG_PANEL} 0%, rgba(212, 168, 67, 0.1) 100%)` : `linear-gradient(135deg, ${BG_PANEL} 0%, rgba(78, 205, 196, 0.1) 100%)`;
+        return (
+          <div key={notif.id || index} className={`whale-notification ${isMegaWhale ? 'mega-whale-notification' : ''}`} style={{ width: "340px", background: bgGradient, border: `1px solid ${borderColor}`, borderLeft: `4px solid ${borderColor}`, borderRadius: "8px", overflow: "hidden", fontFamily: "'JetBrains Mono', monospace", boxShadow: `0 4px 20px rgba(0, 0, 0, 0.5), 0 0 20px ${borderColor}30` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderBottom: `1px solid ${BORDER}`, background: `linear-gradient(90deg, ${borderColor}15, transparent)` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span className="whale-icon" style={{ fontSize: "20px" }}>{isMegaWhale ? "💎" : "🐋"}</span>
+                <div>
+                  <div style={{ color: borderColor, fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase" }}>{isMegaWhale ? "MEGA WHALE" : "WHALE ALERT"}</div>
+                  <div style={{ color: SLATE, fontSize: "10px", marginTop: "1px" }}>{notif.time || "Just now"}</div>
+                </div>
+              </div>
+              <div onClick={() => onDismiss(notif.id)} style={{ color: SLATE, cursor: "pointer", fontSize: "14px", padding: "2px 6px", borderRadius: "4px", transition: "all 0.2s" }} onMouseEnter={(e) => { e.currentTarget.style.color = RED_COLD; e.currentTarget.style.background = `${RED_COLD}20`; }} onMouseLeave={(e) => { e.currentTarget.style.color = SLATE; e.currentTarget.style.background = "transparent"; }}>✕</div>
+            </div>
+            <div style={{ padding: "12px" }}>
+              <div style={{ color: ICE, fontSize: "12px", fontWeight: 500, lineHeight: "1.4", marginBottom: "10px", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{notif.market}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", background: BG, borderRadius: "6px", padding: "10px" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ color: notif.side === "BUY" ? TEAL : RED_COLD, fontSize: "11px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>{notif.side === "BUY" ? "▲" : "▼"} {notif.side}</div>
+                  <div style={{ color: SLATE, fontSize: "9px", marginTop: "2px", letterSpacing: "0.5px" }}>SIDE</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ color: FROST, fontSize: "11px", fontWeight: 600 }}>{notif.outcome}</div>
+                  <div style={{ color: SLATE, fontSize: "9px", marginTop: "2px", letterSpacing: "0.5px" }}>OUTCOME</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ color: isMegaWhale ? AMBER_COLD : TEAL, fontSize: "11px", fontWeight: 700 }}>${formatNum(notif.size)}</div>
+                  <div style={{ color: SLATE, fontSize: "9px", marginTop: "2px", letterSpacing: "0.5px" }}>SIZE</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px", paddingTop: "8px", borderTop: `1px solid ${GRID_LINE}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ color: SLATE, fontSize: "10px" }}>👤</span>
+                  <span style={{ color: FROST, fontSize: "11px", maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{notif.trader || "Anonymous"}</span>
+                </div>
+                <div style={{ color: BLUE_BRIGHT, fontSize: "11px", fontWeight: 500 }}>@ {(notif.price * 100).toFixed(0)}¢</div>
+              </div>
+            </div>
+            <div onClick={onViewAll} style={{ padding: "8px 12px", background: `linear-gradient(90deg, ${borderColor}10, transparent)`, borderTop: `1px solid ${BORDER}`, color: borderColor, fontSize: "10px", fontWeight: 600, letterSpacing: "1px", textAlign: "center", cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={(e) => { e.currentTarget.style.background = `${borderColor}20`; }} onMouseLeave={(e) => { e.currentTarget.style.background = `linear-gradient(90deg, ${borderColor}10, transparent)`; }}>VIEW ALL WHALE TRADES →</div>
+          </div>
+        );
+      })}
+      {notifications.length > 5 && (<div style={{ textAlign: "center", color: AMBER_COLD, fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", padding: "8px", background: BG_PANEL, borderRadius: "6px", border: `1px solid ${BORDER}` }}>+{notifications.length - 5} more whale alerts</div>)}
     </div>
   );
 }
@@ -664,6 +729,8 @@ export default function OracleSentinelDashboard() {
   const [selectedSignal, setSelectedSignal] = useState(null);
   const [signalDetail, setSignalDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [whaleNotifications, setWhaleNotifications] = useState([]);
+  const [seenWhaleTxs, setSeenWhaleTxs] = useState(new Set());
   const logEndRef = useRef(null);
 
   useEffect(() => {
@@ -684,7 +751,7 @@ export default function OracleSentinelDashboard() {
     return () => clearInterval(iv);
   }, [booted]);
 
-  // Fetch whale data
+  // Fetch whale data and check for new whales
   useEffect(() => {
     if (!booted) return;
     const loadWhales = async () => {
@@ -693,13 +760,40 @@ export default function OracleSentinelDashboard() {
         if (res.ok) {
           const json = await res.json();
           setWhaleData(json);
+          // Check for new whale trades to show as notifications
+          if (json.trades && json.trades.length > 0) {
+            const newNotifications = [];
+            json.trades.slice(0, 10).forEach(trade => {
+              if (!seenWhaleTxs.has(trade.tx_hash)) {
+                const tradeTime = new Date(trade.time + "Z");
+                const now = new Date();
+                const diffMinutes = (now - tradeTime) / (1000 * 60);
+                if (diffMinutes <= 5) {
+                  newNotifications.push({ id: trade.tx_hash, market: trade.market, side: trade.side, outcome: trade.outcome, size: trade.size, price: trade.price, trader: trade.trader, time: trade.time?.split(" ")[1]?.slice(0, 5) || "Now" });
+                }
+                setSeenWhaleTxs(prev => new Set([...prev, trade.tx_hash]));
+              }
+            });
+            if (newNotifications.length > 0) { setWhaleNotifications(prev => [...newNotifications, ...prev].slice(0, 10)); }
+          }
         }
       } catch (e) {}
     };
     loadWhales();
-    const iv = setInterval(loadWhales, 60000);
+    const iv = setInterval(loadWhales, 30000);
     return () => clearInterval(iv);
-  }, [booted]);
+  }, [booted, seenWhaleTxs]);
+
+  // Auto-dismiss notifications after 30 seconds
+  useEffect(() => {
+    if (whaleNotifications.length > 0) {
+      const timer = setTimeout(() => { setWhaleNotifications(prev => prev.slice(0, -1)); }, 30000);
+      return () => clearTimeout(timer);
+    }
+  }, [whaleNotifications]);
+
+  const dismissWhaleNotification = (id) => { setWhaleNotifications(prev => prev.filter(n => n.id !== id)); };
+  const viewAllWhales = () => { setWhaleNotifications([]); setActiveTab("whales"); };
 
   // ─── SSE: Real-time log streaming ───
   useEffect(() => {
@@ -1036,6 +1130,9 @@ export default function OracleSentinelDashboard() {
           </Panel>
         )}
       </div>
+
+      {/* Whale Alert Notifications */}
+      <WhaleAlertNotification notifications={whaleNotifications} onDismiss={dismissWhaleNotification} onViewAll={viewAllWhales} />
 
       {/* Signal Detail Modal */}
       {selectedSignal && (

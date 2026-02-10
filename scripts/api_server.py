@@ -628,8 +628,170 @@ RESOLUTION RULES:
         except Exception as e:
             live_context += f"\n[News fetch error: {e}]"
 
+        # ─── FETCH DATABASE STATS ────────────────────────────
+        db_context = ""
+        try:
+            db = get_db()
+            # Accuracy stats
+            acc = db.execute("""
+                SELECT
+                    COUNT(*) as total,
+                    SUM(CASE WHEN signal_type = 'BUY_YES' THEN 1 ELSE 0 END) as buy_yes,
+                    SUM(CASE WHEN signal_type = 'BUY_NO' THEN 1 ELSE 0 END) as buy_no,
+                    SUM(CASE WHEN direction_correct = 1 THEN 1 ELSE 0 END) as correct,
+                    SUM(CASE WHEN direction_correct = 0 THEN 1 ELSE 0 END) as wrong,
+                    SUM(CASE WHEN direction_correct IS NOT NULL THEN 1 ELSE 0 END) as resolved,
+                    AVG(edge_at_signal) as avg_edge
+                FROM prediction_tracking
+            """).fetchone()
+            
+            # Recent predictions
+            recent_preds = db.execute("""
+                SELECT pt.signal_type, pt.ai_probability, pt.edge_at_signal, 
+                       pt.confidence, pt.direction_correct, m.question
+                FROM prediction_tracking pt
+                JOIN markets m ON pt.market_id = m.id
+                ORDER BY pt.created_at DESC LIMIT 5
+            """).fetchall()
+            
+            # Confidence breakdown
+            conf_stats = db.execute("""
+                SELECT confidence,
+                    COUNT(*) as total,
+                    SUM(CASE WHEN direction_correct = 1 THEN 1 ELSE 0 END) as correct,
+                    SUM(CASE WHEN direction_correct IS NOT NULL THEN 1 ELSE 0 END) as resolved
+                FROM prediction_tracking
+                GROUP BY confidence
+            """).fetchall()
+            total = acc['total'] or 0
+            resolved = acc['resolved'] or 0
+            correct = acc['correct'] or 0
+            wrong = acc['wrong'] or 0
+            accuracy_pct = round((correct / resolved * 100), 1) if resolved > 0 else 0
+            
+            db_context = f"""
+ORACLE SENTINEL INTERNAL DATABASE:
+
+ACCURACY STATS:
+- Total Predictions: {total}
+- Resolved: {resolved}
+- Correct: {correct}
+- Wrong: {wrong}
+- Accuracy: {accuracy_pct}%
+- Average Edge: {round(acc['avg_edge'] or 0, 2)}%
+
+SIGNAL BREAKDOWN:
+- BUY_YES Signals: {acc['buy_yes'] or 0}
+- BUY_NO Signals: {acc['buy_no'] or 0}
+
+CONFIDENCE BREAKDOWN:
+"""
+            for c in conf_stats:
+                conf_resolved = c['resolved'] or 0
+                conf_correct = c['correct'] or 0
+                conf_acc = round((conf_correct / conf_resolved * 100), 1) if conf_resolved > 0 else 0
+                db_context += f"- {c['confidence']}: {c['total']} predictions, {conf_resolved} resolved, {conf_acc}% accuracy\n"
+            
+            db_context += "\nRECENT PREDICTIONS:\n"
+            for p in recent_preds:
+                status = "CORRECT" if p['direction_correct'] == 1 else ("WRONG" if p['direction_correct'] == 0 else "TRACKING")
+                db_context += f"- {p['signal_type']} | {p['question'][:50]}... | Edge: {p['edge_at_signal']}% | {status}\n"
+            
+
+            # Whale trades data
+            whale_stats = db.execute("""
+                SELECT
+                    COUNT(*) as total_trades,
+                    SUM(trade_size) as total_volume,
+                    AVG(trade_size) as avg_size,
+                    SUM(CASE WHEN trade_side = 'BUY' THEN 1 ELSE 0 END) as buys,
+                    SUM(CASE WHEN trade_side = 'SELL' THEN 1 ELSE 0 END) as sells
+                FROM whale_trades_alerted
+            """).fetchone()
+            
+            whale_24h = db.execute("""
+                SELECT COUNT(*) as cnt, SUM(trade_size) as vol
+                FROM whale_trades_alerted
+                WHERE alerted_at >= datetime('now', '-24 hours')
+            """).fetchone()
+            
+            recent_whales = db.execute("""
+                SELECT market_title, trade_size, trade_side, outcome, trader_name, alerted_at
+                FROM whale_trades_alerted
+                ORDER BY alerted_at DESC LIMIT 5
+            """).fetchall()
+            
+            large_whales = db.execute("""
+                SELECT market_title, trade_size, trade_side, outcome, trader_name
+                FROM whale_trades_alerted
+                WHERE trade_size >= 10000
+                ORDER BY trade_size DESC LIMIT 10
+            """).fetchall()
+            
+            # Active signals
+            active_sigs = db.execute("""
+                SELECT m.question, json_extract(o.raw_data, '$.llm_original_recommendation') as signal,
+                       o.edge, json_extract(o.raw_data, '$.confidence') as conf
+                FROM opportunities o
+                JOIN markets m ON o.market_id = m.id
+                WHERE o.status = 'active'
+                  AND m.closed = 0
+                  AND (m.end_date IS NULL OR m.end_date > datetime('now'))
+                  AND json_extract(o.raw_data, '$.llm_original_recommendation') IN ('BUY_YES', 'BUY_NO')
+                  AND o.id = (SELECT MAX(o2.id) FROM opportunities o2 WHERE o2.market_id = o.market_id)
+                ORDER BY ABS(o.edge) DESC LIMIT 10
+            """).fetchall()
+            
+            # Market stats
+            market_stats = db.execute("""
+                SELECT COUNT(*) as total,
+                       SUM(CASE WHEN active = 1 THEN 1 ELSE 0 END) as active
+                FROM markets
+            """).fetchone()
+            
+            db_context += f"""
+WHALE TRADING DATA:
+- Total Whale Trades (all time): {whale_stats['total_trades'] or 0}
+- Total Whale Volume: ${whale_stats['total_volume'] or 0:,.0f}
+- Average Trade Size: ${whale_stats['avg_size'] or 0:,.0f}
+- Buy Trades: {whale_stats['buys'] or 0}
+- Sell Trades: {whale_stats['sells'] or 0}
+- Trades Last 24h: {whale_24h['cnt'] or 0}
+- Volume Last 24h: ${whale_24h['vol'] or 0:,.0f}
+
+RECENT WHALE TRADES (last 5):
+"""
+            for w in recent_whales:
+                db_context += f"- {w['trader_name']}: ${w['trade_size']:,.0f} {w['trade_side']} {w['outcome']} on {w['market_title'][:40]}...\n"
+            
+            if large_whales:
+                db_context += "\nLARGE WHALE TRADES (>$10,000):\n"
+                for w in large_whales:
+                    db_context += f"- {w['trader_name']}: ${w['trade_size']:,.0f} {w['trade_side']} {w['outcome']} on {w['market_title'][:40]}...\n"
+            
+            db_context += """
+ACTIVE TRADING SIGNALS:
+"""
+            for s in active_sigs:
+                db_context += f"- {s['signal']} | {s['question'][:45]}... | Edge: {s['edge']}% | {s['conf']}\n"
+            
+            db_context += f"""
+MARKET COVERAGE:
+- Total Markets in Database: {market_stats['total'] or 0}
+- Active Markets Monitored: {market_stats['active'] or 0}
+"""
+
+            live_context = db_context + live_context
+            db.close()
+            data_sources.insert(0, "Oracle Sentinel Database")
+        except Exception as e:
+            live_context += f"\n[Database fetch error: {e}]"
+
         # ─── SYSTEM PROMPT ───────────────────────────────────
-        system_prompt = """You are Oracle Sentinel AI Agent. You are powered by Claude Sonnet 4.5 via OpenRouter. When asked about yourself or your model, always identify as "Oracle Sentinel powered by Claude Sonnet 4.5". Never mention other version numbers. You are an expert prediction market analyst with access to REAL-TIME data.
+        current_time_utc = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+        system_prompt = f"""You are Oracle Sentinel AI Agent.
+CURRENT TIME: {current_time_utc}
+CRITICAL: Use this current time to calculate how far away events are. Do NOT assume you are in 2025 - check the current time above. You are powered by Claude Sonnet 4.5 via OpenRouter. When asked about yourself or your model, always identify as "Oracle Sentinel powered by Claude Sonnet 4.5". Never mention other version numbers. You are an expert prediction market analyst with access to REAL-TIME data.
 
 Your capabilities:
 1. Analyze Polymarket markets with LIVE sports data (standings, form, streaks, stats)

@@ -3,6 +3,7 @@
 Autonomous AI agent for Polymarket prediction intelligence.
 
 ![Status](https://img.shields.io/badge/status-live-brightgreen)
+![Version](https://img.shields.io/badge/version-2.0-blue)
 ![Agent](https://img.shields.io/badge/powered%20by-OpenClaw-blue)
 ![AI](https://img.shields.io/badge/AI-Claude%20Sonnet%204.5-purple)
 ![Solana](https://img.shields.io/badge/token-$OSAI-teal)
@@ -10,34 +11,19 @@ Autonomous AI agent for Polymarket prediction intelligence.
 
 ## What It Does
 
-Oracle Sentinel scans Polymarket prediction markets every 4 hours, identifies mispricing using dual-model AI analysis, and tracks every prediction with radical transparency.
+Oracle Sentinel is an autonomous prediction market intelligence system that continuously monitors Polymarket, identifies mispricing opportunities using dual-model AI analysis, tracks whale activity, and maintains radical transparency on all predictions.
 
-- **Dual-model AI** — Claude Haiku extracts facts, Claude Sonnet assesses probability
-- **Sports Intelligence** — Real-time data for 12 leagues (NFL, NBA, NHL, MLB, Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Champions League, MMA, F1)
-- **Quantified edge** — exact percentage difference between AI and market
-- **Radical transparency** — every prediction tracked, every outcome verified
+**Not a chatbot. An autonomous system.**
 
-## How It Works
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    ORACLE SENTINEL                          │
-├─────────────────────────────────────────────────────────────┤
-│  1. INGEST   → Fetch live prices via Polymarket Gamma API   │
-│  2. RESEARCH → Search news (DuckDuckGo + full extraction)   │
-│  3. SPORTS   → Fetch standings, form, H2H via SofaSport API │
-│  4. EXTRACT  → Claude Haiku extracts facts (no opinions)    │
-│  5. ASSESS   → Claude Sonnet computes AI probability        │
-│  6. SIGNAL   → Edge calculator generates BUY/NO_TRADE       │
-│  7. TRACK    → Accuracy tracker records every outcome       │
-│  8. ALERT    → Whale trades monitor detects large moves     │
-└─────────────────────────────────────────────────────────────┘
-```
+- 🤖 **Dual-Model AI** — Separate models for fact extraction and probability assessment
+- 🐋 **Whale Intelligence** — Real-time large trade monitoring with AI validation
+- 📡 **Adaptive Scanning** — Responds to market anomalies between scheduled scans
+- 🔄 **Self-Improving** — Learns from errors and adjusts over time
+- 📊 **Radical Transparency** — Every prediction tracked, every outcome verified
 
 ## Powered by OpenClaw
 
 Oracle Sentinel runs on [OpenClaw](https://openclaw.ai) — an AI agent gateway that gives Claude full server access.
-
-**Not a chatbot. An autonomous system.**
 
 What it can do:
 - Execute bash commands on VPS
@@ -45,88 +31,129 @@ What it can do:
 - Fetch and parse any web page
 - Read Polymarket resolution rules
 - Search the internet for live data
-- Schedule tasks autonomously
+- Schedule and run tasks autonomously
 
-Every 4 hours, OpenClaw triggers a full scan cycle. No human intervention.
+OpenClaw triggers scan cycles automatically. No human intervention required.
+
+## Prediction Lifecycle
+
+Every prediction goes through a complete lifecycle from detection to resolution:
+```
+  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+  │  DETECT  │───▶│ ANALYZE  │───▶│  TRACK   │───▶│ MONITOR  │───▶│ RESOLVE  │
+  └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
+       │               │               │               │               │
+       ▼               ▼               ▼               ▼               ▼
+  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+  │• Scanner │    │• News    │    │• Signal  │    │• Price   │    │• Verify  │
+  │• Whale   │    │• AI Dual │    │• Edge    │    │  Track   │    │  Outcome │
+  │  Alert   │    │  Model   │    │• Confid. │    │• Recheck │    │• Update  │
+  │• Anomaly │    │• Edge    │    │• Market  │    │  Before  │    │  Stats   │
+  │  Detect  │    │  Calc    │    │  State   │    │  Close   │    │• Learn   │
+  └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
+```
+
+### Phase 1: DETECT
+The system identifies opportunities through multiple channels:
+- **Scheduled Scans** — Regular comprehensive market analysis
+- **Anomaly Detection** — Volume spikes and significant price movements
+- **Whale Alerts** — Large trades that may indicate informed money
+
+### Phase 2: ANALYZE
+Dual-model AI analysis ensures accuracy:
+- Fetch relevant news and context
+- Claude Haiku extracts objective facts (no opinions)
+- Claude Sonnet assesses probability based on evidence
+- Calculate edge between AI estimate and market price
+- Apply safety overrides to reject overconfidence
+
+### Phase 3: TRACK
+Qualifying signals are recorded:
+- Market question and conditions
+- Signal type (BUY_YES or BUY_NO)
+- AI probability estimate
+- Edge percentage and confidence level
+- Timestamp and market state
+
+### Phase 4: MONITOR
+Active predictions are continuously monitored:
+- Price snapshots at regular intervals
+- Re-analysis before market close
+- Signal revision if new information changes assessment
+- Whale exit detection on tracked markets
+
+### Phase 5: RESOLVE
+Final verification and learning:
+- Compare prediction against actual outcome
+- Record win or loss
+- Update accuracy statistics
+- Analyze errors for pattern detection
+- Adjust thresholds based on performance
+
+## Core Systems
+
+### Market Scanner
+Comprehensive analysis of active Polymarket markets using dual-model AI. Identifies opportunities where AI assessment differs significantly from market price.
+
+### Whale Intelligence
+Real-time monitoring of large trades on Polymarket. When significant whale activity is detected, the system runs AI analysis to validate whether the whale's direction aligns with AI assessment. Only aligned signals are tracked.
+
+### Smart Scanner
+Adaptive system that detects market anomalies between scheduled scans. Catches breaking news opportunities that would otherwise be missed.
+
+### Reanalysis Engine
+Before markets close, the system re-runs analysis with the latest information. If new data changes the assessment, signals are revised and alerts are sent.
+
+### Self-Improvement
+Daily analysis of prediction performance. Identifies error patterns, adjusts confidence thresholds, and saves lessons learned to improve future accuracy.
 
 ## Features
 
 | Feature | Description |
 |---------|-------------|
-| **Dual-Model AI** | Haiku extracts, Sonnet assesses — two models cross-validate |
-| **Sports Intelligence** | Live standings, form, H2H, streaks for 12 leagues via SofaSport API |
-| **Real-Time Prices** | Live market data via Polymarket Gamma API |
-| **Deep News Research** | Full article extraction from DuckDuckGo + Google News |
-| **Whale Trade Alerts** | Real-time monitoring of $5,000+ trades with TX verification |
-| **Dashboard AI Agent** | Chat directly with Oracle Sentinel on the web dashboard |
-| **Self-Learning** | Re-analyzes predictions before market close, revises if new data |
+| **Dual-Model AI** | Haiku extracts facts, Sonnet assesses — two models cross-validate |
+| **Whale + AI Validation** | Large trades only tracked when AI confirms the direction |
+| **Adaptive Detection** | Responds to volume spikes and price movements in real-time |
+| **Pre-Close Reanalysis** | Re-checks predictions before market resolution |
+| **Self-Learning** | Analyzes errors and adjusts thresholds automatically |
 | **Quantified Edge** | Mathematical difference between AI and market consensus |
-| **Safety Overrides** | Code rejects AI overconfidence automatically |
-| **Accuracy Tracking** | Price snapshots at 1h, 6h, 24h — wins and losses recorded |
+| **Safety Overrides** | Rejects AI overconfidence automatically |
+| **Accuracy Tracking** | Every prediction recorded, every outcome verified |
+| **Dashboard AI Agent** | Chat directly with Oracle Sentinel on the web |
 
-## Adaptive Intelligence
+## Dashboard
 
-Oracle Sentinel doesn't just scan on a schedule — it reacts to market movements in real-time.
+**Live at:** [oraclesentinel.xyz/app](https://oraclesentinel.xyz/app)
 
-**Smart Scanner** monitors all markets every 10 minutes:
-- **Volume Spike Detection** — triggers when volume increases 50%+ in 1 hour
-- **Price Movement Detection** — triggers when price moves 10%+ in 1 hour
-- **Instant Full Analysis** — fetches news, runs AI, tracks prediction
-- **Real-time Alerts** — sends Telegram notification with signal
+| Tab | Description |
+|-----|-------------|
+| **Signals** | Active predictions with edge, confidence, status |
+| **Markets** | Monitored markets with real-time prices |
+| **Accuracy** | Performance stats and confidence breakdown |
+| **Log** | Real-time system log streaming |
+| **Whales** | Recent whale trades and market activity |
+| **AI Agent** | Chat interface for instant market analysis |
 
-This means Oracle Sentinel catches breaking news opportunities that would be missed by fixed 4-hour scans.
-
-## Sports Intelligence
-
-For sports markets, Oracle Sentinel fetches **real-time data** from SofaSport API:
-
-| Data Type | Description |
-|-----------|-------------|
-| **League Standings** | Current position, points, wins, losses, goal difference |
-| **Team Form** | Last 5-10 match results with scores |
-| **Head-to-Head** | Historical matchups between teams |
-| **Betting Streaks** | Over 2.5 goals, clean sheets, scoring patterns |
-| **Fan Predictions** | Crowd sentiment from 30K+ votes |
-| **Pre-match Ratings** | Team form ratings and position context |
-
-**Supported Leagues:**
-- ⚽ Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Champions League, Europa League
-- 🏀 NBA
-- 🏈 NFL
-- 🏒 NHL
-- ⚾ MLB
-- 🥊 UFC/MMA
-- 🏎️ Formula 1
-
-This gives Oracle Sentinel a **data advantage** over AI systems that only use news articles.
-
-## Links
-
-| Resource | URL |
-|----------|-----|
-| **Dashboard** | https://oraclesentinel.xyz/app |
-| **Documentation** | https://oraclesentinel.xyz/docs |
-| **Landing Page** | https://oraclesentinel.xyz |
-| **Telegram Bot** | https://t.me/oraclesentinel_pm_bot |
-| **Telegram Channel** | https://t.me/oraclesentinelsignals |
-| **X (Twitter)** | https://x.com/oracle_sentinel |
-| **Token ($OSAI)** | [Solscan](https://solscan.io/token/HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump) |
+**Real-time Whale Alerts:** Popup notifications appear when significant trades are detected, showing market, trade details, and quick navigation to full whale data.
 
 ## API Endpoints
 ```bash
-# Get active signals
-curl https://oraclesentinel.xyz/api/signals
-
-# Get all markets
-curl https://oraclesentinel.xyz/api/markets
-
-# Get predictions
-curl https://oraclesentinel.xyz/api/predictions
-
-# Get dashboard data
+# Dashboard data (stats, signals, accuracy)
 curl https://oraclesentinel.xyz/api/dashboard
 
-# AI Chat (analyze any market)
+# Active signals
+curl https://oraclesentinel.xyz/api/signals
+
+# Monitored markets
+curl https://oraclesentinel.xyz/api/markets
+
+# Tracked predictions
+curl https://oraclesentinel.xyz/api/predictions
+
+# Whale activity
+curl https://oraclesentinel.xyz/api/whales
+
+# AI Chat - Analyze any market
 curl -X POST https://oraclesentinel.xyz/api/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "Analyze https://polymarket.com/event/..."}'
@@ -135,93 +162,55 @@ curl -X POST https://oraclesentinel.xyz/api/chat \
 curl https://oraclesentinel.xyz/api/health
 ```
 
-## Monitoring Systems
+## How to Interact
 
-| System | Frequency | Purpose |
-|--------|-----------|---------|
-| **Market Scanner** | Every 4 hours | Analyze top markets, generate signals |
-| **Smart Scanner** | Every 10 minutes | Detect volume/price spikes, instant analysis |
-| **Whale Monitor** | Every 5 minutes | Detect $5,000+ trades, send alerts with TX hash |
-| **Re-analysis** | Every hour | Re-analyze markets closing in 5-6 hours |
-| **Auto Resolver** | Every hour | Verify predictions against final outcomes |
-| **Price Updater** | Every scan | Track market movements for accuracy |
+### Dashboard AI Agent
+Visit [oraclesentinel.xyz/app](https://oraclesentinel.xyz/app) and use the AI Agent tab:
+- "Analyze this market: [Polymarket URL]"
+- "What are the current signals?"
+- "Show me accuracy stats"
+
+### Telegram Channel
+Join [@oraclesentinelsignals](https://t.me/oraclesentinelsignals) for real-time notifications:
+- Signal alerts (BUY_YES / BUY_NO)
+- Whale trade alerts
+- Signal revisions
+
+
+### REST API
+Integrate Oracle Sentinel intelligence into your own applications.
 
 ## Tech Stack
 
-**Intelligence:**
-- Claude Sonnet 4.5 — probability assessment
-- Claude Haiku 3.5 — fact extraction
-- SofaSport API — real-time sports data
+| Layer | Technology |
+|-------|------------|
+| **Agent** | OpenClaw — autonomous AI gateway |
+| **AI** | Claude Sonnet 4.5, Claude Haiku 3.5 |
+| **Data** | Polymarket API, News Sources |
+| **Backend** | Python, Flask, SQLite |
+| **Frontend** | React, Vite |
+| **Infrastructure** | VPS, Nginx, SSL |
+| **Blockchain** | $OSAI token on Solana |
 
-**Data Sources:**
-- Polymarket Gamma API — live market prices
-- DuckDuckGo + Trafilatura — news search & extraction
-- SofaSport — standings, form, H2H for 12 leagues
+## Links
 
-**Infrastructure:**
-- OpenClaw — autonomous agent gateway
-- Python + Flask API
-- React dashboard
-- SQLite database
-- Nginx + SSL
-
-**Blockchain:**
-- $OSAI token on Solana (pump.fun)
-
-## How to Interact
-
-**Via Dashboard AI Agent:**
-Visit [oraclesentinel.xyz/app](https://oraclesentinel.xyz/app), click the chat button, and ask anything:
-- "Analyze this market: [Polymarket URL]"
-- "Research and analyze: [Polymarket URL]" (includes news context)
-- "What are the current signals?"
-- "Show me your accuracy stats"
-
-**Via Telegram Bot:**
-Send any Polymarket URL to [@oraclesentinel_pm_bot](https://t.me/oraclesentinel_pm_bot) and get instant AI analysis with:
-- Resolution rules breakdown
-- AI probability vs market price
-- Edge calculation
-- Signal recommendation
-
-**Via Telegram Alerts:**
-Join the channel to receive automatic notifications:
-- Signal reports every 4 hours
-- Whale trade alerts ($5,000+ trades) every 5 minutes
-
-**Via API:**
-Integrate Oracle Sentinel's intelligence into your own tools using our REST API.
+| Resource | URL |
+|----------|-----|
+| **Dashboard** | https://oraclesentinel.xyz/app |
+| **Documentation** | https://oraclesentinel.xyz/docs |
+| **Landing Page** | https://oraclesentinel.xyz |
+| **Telegram Channel** | https://t.me/oraclesentinelsignals |
+| **X (Twitter)** | https://x.com/oracle_sentinel |
+| **Token ($OSAI)** | [Solscan](https://solscan.io/token/HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump) |
 
 ## AI Agent Integration
 
-External AI agents can integrate with Oracle Sentinel using our skill file:
-```
+External AI agents can integrate with Oracle Sentinel:
+```bash
 curl -s https://oraclesentinel.xyz/skill.md
 ```
 
-This enables any AI agent to:
-- Query real-time market data
-- Get active trading signals
-- Check prediction accuracy
-- Analyze specific markets on demand
-
-**Available Endpoints:**
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/signals` | Active trading signals with edge calculations |
-| `GET /api/markets` | All monitored markets with current prices |
-| `GET /api/predictions` | Tracked predictions and outcomes |
-| `GET /api/dashboard` | Full dashboard data including accuracy stats |
-| `POST /api/chat` | AI chat for market analysis |
-| `GET /api/health` | System health check |
-
-**Example: Fetch Signals**
-```bash
-curl -s https://oraclesentinel.xyz/api/signals | jq '.[:3]'
-```
-
-For detailed integration instructions, see [skill.md](https://oraclesentinel.xyz/skill.md).
+This enables any AI agent to query market data, get active signals, check accuracy, and analyze specific markets on demand.
 
 ## Transparency
 
@@ -229,8 +218,10 @@ Every prediction is recorded. Every outcome is verified.
 
 No cherry-picked wins. No deleted calls. No hidden losses.
 
-Current accuracy stats available live at [oraclesentinel.xyz/app](https://oraclesentinel.xyz/app)
+Live accuracy stats: [oraclesentinel.xyz/app](https://oraclesentinel.xyz/app)
 
 ---
 
-Powered by Claude and OpenClaw.
+**Oracle Sentinel v2.0** — Autonomous Prediction Market Intelligence
+
+Powered by Claude AI and OpenClaw

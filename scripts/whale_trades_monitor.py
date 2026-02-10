@@ -124,6 +124,47 @@ def calculate_trade_value(trade: dict) -> float:
     return size * price
 
 
+
+def auto_fetch_market_from_api(trade: dict) -> int:
+    """
+    Auto-fetch market dari Polymarket API jika belum ada di database.
+    Returns market_id jika berhasil, None jika gagal.
+    """
+    from polymarket_client import PolymarketClient
+    
+    slug = trade.get('eventSlug', '')
+    title = trade.get('title', '')
+    
+    if not slug:
+        print(f"  ⚠ No slug available for auto-fetch")
+        return None
+    
+    print(f"  🔄 Auto-fetching market from Polymarket API...")
+    print(f"     Slug: {slug}")
+    
+    try:
+        client = PolymarketClient()
+        
+        # Fetch market by slug
+        market_data = client.get_market_by_slug(slug)
+        
+        if not market_data:
+            print(f"  ⚠ Market not found on Polymarket API")
+            return None
+        
+        # Save to database
+        market_id = client.save_market(market_data)
+        
+        print(f"  ✅ Market auto-fetched and saved! ID: {market_id}")
+        print(f"     Question: {market_data.get('question', '')[:60]}...")
+        
+        return market_id
+        
+    except Exception as e:
+        print(f"  ❌ Auto-fetch failed: {e}")
+        return None
+
+
 def analyze_mega_whale(trade: dict) -> dict:
     """
     Run AI analysis for mega whale trades ($20K+)
@@ -151,8 +192,31 @@ def analyze_mega_whale(trade: dict) -> dict:
         conn.close()
         
         if not market:
-            print(f"  ⚠ Market not found in DB, skipping AI analysis")
-            return None
+            print(f"  ⚠ Market not found in DB, attempting auto-fetch...")
+            
+            # Auto-fetch dari Polymarket API
+            auto_market_id = auto_fetch_market_from_api(trade)
+            
+            if not auto_market_id:
+                print(f"  ⚠ Auto-fetch failed, skipping AI analysis")
+                return None
+            
+            # Re-query setelah auto-fetch
+            cursor = conn.cursor() if 'cursor' in dir() else sqlite3.connect(DB_PATH).cursor()
+            conn_new = sqlite3.connect(DB_PATH)
+            cursor_new = conn_new.cursor()
+            cursor_new.execute("""
+                SELECT id, question, description, end_date, outcome_prices
+                FROM markets WHERE id = ?
+            """, (auto_market_id,))
+            market = cursor_new.fetchone()
+            conn_new.close()
+            
+            if not market:
+                print(f"  ⚠ Market still not found after auto-fetch, skipping")
+                return None
+            
+            print(f"  ✅ Market loaded after auto-fetch!")
             
         market_id, question, description, end_date, outcome_prices = market
         
