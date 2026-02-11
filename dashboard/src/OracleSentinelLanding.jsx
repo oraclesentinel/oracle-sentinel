@@ -354,24 +354,6 @@ export default function OracleSentinelLanding() {
                 }}>READ DOCS</a>
               </div>
             </Reveal>
-
-            <Reveal delay={0.5}>
-              <div style={{ display: "flex", gap: 40, marginTop: 56, justifyContent: "center" }}>
-                {[
-                  { n: 79, s: "+", l: "Markets" },
-                  { n: 351, s: "+", l: "Signals" },
-                  { n: 60, s: "", l: "Opportunities" },
-                  { n: 4, s: "h", l: "Scan Cycle" },
-                ].map((m, i) => (
-                  <div key={i}>
-                    <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 24, fontWeight: 700 }}>
-                      <AnimNum target={m.n} />{m.s}
-                    </div>
-                    <div style={{ color: C.dim, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1, marginTop: 4 }}>{m.l}</div>
-                  </div>
-                ))}
-              </div>
-            </Reveal>
           </div>
         </div>
       </Sec>
@@ -529,7 +511,7 @@ export default function OracleSentinelLanding() {
                 {[
                   { m: "GET", p: "/api/dashboard", d: "Complete data payload" },
                   { m: "GET", p: "/api/signals", d: "Active trading signals" },
-                  { m: "GET", p: "/api/markets", d: "79 monitored markets" },
+                  { m: "GET", p: "/api/markets", d: "All tracked markets" },
                   { m: "GET", p: "/api/predictions", d: "Tracked predictions" },
                   { m: "GET", p: "/api/health", d: "System health check" },
                 ].map((ep, i) => (

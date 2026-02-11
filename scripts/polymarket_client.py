@@ -587,6 +587,167 @@ class PolymarketClient:
         }
 
 
+    # ================================================================
+    # Multi-outcome Market Support (Events)
+    # ================================================================
+
+    def get_event_by_slug(self, slug: str) -> Optional[Dict]:
+        """
+        Fetch event by slug (for multi-outcome markets)
+        
+        Events contain multiple markets, each with their own outcomes.
+        Example: "In which month will SpaceX IPO?" has markets for each month.
+        """
+        try:
+            response = self.session.get(
+                f"{self.gamma_url}/events",
+                params={'slug': slug},
+                timeout=30
+            )
+            response.raise_for_status()
+            events = response.json()
+            
+            if events and len(events) > 0:
+                event = events[0]
+                self._log('INFO', f"Fetched event '{slug}' with {len(event.get('markets', []))} markets")
+                return event
+            return None
+            
+        except requests.RequestException as e:
+            self._log('ERROR', f"Failed to fetch event by slug {slug}: {e}")
+            return None
+
+    def get_event_by_id(self, event_id: str) -> Optional[Dict]:
+        """Fetch event by ID"""
+        try:
+            response = self.session.get(
+                f"{self.gamma_url}/events/{event_id}",
+                timeout=30
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            self._log('ERROR', f"Failed to fetch event {event_id}: {e}")
+            return None
+
+    def get_market_or_event(self, slug: str) -> Dict:
+        """
+        Smart fetch: Try market first, then event.
+        Returns unified structure for both binary and multi-outcome markets.
+        
+        Returns:
+            Dict with:
+            - type: 'binary' or 'multi_outcome' or None
+            - question: Main question
+            - description: Resolution rules
+            - outcomes: List of {name, price, probability} dicts
+            - volume: Total volume
+            - liquidity: Total liquidity
+            - end_date: End date
+            - raw: Original API response
+        """
+        result = {
+            'type': None,
+            'question': None,
+            'description': None,
+            'outcomes': [],
+            'volume': 0,
+            'liquidity': 0,
+            'end_date': None,
+            'raw': None
+        }
+        
+        # Try as single market first
+        market = self.get_market_by_slug(slug)
+        if market:
+            result['type'] = 'binary'
+            result['question'] = market.get('question', '')
+            result['description'] = market.get('description', '')
+            result['volume'] = float(market.get('volume', 0) or 0)
+            result['liquidity'] = float(market.get('liquidity', 0) or 0)
+            result['end_date'] = market.get('endDate', '')
+            result['raw'] = market
+            
+            # Parse outcomes and prices
+            outcomes = market.get('outcomes', '[]')
+            prices = market.get('outcomePrices', '[]')
+            
+            if isinstance(outcomes, str):
+                try:
+                    outcomes = json.loads(outcomes)
+                except:
+                    outcomes = ['YES', 'NO']
+            
+            if isinstance(prices, str):
+                try:
+                    prices = json.loads(prices)
+                except:
+                    prices = [0, 0]
+            
+            for i, outcome in enumerate(outcomes):
+                price = float(prices[i]) if i < len(prices) else 0
+                result['outcomes'].append({
+                    'name': outcome,
+                    'price': price,
+                    'probability': price * 100
+                })
+            
+            return result
+        
+        # Try as event (multi-outcome)
+        event = self.get_event_by_slug(slug)
+        if event:
+            result['type'] = 'multi_outcome'
+            result['question'] = event.get('title', event.get('question', ''))
+            result['description'] = event.get('description', '')
+            result['end_date'] = event.get('endDate', '')
+            result['raw'] = event
+            
+            total_volume = 0
+            total_liquidity = 0
+            markets = event.get('markets', [])
+            
+            for mkt in markets:
+                mkt_volume = float(mkt.get('volume', 0) or 0)
+                mkt_liquidity = float(mkt.get('liquidity', 0) or 0)
+                total_volume += mkt_volume
+                total_liquidity += mkt_liquidity
+                
+                # Each market in event is an "outcome"
+                mkt_question = mkt.get('question', mkt.get('groupItemTitle', 'Unknown'))
+                
+                # Get YES price for this outcome
+                prices = mkt.get('outcomePrices', '[]')
+                if isinstance(prices, str):
+                    try:
+                        prices = json.loads(prices)
+                    except:
+                        prices = [0]
+                
+                yes_price = float(prices[0]) if prices else 0
+                
+                result['outcomes'].append({
+                    'name': mkt_question,
+                    'price': yes_price,
+                    'probability': yes_price * 100,
+                    'volume': mkt_volume,
+                    'liquidity': mkt_liquidity,
+                    'market_id': mkt.get('id', ''),
+                    'slug': mkt.get('slug', '')
+                })
+            
+            # Sort by probability descending
+            result['outcomes'].sort(key=lambda x: x['probability'], reverse=True)
+            result['volume'] = total_volume
+            result['liquidity'] = total_liquidity
+            
+            return result
+        
+        # Nothing found
+        return result
+
+
+
 def test_connection():
     """Test Polymarket API connection"""
     print("="*60)

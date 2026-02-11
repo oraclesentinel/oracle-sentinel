@@ -24,6 +24,10 @@ from polymarket_client import PolymarketClient
 app = Flask(__name__)
 CORS(app)
 
+# x402 API v1 - Protected endpoints
+from api_v1 import api_v1
+app.register_blueprint(api_v1)
+
 DB_PATH = os.path.expanduser("~/oracle-sentinel/data/polymarket.db")
 
 
@@ -541,43 +545,36 @@ def ai_chat():
         data_sources = []
         market_question = user_message  # default: use raw message
 
-        # Check if message contains Polymarket URL → fetch market data
+        # Check if message contains Polymarket URL → fetch market data (supports multi-outcome)
         try:
             url_match = re.search(r'polymarket\.com/(?:event|sports/.+?)/([a-zA-Z0-9-]+)(?:\?|$|\s)', user_message + ' ')
             if url_match:
                 slug = url_match.group(1)
                 pc = PolymarketClient()
-                market = pc.get_market_by_slug(slug)
-                if market:
-                    question = market.get('question', '')
-                    description = market.get('description', '')
-                    outcomes = market.get('outcomes', '')
-                    prices = market.get('outcomePrices', '')
-                    volume = market.get('volume', 0)
-                    liquidity = market.get('liquidity', 0)
-                    end_date = market.get('endDate', '')
-
-                    # Parse prices
-                    try:
-                        price_list = json.loads(prices) if isinstance(prices, str) else prices
-                        yes_price = float(price_list[0]) if price_list else 0
-                        no_price = float(price_list[1]) if len(price_list) > 1 else 0
-                    except:
-                        yes_price, no_price = 0, 0
-
-                    # Parse outcome names
-                    try:
-                        outcome_list = json.loads(outcomes) if isinstance(outcomes, str) else outcomes
-                        outcome1 = outcome_list[0] if outcome_list else 'YES'
-                        outcome2 = outcome_list[1] if len(outcome_list) > 1 else 'NO'
-                    except:
-                        outcome1, outcome2 = 'YES', 'NO'
-
-                    live_context += f"""
+                
+                # Use smart fetch that handles both binary and multi-outcome markets
+                market_data = pc.get_market_or_event(slug)
+                
+                if market_data['type']:
+                    question = market_data['question'] or ''
+                    description = market_data['description'] or ''
+                    volume = market_data['volume']
+                    liquidity = market_data['liquidity']
+                    end_date = market_data['end_date'] or ''
+                    outcomes = market_data['outcomes']
+                    market_type = market_data['type']
+                    
+                    if market_type == 'binary':
+                        # Binary market (YES/NO)
+                        outcome1 = outcomes[0] if outcomes else {'name': 'YES', 'probability': 0}
+                        outcome2 = outcomes[1] if len(outcomes) > 1 else {'name': 'NO', 'probability': 0}
+                        
+                        live_context += f"""
 POLYMARKET DATA (live from API):
+  Market Type: Binary (YES/NO)
   Question: {question}
-  {outcome1} Price: ${yes_price:.4f} ({yes_price*100:.1f}%)
-  {outcome2} Price: ${no_price:.4f} ({no_price*100:.1f}%)
+  {outcome1['name']} Price: ${outcome1['price']:.4f} ({outcome1['probability']:.1f}%)
+  {outcome2['name']} Price: ${outcome2['price']:.4f} ({outcome2['probability']:.1f}%)
   Volume: ${float(volume):,.0f}
   Liquidity: ${float(liquidity):,.0f}
   End Date: {end_date}
@@ -585,8 +582,32 @@ POLYMARKET DATA (live from API):
 RESOLUTION RULES:
 {description}
 """
+                    else:
+                        # Multi-outcome market
+                        live_context += f"""
+POLYMARKET DATA (live from API):
+  Market Type: Multi-Outcome ({len(outcomes)} options)
+  Question: {question}
+  Volume: ${float(volume):,.0f}
+  Liquidity: ${float(liquidity):,.0f}
+  End Date: {end_date}
+
+OUTCOME PROBABILITIES (sorted by likelihood):
+"""
+                        for i, o in enumerate(outcomes[:15]):  # Show top 15
+                            vol_str = f" (Vol: ${o.get('volume', 0):,.0f})" if o.get('volume') else ""
+                            live_context += f"  {i+1}. {o['name']}: {o['probability']:.1f}%{vol_str}\n"
+                        
+                        if len(outcomes) > 15:
+                            live_context += f"  ... and {len(outcomes) - 15} more options\n"
+                        
+                        live_context += f"""
+RESOLUTION RULES:
+{description}
+"""
+                    
                     market_question = question  # use actual market question
-                    data_sources.append(f"Polymarket API (slug: {slug})")
+                    data_sources.append(f"Polymarket API ({market_type}, slug: {slug})")
         except Exception as e:
             live_context += f"\n[Polymarket fetch error: {e}]"
 

@@ -1,0 +1,32 @@
+{
+  "network": "solana-mainnet",
+  "network_string": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+  "facilitator_url": "https://facilitator.payai.network",
+  "treasury_wallet": "LXzWaDDkSkDQSAvRfArcYwRSq2pjgrVFidGbbnWbiD9",
+  "usdc_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "usdc_decimals": 6,
+  "osai_mint": "HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump",
+  "pricing": {
+    "GET /api/v1/signal": 10000,
+    "GET /api/v1/analysis": 30000,
+    "GET /api/v1/whale": 20000,
+    "GET /api/v1/bulk": 80000,
+    "POST /api/v1/analyze": 50000
+  },
+  "pricing_display": {
+    "GET /api/v1/signal": "$0.01",
+    "GET /api/v1/analysis": "$0.03",
+    "GET /api/v1/whale": "$0.02",
+    "GET /api/v1/bulk": "$0.08",
+    "POST /api/v1/analyze": "$0.05"
+  },
+  "token_gating": {
+    "enabled": true,
+    "min_balance": 1000,
+    "tiers": {
+      "holder": 1000,
+      "premium": 10000,
+      "vip": 100000
+    }
+  }
+}
