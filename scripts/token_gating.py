@@ -8,6 +8,11 @@ import os
 from solana.rpc.api import Client
 from solana.rpc.types import TokenAccountOpts
 from solders.pubkey import Pubkey
+import time
+
+# Simple cache for token balances (wallet -> (balance, timestamp))
+_balance_cache = {}
+CACHE_TTL = 60  # Cache for 60 seconds
 
 # Load config
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'config', 'x402_config.json')
@@ -23,7 +28,15 @@ def get_token_balance(wallet_address: str, mint_address: str) -> int:
     """
     Get SPL token balance for a wallet.
     Returns balance in human-readable units.
+    Uses caching to avoid RPC rate limits.
     """
+    # Check cache first
+    cache_key = f"{wallet_address}:{mint_address}"
+    if cache_key in _balance_cache:
+        cached_balance, cached_time = _balance_cache[cache_key]
+        if time.time() - cached_time < CACHE_TTL:
+            return cached_balance
+    
     try:
         client = Client(SOLANA_RPC)
         
@@ -59,8 +72,13 @@ def get_token_balance(wallet_address: str, mint_address: str) -> int:
                 decimals = int(token_amount.get('decimals', 6))
                 
                 # Return human-readable balance
-                return balance // (10 ** decimals)
+                human_balance = balance // (10 ** decimals)
+                # Cache the result
+                _balance_cache[cache_key] = (human_balance, time.time())
+                return human_balance
         
+        # Cache zero balance
+        _balance_cache[cache_key] = (0, time.time())
         return 0
         
     except Exception as e:

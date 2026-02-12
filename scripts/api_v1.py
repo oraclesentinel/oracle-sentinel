@@ -132,26 +132,27 @@ def get_whale_activity(slug):
         if not market:
             return jsonify({"error": "Market not found"}), 404
         
-        # Get whale trades for this market
+        # Get whale trades from whale_trades_alerted table
+        # Match by market_title containing part of the question
+        question_search = "%" + market["question"][:50] + "%"
         whale_trades = db.execute("""
-            SELECT trader, side, amount, price, timestamp, tx_hash
-            FROM whale_trades
-            WHERE market_id = ?
-            ORDER BY timestamp DESC
+            SELECT tx_hash, market_title, trade_size, trade_side, outcome, price, trader_name, alerted_at
+            FROM whale_trades_alerted
+            WHERE market_title LIKE ?
+            ORDER BY alerted_at DESC
             LIMIT 20
-        """, (market["id"],)).fetchall()
-        
+        """, (question_search,)).fetchall()
         trades = []
         for trade in whale_trades:
             trades.append({
-                "trader": trade["trader"][:8] + "..." + trade["trader"][-4:],
-                "side": trade["side"],
-                "amount": trade["amount"],
+                "trader": trade["trader_name"],
+                "side": trade["trade_side"],
+                "amount": trade["trade_size"],
+                "outcome": trade["outcome"],
                 "price": trade["price"],
-                "timestamp": trade["timestamp"],
-                "tx_hash": trade["tx_hash"]
+                "timestamp": trade["alerted_at"],
+                "tx_hash": trade["tx_hash"][:16] + "..."
             })
-        
         # Calculate whale sentiment
         buy_volume = sum(t["amount"] for t in trades if t["side"] == "BUY")
         sell_volume = sum(t["amount"] for t in trades if t["side"] == "SELL")
@@ -191,6 +192,12 @@ def get_bulk_signals():
                    m.question, m.outcome_prices, m.volume, m.slug
             FROM opportunities o
             JOIN markets m ON o.market_id = m.id
+            INNER JOIN (
+                SELECT market_id, MAX(created_at) as max_created
+                FROM opportunities
+                WHERE status = 'active'
+                GROUP BY market_id
+            ) latest ON o.market_id = latest.market_id AND o.created_at = latest.max_created
             WHERE o.status = 'active'
             ORDER BY ABS(o.edge) DESC
             LIMIT 10
