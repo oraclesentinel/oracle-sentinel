@@ -321,3 +321,85 @@ if __name__ == "__main__":
     print("  GET  /api/v1/bulk            - $0.08")
     print("  POST /api/v1/analyze         - $0.05")
     print("  GET  /api/v1/info            - FREE")
+
+
+# ==================== Signature Verification ====================
+import secrets
+import time
+
+# Store challenges temporarily (in production, use Redis)
+_challenges = {}
+CHALLENGE_TTL = 300  # 5 minutes
+
+@api_v1.route("/auth/challenge", methods=["POST"])
+def get_challenge():
+    """
+    Get a challenge for signature verification.
+    """
+    data = request.get_json() or {}
+    wallet_address = data.get("wallet_address")
+    
+    if not wallet_address:
+        return jsonify({"error": "wallet_address required"}), 400
+    
+    # Generate random challenge
+    challenge = secrets.token_hex(32)
+    timestamp = int(time.time())
+    
+    # Store challenge
+    _challenges[wallet_address] = {
+        "challenge": challenge,
+        "timestamp": timestamp
+    }
+    
+    # Clean old challenges
+    _cleanup_challenges()
+    
+    return jsonify({
+        "challenge": challenge,
+        "message": f"Oracle Sentinel Auth: {challenge}",
+        "expires_in": CHALLENGE_TTL
+    })
+
+
+def _cleanup_challenges():
+    """Remove expired challenges"""
+    now = int(time.time())
+    expired = [k for k, v in _challenges.items() if now - v["timestamp"] > CHALLENGE_TTL]
+    for k in expired:
+        del _challenges[k]
+
+
+def verify_signature(wallet_address: str, signature: str, challenge: str) -> bool:
+    """Verify that signature was made by wallet owner"""
+    try:
+        from solders.pubkey import Pubkey
+        from solders.signature import Signature
+        from nacl.signing import VerifyKey
+        from nacl.exceptions import BadSignatureError
+        import base58
+        
+        # Get stored challenge
+        stored = _challenges.get(wallet_address)
+        if not stored or stored["challenge"] != challenge:
+            return False
+        
+        # Check expiry
+        if int(time.time()) - stored["timestamp"] > CHALLENGE_TTL:
+            return False
+        
+        # Verify signature
+        message = f"Oracle Sentinel Auth: {challenge}".encode()
+        pubkey_bytes = bytes(Pubkey.from_string(wallet_address))
+        sig_bytes = base58.b58decode(signature)
+        
+        verify_key = VerifyKey(pubkey_bytes)
+        verify_key.verify(message, sig_bytes)
+        
+        # Remove used challenge
+        del _challenges[wallet_address]
+        
+        return True
+    except Exception as e:
+        print(f"[Auth] Signature verification failed: {e}")
+        return False
