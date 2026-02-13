@@ -24,6 +24,8 @@ const SECTIONS = [
   { id: "tech", label: "STACK" },
   { id: "accuracy", label: "ACCURACY" },
   { id: "api", label: "API" },
+  { id: "sdk", label: "SDK" },
+  { id: "token", label: "TOKEN" },
   { id: "openclaw", label: "OPENCLAW" },
   { id: "agents", label: "AGENTS" },
 ];
@@ -297,7 +299,7 @@ export default function OracleSentinelDocs() {
           <span style={{ color: C.slateD, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1, marginLeft: 4 }}>DOCS</span>
         </div>
         <div style={{ display: "flex", gap: 24 }}>
-          {["architecture", "features", "filters", "api", "openclaw"].map(s => (
+          {["architecture", "api", "sdk", "token", "openclaw"].map(s => (
             <button key={s} onClick={() => scrollTo(s)} style={{
               background: "none", border: "none", color: activeSection === s ? C.blue : C.slate,
               fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 1.5, cursor: "pointer",
@@ -340,6 +342,29 @@ export default function OracleSentinelDocs() {
           </Reveal>
         </div>
       </Section>
+
+      {/* ── SOCIAL PROOF BAR ── */}
+      <Section style={{ padding: "48px 0", borderTop: `1px solid ${C.border}` }}>
+        <Reveal>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 40, flexWrap: "wrap" }}>
+            {[
+              { l: "Powered by", v: "Anthropic Claude", c: C.blue },
+              { l: "Data from", v: "Polymarket", c: C.teal },
+              { l: "Automated via", v: "OpenClaw", c: C.amber },
+              { l: "Alerts via", v: "Telegram", c: C.frost },
+              { l: "Payments via", v: "PayAI Network", c: C.green },
+              { l: "Listed on", v: "JUICE", c: C.amber },
+              { l: "Built on", v: "Solana", c: C.blue },
+            ].map((b, i) => (
+              <div key={i} style={{ textAlign: "center" }}>
+                <div style={{ color: C.slateD, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 2, marginBottom: 4 }}>{b.l}</div>
+                <div style={{ color: b.c, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600 }}>{b.v}</div>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      </Section>
+
 
       {/* ═══════════════════════════════════════════════════════ */}
       {/* PROBLEM */}
@@ -456,7 +481,7 @@ export default function OracleSentinelDocs() {
                     border: `1px solid ${C.borderL}`, borderRadius: 6,
                     padding: "14px 20px", textAlign: "center", flex: 1,
                   }}>
-                    <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600 }}>{item.t}</div>
+                    <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600 }}>{item.t}</div>
                     <div style={{ color: C.slate, fontSize: 10, marginTop: 4 }}>{item.s}</div>
                   </div>
                 ))}
@@ -691,57 +716,228 @@ export default function OracleSentinelDocs() {
       </Section>
 
       {/* ═══════════════════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════ */}
       {/* API REFERENCE */}
       {/* ═══════════════════════════════════════════════════════ */}
       <Section id="api" style={{ borderTop: `1px solid ${C.border}` }}>
         <Reveal><SectionLabel text="API REFERENCE" sub="Integrate Oracle Sentinel data." /></Reveal>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {[
-            { method: "GET", path: "/api/dashboard", desc: "Complete dashboard payload — signals, markets, predictions, accuracy, logs", res: '{ active_signals, markets, predictions, accuracy_stats, system_logs, stats }' },
-            { method: "GET", path: "/api/signals", desc: "Active BUY_YES and BUY_NO trading signals with AI reasoning", res: '[ { question, signal_type, edge, confidence, ai_probability, reasoning, ... } ]' },
-            { method: "GET", path: "/api/markets", desc: "All monitored markets with current prices and volume", res: '[ { question, yes_price, no_price, volume, liquidity, slug } ]' },
-            { method: "GET", path: "/api/predictions", desc: "Tracked predictions with 1h/6h/24h price snapshots", res: '[ { question, signal_type, edge_at_signal, price_after_1h, direction_correct } ]' },
-            { method: "GET", path: "/api/market/:id", desc: "Individual market details with all associated opportunities", res: '{ market: {...}, opportunities: [...] }' },
-            { method: "GET", path: "/api/health", desc: "System health check", res: '{ status: "ok", markets: 79, server_time: "..." }' },
-          ].map((ep, i) => (
-            <Reveal key={i} delay={i * 0.05}>
-              <GlowCard style={{ padding: "18px 24px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                  <span style={{
-                    color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
-                    background: `${C.teal}15`, padding: "3px 8px", borderRadius: 3, letterSpacing: 1,
-                  }}>{ep.method}</span>
-                  <span style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600 }}>{ep.path}</span>
+        
+        {/* Free Endpoints */}
+        <Reveal delay={0.1}>
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>FREE ENDPOINTS</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { method: "GET", path: "/api/signals", desc: "Active BUY_YES and BUY_NO trading signals", res: '[ { question, signal_type, edge, confidence, ai_probability, ... } ]' },
+                { method: "GET", path: "/api/markets", desc: "All monitored markets with current prices", res: '[ { question, yes_price, no_price, volume, liquidity, slug } ]' },
+                { method: "GET", path: "/api/predictions", desc: "Tracked predictions with price snapshots", res: '[ { question, signal_type, edge_at_signal, price_after_1h, ... } ]' },
+                { method: "GET", path: "/api/dashboard", desc: "Complete dashboard payload", res: '{ active_signals, markets, predictions, accuracy_stats, ... }' },
+                { method: "GET", path: "/api/health", desc: "System health check", res: '{ status: "ok", markets: 79, server_time: "..." }' },
+              ].map((ep, i) => (
+                <GlowCard key={i} style={{ padding: "14px 20px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+                    <span style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, background: `${C.teal}15`, padding: "3px 8px", borderRadius: 3 }}>{ep.method}</span>
+                    <span style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600 }}>{ep.path}</span>
+                    <span style={{ color: C.slate, fontSize: 11, marginLeft: "auto" }}>{ep.desc}</span>
+                  </div>
+                  <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, padding: "6px 12px", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.frost, overflowX: "auto" }}>{ep.res}</div>
+                </GlowCard>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+
+        {/* Protected Endpoints */}
+        <Reveal delay={0.2}>
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div style={{ color: C.amber, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2 }}>PROTECTED ENDPOINTS</div>
+              <span style={{ color: C.slateD, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>x402 Payment Protocol</span>
+            </div>
+            <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden", marginBottom: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "70px 220px 1fr 80px", gap: 12, padding: "12px 16px", borderBottom: `1px solid ${C.border}`, background: C.bgPanel }}>
+                <span style={{ color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1 }}>METHOD</span>
+                <span style={{ color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1 }}>ENDPOINT</span>
+                <span style={{ color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1 }}>DESCRIPTION</span>
+                <span style={{ color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1, textAlign: "right" }}>PRICE</span>
+              </div>
+              {[
+                { m: "GET", p: "/api/v1/signal/{slug}", d: "Trading signal for specific market", price: "$0.01" },
+                { m: "GET", p: "/api/v1/analysis/{slug}", d: "Full AI analysis with reasoning", price: "$0.03" },
+                { m: "GET", p: "/api/v1/whale/{slug}", d: "Whale trading activity", price: "$0.02" },
+                { m: "GET", p: "/api/v1/bulk", d: "Top 10 active signals", price: "$0.08" },
+                { m: "POST", p: "/api/v1/analyze", d: "Analyze any Polymarket URL", price: "$0.05" },
+              ].map((ep, i) => (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "70px 220px 1fr 80px", gap: 12, padding: "12px 16px", borderBottom: i < 4 ? `1px solid ${C.border}` : "none" }}>
+                  <span style={{ color: ep.m === "POST" ? C.amber : C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600 }}>{ep.m}</span>
+                  <span style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{ep.p}</span>
+                  <span style={{ color: C.frost, fontSize: 11 }}>{ep.d}</span>
+                  <span style={{ color: C.amber, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600, textAlign: "right" }}>{ep.price}</span>
                 </div>
-                <div style={{ color: C.slate, fontSize: 12, marginBottom: 10, lineHeight: 1.6 }}>{ep.desc}</div>
-                <div style={{
-                  background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, padding: "8px 14px",
-                  fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: C.frost, overflowX: "auto",
-                }}>{ep.res}</div>
-              </GlowCard>
-            </Reveal>
-          ))}
-        </div>
+              ))}
+            </div>
+            <div style={{ padding: "14px 18px", background: `${C.teal}08`, border: `1px solid ${C.teal}25`, borderRadius: 6 }}>
+              <span style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>Hold 1,000+ $OSAI = FREE unlimited access to all protected endpoints</span>
+            </div>
+          </div>
+        </Reveal>
 
+        {/* Usage Example */}
         <Reveal delay={0.3}>
-          <div style={{ marginTop: 32 }}>
-            <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 12 }}>USAGE EXAMPLE</div>
-            <CodeBlock lang="python" code={`import requests
+          <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 12 }}>USAGE EXAMPLE</div>
+          <CodeBlock lang="python" code={`import requests
 
-# Get all active trading signals
+# Free endpoint
 signals = requests.get("https://oraclesentinel.xyz/api/signals").json()
 
 for signal in signals:
     print(f"[{signal['signal_type']}] {signal['question']}")
-    print(f"  Edge: {signal['edge']}% | Confidence: {signal['confidence']}")
-    print(f"  AI Prob: {signal['ai_probability']}")
-    print(f"  Reasoning: {signal['reasoning'][:100]}...")
-    print()`} />
-          </div>
+    print(f"  Edge: {signal['edge']}% | Confidence: {signal['confidence']}")`} />
         </Reveal>
       </Section>
 
       {/* ═══════════════════════════════════════════════════════ */}
+      {/* SDK */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      <Section id="sdk" style={{ borderTop: `1px solid ${C.border}` }}>
+        <Reveal><SectionLabel text="PYTHON SDK" sub="Integrate in minutes." /></Reveal>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+          <Reveal delay={0.1}>
+            <GlowCard accent={C.blue} style={{ height: "100%" }}>
+              <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>INSTALLATION</div>
+              <CodeBlock lang="bash" code={`# Basic installation
+pip install oracle-sentinel
+
+# With Solana support (for token gating)
+pip install oracle-sentinel[solana]`} />
+              <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
+                <a href="https://pypi.org/project/oracle-sentinel/" target="_blank" rel="noopener noreferrer" style={{
+                  background: `linear-gradient(135deg, ${C.blue}, ${C.blueMid})`,
+                  color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600,
+                  letterSpacing: 1, padding: "10px 16px", borderRadius: 4, textDecoration: "none",
+                }}>VIEW ON PYPI</a>
+                <a href="https://github.com/oraclesentinel/oracle-sentinel-python" target="_blank" rel="noopener noreferrer" style={{
+                  background: "transparent", border: `1px solid ${C.borderL}`,
+                  color: C.frost, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 500,
+                  letterSpacing: 1, padding: "10px 16px", borderRadius: 4, textDecoration: "none",
+                }}>GITHUB</a>
+              </div>
+            </GlowCard>
+          </Reveal>
+
+          <Reveal delay={0.15}>
+            <GlowCard accent={C.teal} style={{ height: "100%" }}>
+              <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>FEATURES</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {[
+                  "Automatic signature verification for token gating",
+                  "Built-in x402 micropayments",
+                  "FREE access for 1000+ $OSAI holders",
+                  "Async support & type hints",
+                  "Comprehensive error handling",
+                ].map((f, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ color: C.teal, fontSize: 12 }}>✓</span>
+                    <span style={{ color: C.frost, fontSize: 12 }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+            </GlowCard>
+          </Reveal>
+        </div>
+
+        <Reveal delay={0.2}>
+          <div style={{ marginTop: 32, color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 12 }}>QUICK START</div>
+          <CodeBlock lang="python" code={`from oracle_sentinel import OracleSentinelClient
+
+# Initialize with private key for FREE access (if holding 1000+ $OSAI)
+client = OracleSentinelClient(
+    private_key="YOUR_SOLANA_PRIVATE_KEY"
+)
+
+# Get bulk signals (FREE for holders, $0.08 otherwise)
+result = client.get_bulk_signals()
+for signal in result["signals"]:
+    print(f"{signal['signal']}: {signal['question']}")
+    print(f"  Edge: {signal['edge']}%")
+
+# Analyze any Polymarket URL
+analysis = client.analyze_url("https://polymarket.com/event/...")
+print(analysis["recommendation"])`} />
+        </Reveal>
+      </Section>
+
+      {/* ═══════════════════════════════════════════════════════ */}
+      {/* TOKEN */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      <Section id="token" style={{ borderTop: `1px solid ${C.border}` }}>
+        <Reveal><SectionLabel text="$OSAI TOKEN" sub="Unlock free API access." /></Reveal>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+          <Reveal delay={0.1}>
+            <GlowCard accent={C.amber} style={{ height: "100%" }}>
+              <div style={{ color: C.amber, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>CONTRACT ADDRESS</div>
+              <div style={{ 
+                display: "flex", alignItems: "center", gap: 12, padding: "14px", 
+                background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6,
+                cursor: "pointer", transition: "all 0.2s",
+              }}
+              onClick={() => navigator.clipboard.writeText("HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump")}
+              >
+                <span style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, flex: 1, wordBreak: "break-all" }}>HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump</span>
+                <span style={{ color: C.amber, fontSize: 12, flexShrink: 0 }}>COPY</span>
+              </div>
+              <div style={{ color: C.slateD, fontSize: 10, marginTop: 8, fontFamily: "'JetBrains Mono', monospace" }}>Click to copy</div>
+              
+              <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
+                <a href="https://jup.ag/swap/SOL-HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump" target="_blank" rel="noopener noreferrer" style={{
+                  background: `linear-gradient(135deg, ${C.amber}, ${C.amber}cc)`,
+                  color: "#000", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
+                  letterSpacing: 1, padding: "10px 16px", borderRadius: 4, textDecoration: "none",
+                }}>BUY ON JUPITER</a>
+                <a href="https://solscan.io/token/HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump" target="_blank" rel="noopener noreferrer" style={{
+                  background: "transparent", border: `1px solid ${C.borderL}`,
+                  color: C.frost, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 500,
+                  letterSpacing: 1, padding: "10px 16px", borderRadius: 4, textDecoration: "none",
+                }}>SOLSCAN</a>
+              </div>
+            </GlowCard>
+          </Reveal>
+
+          <Reveal delay={0.15}>
+            <GlowCard accent={C.teal} style={{ height: "100%" }}>
+              <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>HOLDER BENEFITS</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {[
+                  { tier: "1,000+ $OSAI", benefit: "FREE unlimited API access", color: C.teal },
+                  { tier: "10,000+ $OSAI", benefit: "Premium tier (coming soon)", color: C.blue },
+                  { tier: "100,000+ $OSAI", benefit: "VIP tier (coming soon)", color: C.amber },
+                ].map((t, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6 }}>
+                    <span style={{ color: t.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600, minWidth: 110 }}>{t.tier}</span>
+                    <span style={{ color: C.frost, fontSize: 11 }}>{t.benefit}</span>
+                  </div>
+                ))}
+              </div>
+            </GlowCard>
+          </Reveal>
+        </div>
+
+        <Reveal delay={0.2}>
+          <div style={{ marginTop: 32 }}>
+            <GlowCard accent={C.green}>
+              <div style={{ color: C.green, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 12 }}>HOW TOKEN GATING WORKS</div>
+              <div style={{ color: C.frost, fontSize: 13, lineHeight: 1.8 }}>
+                When you use the SDK with your Solana private key, the system verifies your wallet signature and checks your $OSAI balance on-chain. 
+                If you hold 1,000+ tokens, all protected API endpoints become FREE. No payment required, no rate limits. 
+                The verification happens automatically on each request.
+              </div>
+            </GlowCard>
+          </div>
+        </Reveal>
+      </Section>
+
       {/* OPENCLAW INTEGRATION */}
       {/* ═══════════════════════════════════════════════════════ */}
       <Section id="openclaw" style={{ borderTop: `1px solid ${C.border}` }}>
@@ -806,7 +1002,7 @@ for signal in signals:
             <Reveal key={i} delay={0.2 + i * 0.04}>
               <GlowCard style={{ padding: "18px 16px", textAlign: "center" }}>
                 <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 700, marginBottom: 8, opacity: 0.5 }}>{">"}</div>
-                <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{tool.name}</div>
+                <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{tool.name}</div>
                 <div style={{ color: C.slateD, fontSize: 10, lineHeight: 1.5 }}>{tool.desc}</div>
               </GlowCard>
             </Reveal>
@@ -829,7 +1025,7 @@ for signal in signals:
               <GlowCard style={{ padding: "16px 24px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <span style={{
-                    color: item.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600,
+                    color: item.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600,
                     background: `${item.color}12`, padding: "4px 12px", borderRadius: 4, flexShrink: 0,
                   }}>"{item.cmd}"</span>
                   <span style={{ color: C.slate, fontSize: 12, lineHeight: 1.5 }}>{item.desc}</span>
@@ -933,8 +1129,9 @@ for signal in signals:
         <div style={{ color: C.slateD, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 24 }}>AUTONOMOUS PREDICTION INTELLIGENCE</div>
         <div style={{ display: "flex", justifyContent: "center", gap: 32, marginBottom: 24 }}>
           {[
-            { l: "Dashboard", h: "/app" },
+            { l: "Dashboard", h: "/predict" },
             { l: "X", h: "https://x.com/oracle_sentinel" },
+            { l: "GitHub", h: "https://github.com/oraclesentinel?tab=repositories" },
             { l: "Telegram", h: "https://t.me/oraclesentinelsignals" },
             { l: "$OSAI", h: "https://solscan.io/token/HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump" },
           ].map((lnk, i) => (
