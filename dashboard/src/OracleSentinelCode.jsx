@@ -198,13 +198,6 @@ export default function OracleSentinelCode() {
     }
   };
 
-  const getScoreColor = (score) => {
-    if (score >= 80) return C.green;
-    if (score >= 60) return C.gray;
-    if (score >= 40) return C.amber;
-    return C.red;
-  };
-
   return (
     <div style={{ 
       minHeight: "100vh", 
@@ -350,7 +343,7 @@ export default function OracleSentinelCode() {
             {/* Stats Header */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
+              gridTemplateColumns: "1fr 1fr",
               gap: 16,
               marginBottom: 32,
             }}>
@@ -369,22 +362,6 @@ export default function OracleSentinelCode() {
                 }}>
                   {result.repo?.replace("https://github.com/", "")}
                 </div>
-              </div>
-              
-              <div style={{
-                background: C.card,
-                border: `1px solid ${C.border}`,
-                borderRadius: 8,
-                padding: 20,
-                textAlign: "center",
-              }}>
-                <div style={{ color: C.grayL, fontSize: 10, marginBottom: 8, letterSpacing: 1 }}>QUALITY SCORE</div>
-                <div style={{
-                  fontSize: 36,
-                  fontWeight: 300,
-                  color: getScoreColor(result.score),
-                  fontFamily: "'JetBrains Mono', monospace",
-                }}>{result.score}<span style={{ fontSize: 16, color: C.grayL }}>/100</span></div>
               </div>
               
               <div style={{

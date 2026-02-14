@@ -23,6 +23,7 @@ const SECTIONS = [
   { id: "pipeline", label: "PIPELINE" },
   { id: "tech", label: "STACK" },
   { id: "accuracy", label: "ACCURACY" },
+  { id: "sentinel-code", label: "CODE" },
   { id: "api", label: "API" },
   { id: "sdk", label: "SDK" },
   { id: "token", label: "TOKEN" },
@@ -716,6 +717,131 @@ export default function OracleSentinelDocs() {
       </Section>
 
       {/* ═══════════════════════════════════════════════════════ */}
+
+      {/* ═══════════════════════════════════════════════════════ */}
+      {/* SENTINEL CODE */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      <Section id="sentinel-code" style={{ borderTop: `1px solid ${C.border}` }}>
+        <Reveal><SectionLabel text="SENTINEL CODE" sub="AI-Powered Code Analysis." /></Reveal>
+
+        <Reveal delay={0.1}>
+          <GlowCard accent={C.teal} style={{ marginBottom: 32 }}>
+            <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>WHAT IS SENTINEL CODE</div>
+            <p style={{ color: C.frost, fontSize: 14, lineHeight: 1.8, marginBottom: 16 }}>
+              Sentinel Code is an AI-powered code analysis module that scans any public GitHub repository for security vulnerabilities, bugs, and code quality issues. It provides detailed reports with exact file locations, code snippets, and fix suggestions.
+            </p>
+            <p style={{ color: C.slate, fontSize: 13, lineHeight: 1.7 }}>
+              Built for developers who want cleaner code and investors who want to verify the quality of projects they're holding. Drop a repo URL, get a comprehensive audit in 30-60 seconds.
+            </p>
+          </GlowCard>
+        </Reveal>
+
+        {/* Use Cases */}
+        <Reveal delay={0.15}>
+          <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>USE CASES</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
+            {[
+              { title: "For Developers", desc: "Catch security issues before hackers do. Find bugs, missing error handling, and code quality problems. Get AI-suggested fixes with exact code examples.", color: C.teal },
+              { title: "For Investors", desc: "Verify if the project you're holding is actually well-built. Check for red flags like hardcoded secrets, SQL injection risks, or missing authentication.", color: C.amber },
+              { title: "For Code Reviews", desc: "Automate the first pass of code review. Identify obvious issues so human reviewers can focus on architecture and logic.", color: C.blue },
+              { title: "For Due Diligence", desc: "Before integrating a dependency or forking a project, understand its code quality and security posture.", color: C.green },
+            ].map((item, i) => (
+              <Reveal key={i} delay={0.15 + i * 0.05}>
+                <GlowCard accent={item.color} style={{ height: "100%" }}>
+                  <div style={{ color: item.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{item.title}</div>
+                  <div style={{ color: C.slate, fontSize: 12, lineHeight: 1.7 }}>{item.desc}</div>
+                </GlowCard>
+              </Reveal>
+            ))}
+          </div>
+        </Reveal>
+
+        {/* What It Detects */}
+        <Reveal delay={0.2}>
+          <div style={{ color: C.red, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>WHAT IT DETECTS</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, marginBottom: 32 }}>
+            {[
+              { cat: "CRITICAL", items: ["SQL Injection", "XSS Vulnerabilities", "Hardcoded Secrets", "API Keys Exposed"], color: C.red },
+              { cat: "BUGS", items: ["Null Pointers", "Race Conditions", "Unhandled Exceptions", "Memory Leaks"], color: C.amber },
+              { cat: "QUALITY", items: ["No Error Handling", "No Input Validation", "Code Duplication", "Complex Functions"], color: C.blue },
+              { cat: "IMPROVEMENTS", items: ["Missing Type Hints", "No Documentation", "No Unit Tests", "Outdated Patterns"], color: C.green },
+            ].map((cat, i) => (
+              <Reveal key={i} delay={0.2 + i * 0.04}>
+                <GlowCard accent={cat.color} style={{ padding: "20px 16px" }}>
+                  <div style={{ color: cat.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 1.5, marginBottom: 12 }}>{cat.cat}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {cat.items.map((item, j) => (
+                      <div key={j} style={{ color: C.frost, fontSize: 11, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ color: cat.color, fontSize: 8 }}>●</span>{item}
+                      </div>
+                    ))}
+                  </div>
+                </GlowCard>
+              </Reveal>
+            ))}
+          </div>
+        </Reveal>
+
+        {/* Output Format */}
+        <Reveal delay={0.25}>
+          <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>OUTPUT FORMAT</div>
+          <GlowCard accent={C.teal} style={{ marginBottom: 32 }}>
+            <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, padding: "20px", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, lineHeight: 1.7, color: C.frost, overflowX: "auto" }}>
+              <div style={{ color: C.blue, marginBottom: 8 }}>ORACLE SENTINEL CODE REVIEW</div>
+              <div style={{ color: C.slate, marginBottom: 16 }}>Repo: github.com/user/project | Python 92% | 12 files analyzed</div>
+              <div style={{ color: C.red, marginBottom: 4 }}>CRITICAL ISSUES (2)</div>
+              <div style={{ color: C.frost, marginBottom: 2 }}>1. SQL Injection Vulnerability</div>
+              <div style={{ color: C.slate, marginBottom: 2 }}>   File: app/routes.py:47</div>
+              <div style={{ color: C.slate, marginBottom: 2 }}>   Code: f"SELECT * FROM users WHERE id = &#123;user_input&#125;"</div>
+              <div style={{ color: C.teal, marginBottom: 12 }}>   Fix: Use parameterized queries</div>
+              <div style={{ color: C.amber, marginBottom: 4 }}>WARNINGS (4)</div>
+              <div style={{ color: C.slate, marginBottom: 12 }}>   - No rate limiting on API endpoints (routes.py)</div>
+              <div style={{ color: C.green, marginBottom: 4 }}>IMPROVEMENTS (5)</div>
+              <div style={{ color: C.slate, marginBottom: 12 }}>   - Add type hints for better maintainability</div>
+            </div>
+          </GlowCard>
+        </Reveal>
+
+        {/* How to Use */}
+        <Reveal delay={0.3}>
+          <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>HOW TO USE</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <GlowCard accent={C.blue}>
+              <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600, marginBottom: 12 }}>Web Interface</div>
+              <div style={{ color: C.frost, fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
+                Visit oraclesentinel.xyz/code, paste any GitHub repository URL, and click Analyze. Results appear in 30-60 seconds.
+              </div>
+              <a href="/code" style={{
+                display: "inline-block", background: `linear-gradient(135deg, ${C.blue}, ${C.blueMid})`,
+                color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600,
+                letterSpacing: 1, padding: "10px 16px", borderRadius: 4, textDecoration: "none",
+              }}>OPEN CODE ANALYZER</a>
+            </GlowCard>
+            <GlowCard accent={C.teal}>
+              <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600, marginBottom: 12 }}>API Endpoint</div>
+              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, padding: "12px", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: C.frost, marginBottom: 12 }}>
+                POST /api/code/analyze<br/>
+                &#123; "repo_url": "https://github.com/user/repo" &#125;
+              </div>
+              <div style={{ color: C.slate, fontSize: 11 }}>FREE for all users. No authentication required.</div>
+            </GlowCard>
+          </div>
+        </Reveal>
+
+        {/* Supported Languages */}
+        <Reveal delay={0.35}>
+          <div style={{ marginTop: 32, color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>SUPPORTED LANGUAGES</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {["Python", "JavaScript", "TypeScript", "Rust", "Solidity", "Go", "Java", "C++", "C", "Ruby", "PHP", "React JSX", "React TSX", "Solana Programs", "Smart Contracts"].map((lang, i) => (
+              <span key={i} style={{
+                background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 4,
+                padding: "6px 14px", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: C.frost,
+              }}>{lang}</span>
+            ))}
+          </div>
+        </Reveal>
+      </Section>
+
       {/* ═══════════════════════════════════════════════════════ */}
       {/* API REFERENCE */}
       {/* ═══════════════════════════════════════════════════════ */}
@@ -733,6 +859,8 @@ export default function OracleSentinelDocs() {
                 { method: "GET", path: "/api/predictions", desc: "Tracked predictions with price snapshots", res: '[ { question, signal_type, edge_at_signal, price_after_1h, ... } ]' },
                 { method: "GET", path: "/api/dashboard", desc: "Complete dashboard payload", res: '{ active_signals, markets, predictions, accuracy_stats, ... }' },
                 { method: "GET", path: "/api/health", desc: "System health check", res: '{ status: "ok", markets: 79, server_time: "..." }' },
+                { method: "POST", path: "/api/code/analyze", desc: "Analyze GitHub repository", res: '{ repo, files_analyzed, languages, analysis }' },
+                { method: "GET", path: "/api/code/health", desc: "Code analyzer health check", res: '{ status: "ok", service: "sentinel-code" }' },
               ].map((ep, i) => (
                 <GlowCard key={i} style={{ padding: "14px 20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
