@@ -586,6 +586,16 @@ Respond ONLY with the JSON object, no other text."""
             prob = float(result['probability'])
             result['probability'] = max(0.01, min(0.99, prob))
             
+            # =========================================================
+            # SELF-IMPROVEMENT: Apply probability dampening
+            # Moves extreme probabilities closer to 50% to reduce overconfidence
+            # =========================================================
+            if self.agent_config and self.agent_config.probability_dampening > 0:
+                original_prob = result['probability']
+                result['probability'] = self.agent_config.apply_dampening(original_prob)
+                if abs(original_prob - result['probability']) > 0.01:
+                    self._log('INFO', f'  🎯 Probability dampening: {original_prob*100:.1f}% → {result["probability"]*100:.1f}%')
+            
             # ==============================================
             # FORCE RECOMMENDATION RULES AT CODE LEVEL
             # Don't trust LLM's recommendation — recalculate
@@ -595,7 +605,10 @@ Respond ONLY with the JSON object, no other text."""
             categorizer = MarketCategorizer()
             market_category = categorizer.categorize(question)
             
-            result = self._force_recommendation(result, yes_price)
+            # Store category in result for tracking
+            result['category'] = market_category
+
+            result = self._force_recommendation(result, yes_price, market_category)
             
             return result
 
@@ -604,7 +617,7 @@ Respond ONLY with the JSON object, no other text."""
             self._log('WARN', f'  Raw response: {response[:200]}')
             return self._default_assessment(yes_price)
 
-    def _force_recommendation(self, result: dict, market_yes_price: float) -> dict:
+    def _force_recommendation(self, result: dict, market_yes_price: float, category: str = None) -> dict:
         """
         Override LLM recommendation with hard-coded rules.
         This ensures consistent logic regardless of what the LLM outputs.
@@ -627,7 +640,26 @@ Respond ONLY with the JSON object, no other text."""
 
         llm_rec = result.get('recommendation', 'SKIP')
         # Load dynamic threshold from agent config
-        min_edge_threshold = self.agent_config.min_edge_threshold if self.agent_config else 5
+        # =========================================================
+        # SELF-IMPROVEMENT: Get category-specific threshold
+        # =========================================================
+        if category and self.agent_config:
+            min_edge_threshold = self.agent_config.get_threshold_for_category(category)
+            self._log('INFO', f'  📊 Category "{category}" threshold: {min_edge_threshold}%')
+        else:
+            min_edge_threshold = self.agent_config.min_edge_threshold if self.agent_config else 5
+        
+        # =========================================================
+        # SELF-IMPROVEMENT: Apply confidence multiplier per category
+        # =========================================================
+        if category and self.agent_config:
+            confidence_multiplier = self.agent_config.get_confidence_multiplier(category)
+            if confidence_multiplier < 1.0:
+                # Category has poor performance - need MORE edge to signal
+                adjusted_threshold = min_edge_threshold / confidence_multiplier
+                self._log('INFO', f'  📊 Category "{category}" multiplier: {confidence_multiplier}x → threshold adjusted to {adjusted_threshold:.1f}%')
+                min_edge_threshold = adjusted_threshold
+        
         new_rec = 'SKIP'  # default
         
 
@@ -852,6 +884,19 @@ Respond ONLY with the JSON object, no other text."""
                 'question': question,
                 'status': 'skipped',
                 'reason': 'No articles available'
+            }
+
+        # =========================================================
+        # SELF-IMPROVEMENT: Check minimum news sources requirement
+        # =========================================================
+        min_sources = self.agent_config.min_news_sources if self.agent_config else 3
+        if len(articles) < min_sources:
+            self._log('WARN', f'  Insufficient articles ({len(articles)}/{min_sources}) - skipping AI analysis')
+            return {
+                'market_id': market_id,
+                'question': question,
+                'status': 'skipped',
+                'reason': f'Insufficient news sources ({len(articles)}/{min_sources} required)'
             }
 
         # Stage 1: Extract facts

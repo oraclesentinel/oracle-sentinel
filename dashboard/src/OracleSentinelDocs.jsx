@@ -496,7 +496,7 @@ export default function OracleSentinelDocs() {
       {/* FEATURES */}
       {/* ═══════════════════════════════════════════════════════ */}
       <Section id="features" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="CORE CAPABILITIES" sub="What makes Oracle Sentinel different." /></Reveal>
+        <Reveal><SectionLabel text="CORE CAPABILITIES" sub="What makes Sentinel Predict different." /></Reveal>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
           {[
             { title: "Dual-Model AI Brain", desc: "Stage 1: Claude Haiku extracts facts. Stage 2: Claude Sonnet assesses probability. Two models, one verdict — eliminating single-model bias.", accent: C.blue },
@@ -787,7 +787,7 @@ export default function OracleSentinelDocs() {
           <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>OUTPUT FORMAT</div>
           <GlowCard accent={C.teal} style={{ marginBottom: 32 }}>
             <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, padding: "20px", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, lineHeight: 1.7, color: C.frost, overflowX: "auto" }}>
-              <div style={{ color: C.blue, marginBottom: 8 }}>ORACLE SENTINEL CODE REVIEW</div>
+              <div style={{ color: C.blue, marginBottom: 8 }}>SENTINEL CODE REVIEW</div>
               <div style={{ color: C.slate, marginBottom: 16 }}>Repo: github.com/user/project | Python 92% | 12 files analyzed</div>
               <div style={{ color: C.red, marginBottom: 4 }}>CRITICAL ISSUES (2)</div>
               <div style={{ color: C.frost, marginBottom: 2 }}>1. SQL Injection Vulnerability</div>

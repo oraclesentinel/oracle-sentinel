@@ -71,6 +71,18 @@ class AgentConfig:
     @property
     def version(self) -> int:
         return self._config.get('version', 0)
+
+    @property
+    def category_thresholds(self) -> dict:
+        """Get category-specific edge thresholds."""
+        return self._config.get('category_thresholds', {})
+
+    def get_threshold_for_category(self, category: str) -> float:
+        """Get edge threshold for specific category. Falls back to min_edge_threshold."""
+        thresholds = self.category_thresholds
+        if category and category in thresholds:
+            return float(thresholds[category])
+        return self.min_edge_threshold
     
     def get_confidence_multiplier(self, category: str) -> float:
         """Get confidence multiplier for a specific category."""

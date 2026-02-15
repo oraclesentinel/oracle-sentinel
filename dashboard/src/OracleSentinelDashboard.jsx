@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 // ═══════════════════════════════════════════════════════════════
-// ORACLE SENTINEL — TERMINAL INTELLIGENCE DASHBOARD
+// SENTINEL PREDICT — TERMINAL INTELLIGENCE DASHBOARD
 // Bloomberg Terminal / Cold Blue Aesthetic
 // ═══════════════════════════════════════════════════════════════
 
@@ -90,7 +90,7 @@ function Header() {
   return (
     <div style={{ textAlign: "center", padding: "16px 0 8px", borderBottom: `1px solid ${BORDER}` }}>
       <div style={{ color: BLUE_BRIGHT, fontFamily: "'JetBrains Mono', monospace", fontSize: "16px", fontWeight: 700, letterSpacing: "4px" }}>
-        ORACLE SENTINEL
+        SENTINEL PREDICT
       </div>
       <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", letterSpacing: "3px", marginTop: "4px" }}>
         POLYMARKET PREDICTION INTELLIGENCE v2.0
@@ -266,7 +266,7 @@ function WeeklyAccuracyChart({ data }) {
 
 function BootSequence({ onComplete }) {
   const lines = [
-    { text: "ORACLE SENTINEL v2.0", color: BLUE_BRIGHT },
+    { text: "SENTINEL PREDICT v2.0", color: BLUE_BRIGHT },
     { text: "Polymarket Prediction Intelligence System", color: FROST },
     { text: "─────────────────────────────────────────", color: BORDER_LIGHT },
     { text: "> Initializing prediction engine...", color: SLATE },
@@ -517,7 +517,7 @@ function AIAgentChat() {
         {messages.length === 0 && (
           <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "13px", textAlign: "center", padding: "40px 20px" }}>
             <div style={{ fontSize: "32px", marginBottom: "12px" }}>🤖</div>
-            <div style={{ color: FROST, marginBottom: "8px" }}>Oracle Sentinel AI Agent</div>
+            <div style={{ color: FROST, marginBottom: "8px" }}>Sentinel Predict AI</div>
             <div style={{ lineHeight: "1.6" }}>
               Analyze any Polymarket with:<br />
               <span style={{ color: TEAL }}>"Analyze this market and check the resolution rules carefully: [URL]"</span>
@@ -679,7 +679,7 @@ function AIAgentPanel() {
         {messages.length === 0 && (
           <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "13px", textAlign: "center", padding: "60px 20px" }}>
             <div style={{ fontSize: "48px", marginBottom: "16px" }}>🤖</div>
-            <div style={{ color: FROST, marginBottom: "12px", fontSize: "14px" }}>Oracle Sentinel AI Agent</div>
+            <div style={{ color: FROST, marginBottom: "12px", fontSize: "14px" }}>Sentinel Predict AI</div>
             <div style={{ lineHeight: "1.8", maxWidth: "500px", margin: "0 auto" }}>
               Analyze any Polymarket with:<br />
               <span style={{ color: TEAL }}>"Analyze this market: [URL]"</span><br /><br />
@@ -721,6 +721,45 @@ function AIAgentPanel() {
 export default function OracleSentinelDashboard() {
   const [booted, setBooted] = useState(false);
   const [activeTab, setActiveTab] = useState("signals");
+  const [selfImprovementData, setSelfImprovementData] = useState(null);
+  const [improvementHistory, setImprovementHistory] = useState([]);
+  const [trackedSignals, setTrackedSignals] = useState({ signals: [], summary: {} });
+  const [signalAlerts, setSignalAlerts] = useState([]);
+  // Fetch self-improvement data
+  useEffect(() => {
+    const fetchSelfImprovement = async () => {
+      try {
+        const [statsRes, historyRes, signalsRes, alertsRes] = await Promise.all([
+          fetch(API_BASE + "/self-improvement/stats"),
+          fetch(API_BASE + "/self-improvement/history"),
+          fetch(API_BASE + "/signals/tracked"),
+          fetch(API_BASE + "/signals/alerts")
+        ]);
+        if (statsRes.ok) {
+          const stats = await statsRes.json();
+          setSelfImprovementData(stats);
+        }
+        if (historyRes.ok) {
+          const history = await historyRes.json();
+          setImprovementHistory(history.history || []);
+        }
+        if (signalsRes.ok) {
+          const sigData = await signalsRes.json();
+          setTrackedSignals(sigData);
+        }
+        if (alertsRes.ok) {
+          const alertData = await alertsRes.json();
+          setSignalAlerts(alertData.alerts || []);
+        }
+      } catch (e) {
+        console.error("Failed to fetch self-improvement data:", e);
+      }
+    };
+    fetchSelfImprovement();
+    const interval = setInterval(fetchSelfImprovement, 60000); // Refresh every minute
+    return () => clearInterval(interval);
+  }, []);
+
   const [data, setData] = useState(null);
   const [apiOk, setApiOk] = useState(false);
   const [streamLogs, setStreamLogs] = useState([]);
@@ -879,8 +918,8 @@ export default function OracleSentinelDashboard() {
 
       {/* Tabs */}
       <div style={{ display: "flex", borderBottom: `1px solid ${BORDER}`, background: BG_PANEL }}>
-        {["signals", "markets", "accuracy", "log", "whales", "ai agent"].map(t => (
-          <button key={t} className={`tab-btn ${activeTab === t ? "active" : ""} ${t === "ai agent" ? "ai-agent-tab" : ""}`} onClick={() => setActiveTab(t)}>{t.toUpperCase()}</button>
+        {["signals", "markets", "accuracy", "log", "whales", "ai agent", "ai learning"].map(t => (
+          <button key={t} className={`tab-btn ${activeTab === t ? "active" : ""} ${t === "ai agent" ? "ai-agent-tab" : t === "ai learning" ? "ai-agent-tab" : ""}`} onClick={() => setActiveTab(t)}>{t.toUpperCase()}</button>
         ))}
         <div style={{ marginLeft: "auto", padding: "10px 20px", fontSize: "12px", color: SLATE, display: "flex", alignItems: "center", gap: "6px" }}>
           <span style={{ color: apiOk ? TEAL : RED_COLD, animation: "pulse 2s infinite", fontSize: "12px" }}>●</span>{apiOk ? "LIVE" : "OFFLINE"}
@@ -1129,6 +1168,182 @@ export default function OracleSentinelDashboard() {
             <AIAgentPanel />
           </Panel>
         )}
+
+        {/* ── AI LEARNING ── */}
+        {activeTab === "ai learning" && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+            {/* Stats Cards */}
+            <Panel title="🧠 SELF-IMPROVEMENT STATS">
+              {selfImprovementData ? (
+                <div style={{ padding: "16px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "20px" }}>
+                    <div style={{ background: BG, padding: "16px", borderRadius: "4px", textAlign: "center" }}>
+                      <div style={{ color: TEAL, fontSize: "28px", fontWeight: 700 }}>{selfImprovementData.stats?.accuracy || 0}%</div>
+                      <div style={{ color: SLATE, fontSize: "11px", marginTop: "4px" }}>ACCURACY</div>
+                    </div>
+                    <div style={{ background: BG, padding: "16px", borderRadius: "4px", textAlign: "center" }}>
+                      <div style={{ color: AMBER_COLD, fontSize: "28px", fontWeight: 700 }}>v{selfImprovementData.config?.version || 0}</div>
+                      <div style={{ color: SLATE, fontSize: "11px", marginTop: "4px" }}>CONFIG VERSION</div>
+                    </div>
+                    <div style={{ background: BG, padding: "16px", borderRadius: "4px", textAlign: "center" }}>
+                      <div style={{ color: BLUE_BRIGHT, fontSize: "28px", fontWeight: 700 }}>{selfImprovementData.fixes?.applied || 0}</div>
+                      <div style={{ color: SLATE, fontSize: "11px", marginTop: "4px" }}>FIXES APPLIED</div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: "16px" }}>
+                    <div style={{ color: ICE, fontSize: "13px", fontWeight: 600, marginBottom: "12px" }}>CURRENT SETTINGS</div>
+                    <div style={{ display: "grid", gap: "8px", fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: SLATE }}>Min Edge Threshold:</span>
+                        <span style={{ color: FROST }}>{selfImprovementData.config?.min_edge_threshold || 10}%</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: SLATE }}>Min News Sources:</span>
+                        <span style={{ color: FROST }}>{selfImprovementData.config?.min_news_sources || 3}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: SLATE }}>Probability Dampening:</span>
+                        <span style={{ color: FROST }}>{(selfImprovementData.config?.probability_dampening || 0) * 100}%</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ color: SLATE }}>Lessons Learned:</span>
+                        <span style={{ color: FROST }}>{selfImprovementData.config?.lessons_count || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: "30px", textAlign: "center", color: SLATE }}>Loading...</div>
+              )}
+            </Panel>
+
+            {/* Category Thresholds */}
+            <Panel title="📊 CATEGORY THRESHOLDS">
+              {selfImprovementData?.config?.category_thresholds ? (
+                <div style={{ padding: "16px" }}>
+                  <div style={{ display: "grid", gap: "8px" }}>
+                    {Object.entries(selfImprovementData.config.category_thresholds).map(([cat, threshold]) => (
+                      <div key={cat} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 12px", background: BG, borderRadius: "4px" }}>
+                        <span style={{ color: ICE, fontSize: "12px", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase", flex: 1 }}>{cat}</span>
+                        <div style={{ width: "100px", height: "6px", background: BORDER, borderRadius: "3px", overflow: "hidden" }}>
+                          <div style={{ width: `${threshold * 5}%`, height: "100%", background: threshold > 10 ? AMBER_COLD : TEAL, borderRadius: "3px" }} />
+                        </div>
+                        <span style={{ color: threshold > 10 ? AMBER_COLD : TEAL, fontSize: "13px", fontWeight: 600, width: "40px", textAlign: "right" }}>{threshold}%</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: "16px", padding: "12px", background: `${BLUE_DARK}30`, borderRadius: "4px", fontSize: "11px", color: SLATE }}>
+                    Higher threshold = more conservative (needs bigger edge to signal)
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: "30px", textAlign: "center", color: SLATE }}>Loading...</div>
+              )}
+            </Panel>
+
+            {/* Fix History - Full Width */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <Panel title="📜 IMPROVEMENT HISTORY" headerRight={<span style={{ color: SLATE, fontSize: "12px" }}>{improvementHistory.length} fixes</span>}>
+                <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+                  {improvementHistory.length === 0 ? (
+                    <div style={{ padding: "30px", textAlign: "center", color: SLATE }}>No improvements yet</div>
+                  ) : (
+                    improvementHistory.slice(0, 15).map((fix, i) => (
+                      <div key={fix.id || i} style={{ display: "grid", gridTemplateColumns: "100px 1fr 120px 80px", gap: "12px", padding: "10px 14px", borderBottom: `1px solid ${GRID_LINE}`, fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>
+                        <span style={{ color: fix.status === "applied" ? TEAL : fix.status === "skipped_backtest" ? AMBER_COLD : RED_COLD }}>
+                          {fix.status === "applied" ? "✅ APPLIED" : fix.status === "skipped_backtest" ? "⏭️ SKIPPED" : "❌ FAILED"}
+                        </span>
+                        <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fix.fix_type?.replace(/_/g, " ").toUpperCase()}</span>
+                        <span style={{ color: FROST }}>
+                          {fix.backtest_before && fix.backtest_after ? (
+                            <>{fix.backtest_before}% → {fix.backtest_after}%</>
+                          ) : "—"}
+                        </span>
+                        <span style={{ color: SLATE, textAlign: "right" }}>{fix.applied_at ? new Date(fix.applied_at).toLocaleDateString() : "—"}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </Panel>
+            </div>
+
+            {/* Signal Tracker - Full Width */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <Panel title="📡 SIGNAL TRACKER" headerRight={
+                <span style={{ fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>
+                  <span style={{ color: TEAL }}>{trackedSignals.summary?.confirmed || 0} confirmed</span>
+                  <span style={{ color: SLATE }}> | </span>
+                  <span style={{ color: RED_COLD }}>{trackedSignals.summary?.challenged || 0} challenged</span>
+                  <span style={{ color: SLATE }}> | </span>
+                  <span style={{ color: FROST }}>{trackedSignals.summary?.tracking || 0} tracking</span>
+                </span>
+              }>
+                <div style={{ maxHeight: "250px", overflowY: "auto" }}>
+                  {!trackedSignals.signals?.length ? (
+                    <div style={{ padding: "30px", textAlign: "center", color: SLATE }}>No active signals</div>
+                  ) : (
+                    trackedSignals.signals.map((sig, i) => (
+                      <div key={sig.id || i} style={{ display: "grid", gridTemplateColumns: "70px 1fr 100px 80px 110px", gap: "12px", padding: "10px 14px", borderBottom: `1px solid ${GRID_LINE}`, fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>
+                        <span style={{ color: sig.signal_type === "BUY_YES" ? TEAL : RED_COLD, fontWeight: 600 }}>
+                          {sig.signal_type === "BUY_YES" ? "▲ YES" : "▼ NO"}
+                        </span>
+                        <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sig.question}</span>
+                        <span style={{ color: FROST, textAlign: "right", fontSize: "11px" }}>{((sig.entry_price || 0) * 100).toFixed(1)}¢ → {((sig.current_price || 0) * 100).toFixed(1)}¢</span>
+                        <span style={{ color: (sig.edge_movement || 0) >= 0 ? TEAL : RED_COLD, textAlign: "right", fontWeight: 600 }}>
+                          {(sig.edge_movement || 0) >= 0 ? "+" : ""}{(sig.edge_movement || 0).toFixed(1)}%
+                        </span>
+                        <span style={{ color: sig.edge_movement >= 30 ? TEAL : sig.edge_movement <= -30 ? RED_COLD : AMBER_COLD, textAlign: "right", fontSize: "10px" }}>
+                          {sig.edge_movement >= 30 ? "✅ CONFIRMED" : sig.edge_movement <= -30 ? "⚠️ CHALLENGED" : "📊 TRACKING"}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </Panel>
+            </div>
+
+            {/* Signal Alerts - Full Width */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <Panel title="🔔 SIGNAL ALERTS" headerRight={<span style={{ color: SLATE, fontSize: "12px" }}>{signalAlerts.length} alerts today</span>}>
+                <div style={{ maxHeight: "180px", overflowY: "auto" }}>
+                  {signalAlerts.length === 0 ? (
+                    <div style={{ padding: "30px", textAlign: "center", color: SLATE }}>No recent alerts</div>
+                  ) : (
+                    signalAlerts.slice(0, 8).map((alert, i) => (
+                      <div key={alert.id || i} style={{ display: "grid", gridTemplateColumns: "120px 1fr 100px 80px", gap: "12px", padding: "8px 14px", borderBottom: `1px solid ${GRID_LINE}`, fontSize: "11px", fontFamily: "'JetBrains Mono', monospace" }}>
+                        <span style={{ color: alert.urgency === "high" ? RED_COLD : alert.urgency === "medium" ? AMBER_COLD : FROST }}>
+                          {alert.urgency === "high" ? "🔴" : alert.urgency === "medium" ? "🟡" : "🟢"} {alert.type?.replace(/_/g, " ").substring(0, 15)}
+                        </span>
+                        <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{alert.market?.substring(0, 40)}</span>
+                        <span style={{ color: alert.action?.includes("CONFIRMED") ? TEAL : alert.action?.includes("CHALLENGED") ? RED_COLD : FROST, textAlign: "center", fontSize: "10px" }}>{alert.action}</span>
+                        <span style={{ color: SLATE, textAlign: "right" }}>{alert.created_at ? new Date(alert.created_at).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}) : "—"}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </Panel>
+            </div>
+
+            {/* Category Accuracy */}
+            {selfImprovementData?.category_accuracy && Object.keys(selfImprovementData.category_accuracy).length > 0 && (
+              <div style={{ gridColumn: "1 / -1" }}>
+                <Panel title="📈 ACCURACY BY CATEGORY">
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px", padding: "16px" }}>
+                    {Object.entries(selfImprovementData.category_accuracy).map(([cat, data]) => (
+                      <div key={cat} style={{ background: BG, padding: "16px", borderRadius: "4px", textAlign: "center" }}>
+                        <div style={{ color: data.accuracy >= 50 ? TEAL : data.accuracy >= 30 ? AMBER_COLD : RED_COLD, fontSize: "24px", fontWeight: 700 }}>{data.accuracy}%</div>
+                        <div style={{ color: ICE, fontSize: "11px", textTransform: "uppercase", marginTop: "4px" }}>{cat}</div>
+                        <div style={{ color: SLATE, fontSize: "10px", marginTop: "2px" }}>{data.correct}/{data.total} correct</div>
+                      </div>
+                    ))}
+                  </div>
+                </Panel>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* Whale Alert Notifications */}
@@ -1276,7 +1491,7 @@ export default function OracleSentinelDashboard() {
 
       {/* Footer */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: BG_PANEL, borderTop: `1px solid ${BORDER}`, padding: "5px 20px", display: "flex", justifyContent: "space-between", fontSize: "13px", color: SLATE }}>
-        <span>ORACLE SENTINEL v2.0 — Claude Sonnet 4.5</span>
+        <span>SENTINEL PREDICT v2.0 — Claude Sonnet 4.5</span>
         <span style={{ display: "flex", gap: "16px" }}>
           <span>OpenClaw 2026.1.30</span><a href="https://x.com/oracle_sentinel" target="_blank" rel="noopener noreferrer" style={{ color: AMBER_COLD, textDecoration: "none" }}>$OSAI</a>
           <span style={{ color: apiOk ? TEAL : RED_COLD }}>{apiOk ? "API: connected" : "API: offline"}</span>

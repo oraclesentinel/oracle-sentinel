@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """
-Re-analysis Scheduler - Analyze predictions 5-6 hours before market close
-Runs every hour via cron, but only triggers analysis when timing is right
-Now with Telegram alerts for signal changes
+Re-analysis Scheduler - Position Management System
+Analyzes existing positions 5-6 hours before market close
+OUTPUT: HOLD / TAKE_PROFIT / CUT_LOSS / ALERT (bukan sinyal baru!)
+
+Key Changes from original:
+1. Reanalysis BUKAN untuk kasih sinyal baru
+2. Reanalysis untuk MANAGE existing position
+3. Tidak affect accuracy calculation
+4. Skip jika harga sudah ekstrem (>85% atau <15%)
 """
 
 import os
@@ -19,14 +25,23 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', 'config', '.env'))
 
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'polymarket.db')
 LOG_PATH = os.path.join(os.path.dirname(__file__), '..', 'logs', 'reanalysis.log')
-OPENCLAW_SESSION_ID = "agent:main:main"
 
 # Telegram Config
-from config_loader import BOT_TOKEN, CHAT_IDS
+try:
+    from config_loader import BOT_TOKEN, CHAT_IDS
+except:
+    BOT_TOKEN = None
+    CHAT_IDS = []
 
 # Window: 5-6 hours before market close
 HOURS_BEFORE_CLOSE_MIN = 5
 HOURS_BEFORE_CLOSE_MAX = 6
+
+# Position Management Thresholds
+TAKE_PROFIT_THRESHOLD = 50  # Take profit if P&L >= 50%
+CUT_LOSS_THRESHOLD = -30    # Cut loss if P&L <= -30%
+EXTREME_PRICE_HIGH = 0.85   # Skip if price > 85%
+EXTREME_PRICE_LOW = 0.15    # Skip if price < 15%
 
 
 def log(message: str):
@@ -43,6 +58,8 @@ def log(message: str):
 
 def send_telegram(text: str):
     """Send alert to Telegram"""
+    if not BOT_TOKEN or not CHAT_IDS:
+        return
     for chat_id in CHAT_IDS:
         try:
             requests.post(
@@ -64,6 +81,130 @@ def get_db():
     return sqlite3.connect(DB_PATH)
 
 
+def get_current_market_price(market_id: int) -> float:
+    """Get current market price from markets table"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT yes_price FROM markets WHERE id = ?", (market_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else None
+
+
+def calculate_pnl(entry_price: float, current_price: float, direction: str) -> float:
+    """
+    Calculate P&L percentage for a position
+    direction: 'BUY_YES' or 'BUY_NO'
+    """
+    if direction == 'BUY_YES':
+        # Bought YES at entry_price, current value is current_price
+        if entry_price > 0:
+            return ((current_price - entry_price) / entry_price) * 100
+    else:  # BUY_NO
+        # Bought NO at (1-entry_price), current NO value is (1-current_price)
+        entry_no = 1 - entry_price
+        current_no = 1 - current_price
+        if entry_no > 0:
+            return ((current_no - entry_no) / entry_no) * 100
+    return 0
+
+
+def determine_position_action(
+    entry_price: float,
+    current_price: float,
+    direction: str,
+    thesis_still_valid: bool = True,
+    has_new_contradicting_info: bool = False
+) -> dict:
+    """
+    Determine position management action
+    
+    Returns:
+        {
+            'action': 'HOLD' | 'TAKE_PROFIT' | 'CUT_LOSS' | 'ALERT',
+            'reason': str,
+            'pnl_pct': float,
+            'urgency': 'low' | 'medium' | 'high'
+        }
+    """
+    pnl = calculate_pnl(entry_price, current_price, direction)
+    
+    # Check for extreme prices - market already decided
+    if current_price >= EXTREME_PRICE_HIGH:
+        if direction == 'BUY_YES':
+            return {
+                'action': 'TAKE_PROFIT',
+                'reason': f'Market at {current_price*100:.0f}% - strongly favoring YES. Consider taking profit.',
+                'pnl_pct': pnl,
+                'urgency': 'medium'
+            }
+        else:
+            return {
+                'action': 'CUT_LOSS',
+                'reason': f'Market at {current_price*100:.0f}% - strongly against NO position.',
+                'pnl_pct': pnl,
+                'urgency': 'high'
+            }
+    
+    if current_price <= EXTREME_PRICE_LOW:
+        if direction == 'BUY_NO':
+            return {
+                'action': 'TAKE_PROFIT',
+                'reason': f'Market at {current_price*100:.0f}% - strongly favoring NO. Consider taking profit.',
+                'pnl_pct': pnl,
+                'urgency': 'medium'
+            }
+        else:
+            return {
+                'action': 'CUT_LOSS',
+                'reason': f'Market at {current_price*100:.0f}% - strongly against YES position.',
+                'pnl_pct': pnl,
+                'urgency': 'high'
+            }
+    
+    # Check P&L thresholds
+    if pnl >= TAKE_PROFIT_THRESHOLD:
+        return {
+            'action': 'TAKE_PROFIT',
+            'reason': f'Position up {pnl:.1f}%. Consider securing gains before close.',
+            'pnl_pct': pnl,
+            'urgency': 'medium'
+        }
+    
+    if pnl <= CUT_LOSS_THRESHOLD:
+        if not thesis_still_valid:
+            return {
+                'action': 'CUT_LOSS',
+                'reason': f'Position down {pnl:.1f}% and thesis invalidated. Consider cutting loss.',
+                'pnl_pct': pnl,
+                'urgency': 'high'
+            }
+        else:
+            return {
+                'action': 'ALERT',
+                'reason': f'Position down {pnl:.1f}% but thesis still valid. Monitor closely.',
+                'pnl_pct': pnl,
+                'urgency': 'medium'
+            }
+    
+    # Check for new contradicting information
+    if has_new_contradicting_info:
+        return {
+            'action': 'ALERT',
+            'reason': 'New information may affect position. Re-evaluate thesis.',
+            'pnl_pct': pnl,
+            'urgency': 'high'
+        }
+    
+    # Default: HOLD
+    return {
+        'action': 'HOLD',
+        'reason': f'Position on track (P&L: {pnl:+.1f}%). No action needed.',
+        'pnl_pct': pnl,
+        'urgency': 'low'
+    }
+
+
 def get_predictions_near_close() -> list:
     """
     Get predictions from prediction_tracking where market_end_date
@@ -78,7 +219,7 @@ def get_predictions_near_close() -> list:
 
     log(f"Checking for markets closing between {window_start.isoformat()} and {window_end.isoformat()}")
 
-    cursor.execute('''
+    cursor.execute("""
         SELECT
             pt.id,
             pt.market_id,
@@ -93,13 +234,14 @@ def get_predictions_near_close() -> list:
             pt.revised_at,
             m.slug,
             m.description,
-            pt.signal_source
+            pt.signal_source,
+            m.yes_price
         FROM prediction_tracking pt
         JOIN markets m ON m.id = pt.market_id
         WHERE pt.final_resolution IS NULL
           AND pt.revised_at IS NULL
           AND pt.market_end_date IS NOT NULL
-    ''')
+    """)
 
     predictions = []
     for row in cursor.fetchall():
@@ -117,7 +259,8 @@ def get_predictions_near_close() -> list:
             'revised_at': row[10],
             'slug': row[11],
             'description': row[12],
-            'signal_source': row[13] if len(row) > 13 else 'scan'
+            'signal_source': row[13] if len(row) > 13 else 'scan',
+            'current_price': row[14] if len(row) > 14 else None
         }
 
         # Parse end date and check if in window
@@ -140,255 +283,156 @@ def get_predictions_near_close() -> list:
     return predictions
 
 
-def call_openclaw_reanalysis(question: str, slug: str, description: str, original_signal: str, original_prob: float) -> dict:
+def check_thesis_validity(question: str, original_signal: str, description: str) -> dict:
     """
-    Call OpenClaw to re-analyze a market with fresh news
+    Quick check if original thesis is still valid.
+    Returns: {'valid': bool, 'new_info': str, 'contradicting': bool}
+    
+    This is a simplified version - in production you might want to call LLM
     """
-    polymarket_url = f"https://polymarket.com/event/{slug}" if slug else ""
-
-    prompt = f"""URGENT RE-ANALYSIS REQUEST - Market closing in 5-6 hours
-
-MARKET: {question}
-URL: {polymarket_url}
-
-RESOLUTION RULES:
-{description[:1500] if description else 'Not available'}
-
-ORIGINAL PREDICTION (made earlier):
-- Signal: {original_signal}
-- AI Probability: {original_prob * 100:.1f}%
-
-YOUR TASK:
-1. Fetch the latest market data from Polymarket using the URL above
-2. Search for any NEW news or developments since the original prediction
-3. Re-assess the probability based on current information
-4. Compare with original prediction
-
-RESPOND IN THIS EXACT JSON FORMAT:
-{{
-    "current_market_price": 0.XX,
-    "revised_probability": 0.XX,
-    "revised_signal": "BUY_YES|BUY_NO|NO_TRADE",
-    "revised_confidence": "LOW|MEDIUM|HIGH",
-    "signal_changed": true/false,
-    "change_reason": "Brief explanation if signal changed, or 'No change - original analysis still valid'",
-    "new_information": "Any new developments found, or 'No significant new information'",
-    "key_factors": ["factor1", "factor2"]
-}}
-
-Be calibrated. If no new information changes the outlook, keep the original signal.
-Only change if there's a genuine reason based on new facts."""
-
-    try:
-        log(f"  Calling OpenClaw for re-analysis...")
-        result = subprocess.run(
-            [
-                "openclaw", "agent",
-                "-m", prompt,
-                "--session-id", OPENCLAW_SESSION_ID,
-                "--json"
-            ],
-            capture_output=True,
-            text=True,
-            timeout=180,
-            env={**os.environ, "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/lib/node_modules/.bin"}
-        )
-
-        if result.returncode != 0:
-            log(f"  ⚠ OpenClaw failed: {result.stderr[:200]}")
-            return None
-
-        try:
-            response_data = json.loads(result.stdout)
-            # Get response text from payloads array
-            payloads = response_data.get('result', {}).get('payloads', [])
-            if not payloads:
-                log(f"  ⚠ No payloads in response")
-                return None
-            response_text = payloads[0].get('text', '')
-
-            # Strip markdown code blocks if present
-            if "```json" in response_text:
-                response_text = response_text.replace("```json", "").replace("```", "").strip()
-            elif "```" in response_text:
-                response_text = response_text.replace("```", "").strip()
-
-            if '{' in response_text and '}' in response_text:
-                json_start = response_text.find('{')
-                json_end = response_text.rfind('}') + 1
-                json_str = response_text[json_start:json_end]
-                return json.loads(json_str)
-            else:
-                log(f"  ⚠ No JSON found in response")
-                return None
-
-        except json.JSONDecodeError as e:
-            log(f"  ⚠ JSON parse error: {e}")
-            return None
-
-    except subprocess.TimeoutExpired:
-        log(f"  ⚠ OpenClaw timeout (180s)")
-        return None
-    except Exception as e:
-        log(f"  ⚠ Error calling OpenClaw: {e}")
-        return None
+    # For now, assume thesis is still valid unless we implement LLM check
+    # You can enhance this later with actual news checking
+    return {
+        'valid': True,
+        'new_info': 'No significant new information detected',
+        'contradicting': False
+    }
 
 
-def update_prediction_tracking(pred_id: int, original: dict, revised: dict):
+def update_position_status(pred_id: int, action_result: dict, current_price: float):
     """
-    Update prediction_tracking with revised analysis.
-    Handles whale_confirmed signals - changes to whale_reanalyzed if signal changes.
+    Update prediction_tracking with position management result.
+    NOTE: This does NOT change signal_type - just adds position_action info
     """
     conn = get_db()
     cursor = conn.cursor()
-
+    
     now = datetime.now().isoformat()
-
-    # Determine new signal_source based on whale handling
-    old_signal = original['signal_type']
-    new_signal = revised.get('revised_signal', old_signal)
-    old_source = original.get('signal_source', 'scan')
-
-    # If signal changed and was whale_confirmed, mark as whale_reanalyzed
-    if old_source == 'whale_confirmed' and old_signal != new_signal:
-        new_source = 'whale_reanalyzed'
-        revision_reason = f"AI override whale signal: {old_signal} -> {new_signal}"
-        log(f"  ⚠️ Whale signal overridden: {old_signal} -> {new_signal}")
-    elif old_source == 'whale_confirmed':
-        new_source = 'whale_confirmed'
-        revision_reason = revised.get('change_reason', 'Reanalysis confirms whale signal')
-        log(f"  ✅ Whale signal confirmed by reanalysis")
-    else:
-        new_source = old_source
-        revision_reason = revised.get('change_reason', 'Re-analysis completed')
-
-    cursor.execute('''
+    
+    # Store position management result in revision fields
+    revision_reason = f"[{action_result['action']}] {action_result['reason']} (P&L: {action_result['pnl_pct']:+.1f}%)"
+    
+    cursor.execute("""
         UPDATE prediction_tracking
-        SET
-            original_signal_type = COALESCE(original_signal_type, ?),
-            original_ai_probability = COALESCE(original_ai_probability, ?),
-            original_edge = COALESCE(original_edge, ?),
-            signal_type = ?,
-            ai_probability = ?,
-            edge_at_signal = ?,
-            confidence = ?,
-            signal_source = ?,
+        SET 
             revised_at = ?,
             revision_reason = ?
         WHERE id = ?
-    ''', (
-        original['signal_type'],
-        original['ai_probability'],
-        original['edge_at_signal'],
-        new_signal,
-        revised.get('revised_probability', original['ai_probability']),
-        round((revised.get('revised_probability', original['ai_probability']) - revised.get('current_market_price', original['market_price_at_signal'])) * 100, 2),
-        revised.get('revised_confidence', original['confidence']),
-        new_source,
-        now,
-        revision_reason[:500]
-    ))
-
+    """, (now, revision_reason[:500], pred_id))
+    
     conn.commit()
     conn.close()
+    
+    log(f"  ✓ Updated position #{pred_id} with action: {action_result['action']}")
 
-    log(f"  ✓ Updated prediction #{pred_id}")
 
-
-def send_signal_change_alert(pred: dict, revised: dict):
-    """Send Telegram alert when signal changes"""
-    old_signal = pred['signal_type']
-    new_signal = revised.get('revised_signal', old_signal)
-
-    # Emoji based on signal
-    if new_signal == 'BUY_YES':
-        signal_emoji = "🟢"
-    elif new_signal == 'BUY_NO':
-        signal_emoji = "🔴"
-    else:
-        signal_emoji = "⚪"
-
-    msg = f"""⚡ <b>SIGNAL REVISED</b>
+def send_position_alert(pred: dict, action_result: dict, current_price: float):
+    """Send Telegram alert for position management"""
+    
+    action = action_result['action']
+    
+    # Emoji based on action
+    if action == 'TAKE_PROFIT':
+        emoji = "💰"
+        title = "TAKE PROFIT OPPORTUNITY"
+    elif action == 'CUT_LOSS':
+        emoji = "⚠️"
+        title = "CUT LOSS WARNING"
+    elif action == 'ALERT':
+        emoji = "🔔"
+        title = "POSITION ALERT"
+    else:  # HOLD
+        emoji = "✅"
+        title = "POSITION CONFIRMED"
+    
+    pnl = action_result['pnl_pct']
+    pnl_emoji = "📈" if pnl >= 0 else "📉"
+    
+    msg = f"""{emoji} <b>{title}</b>
 
 📊 <b>Market:</b> {pred['question'][:100]}
 
-<b>Original:</b> {old_signal} ({pred['ai_probability']*100:.0f}%)
-<b>Revised:</b> {signal_emoji} {new_signal} ({revised.get('revised_probability', 0)*100:.0f}%)
+<b>Position:</b> {pred['signal_type']}
+<b>Entry Price:</b> {pred['market_price_at_signal']*100:.0f}¢
+<b>Current Price:</b> {current_price*100:.0f}¢
+{pnl_emoji} <b>P&L:</b> {pnl:+.1f}%
 
-<b>Reason:</b> {revised.get('change_reason', 'N/A')[:200]}
-
-<b>New Info:</b> {revised.get('new_information', 'None')[:200]}
+<b>Recommendation:</b> {action_result['action']}
+<b>Reason:</b> {action_result['reason'][:200]}
 
 ⏰ Market closes in ~5 hours
-
 🔗 https://polymarket.com/event/{pred.get('slug', '')}"""
 
     send_telegram(msg)
 
 
-def run_reanalysis():
-    """Main function - check and re-analyze predictions near close"""
+def run_position_management():
+    """Main function - check and manage positions near close"""
     log("=" * 60)
-    log("🔄 Re-analysis Scheduler Started")
+    log("📊 Position Management Scheduler Started")
     log("=" * 60)
 
     predictions = get_predictions_near_close()
 
     if not predictions:
-        log("No predictions found in 5-6 hour window. Exiting.")
+        log("No positions found in 5-6 hour window. Exiting.")
         return
 
-    log(f"\nFound {len(predictions)} prediction(s) to re-analyze\n")
+    log(f"\nFound {len(predictions)} position(s) to review\n")
 
     for pred in predictions:
         log(f"\n{'─' * 50}")
-        log(f"Re-analyzing: {pred['question'][:60]}...")
-        log(f"  Original signal: {pred['signal_type']} ({pred['ai_probability']*100:.1f}%)")
-        log(f"  Market closes: {pred['market_end_date']}")
-
-        revised = call_openclaw_reanalysis(
-            question=pred['question'],
-            slug=pred['slug'],
-            description=pred['description'],
-            original_signal=pred['signal_type'],
-            original_prob=pred['ai_probability']
-        )
-
-        if not revised:
-            log(f"  ⚠ Re-analysis failed - keeping original signal")
-            conn = get_db()
-            cursor = conn.cursor()
-            cursor.execute('''
-                UPDATE prediction_tracking
-                SET revised_at = ?, revision_reason = ?
-                WHERE id = ?
-            ''', (datetime.now().isoformat(), 'Re-analysis attempted but failed', pred['id']))
-            conn.commit()
-            conn.close()
+        log(f"Reviewing: {pred['question'][:60]}...")
+        log(f"  Position: {pred['signal_type']} @ {pred['market_price_at_signal']*100:.0f}¢")
+        
+        # Get current price
+        current_price = pred.get('current_price') or get_current_market_price(pred['market_id'])
+        
+        if current_price is None:
+            log(f"  ⚠ Could not get current price - skipping")
             continue
-
-        # Check if signal changed
-        old_signal = pred['signal_type']
-        new_signal = revised.get('revised_signal', old_signal)
-        signal_changed = revised.get('signal_changed', False) or (old_signal != new_signal)
-
-        if signal_changed:
-            log(f"  ⚡ SIGNAL CHANGED: {old_signal} → {new_signal}")
-            log(f"     Reason: {revised.get('change_reason', 'Unknown')}")
-            log(f"     New info: {revised.get('new_information', 'None')}")
-
-            # Send Telegram alert
-            send_signal_change_alert(pred, revised)
-        else:
-            log(f"  ✓ Signal confirmed: {old_signal} (no change)")
-
+        
+        log(f"  Current price: {current_price*100:.0f}¢")
+        
+        # Calculate P&L
+        pnl = calculate_pnl(pred['market_price_at_signal'], current_price, pred['signal_type'])
+        log(f"  Current P&L: {pnl:+.1f}%")
+        
+        # Check thesis validity (simplified)
+        thesis_check = check_thesis_validity(
+            pred['question'],
+            pred['signal_type'],
+            pred.get('description', '')
+        )
+        
+        # Determine action
+        action_result = determine_position_action(
+            entry_price=pred['market_price_at_signal'],
+            current_price=current_price,
+            direction=pred['signal_type'],
+            thesis_still_valid=thesis_check['valid'],
+            has_new_contradicting_info=thesis_check['contradicting']
+        )
+        
+        log(f"  📋 Action: {action_result['action']}")
+        log(f"     Reason: {action_result['reason']}")
+        log(f"     Urgency: {action_result['urgency']}")
+        
         # Update database
-        update_prediction_tracking(pred['id'], pred, revised)
+        update_position_status(pred['id'], action_result, current_price)
+        
+        # Send alert if not just HOLD with low urgency
+        if action_result['action'] != 'HOLD' or action_result['urgency'] != 'low':
+            send_position_alert(pred, action_result, current_price)
 
     log(f"\n{'=' * 60}")
-    log(f"Re-analysis complete. Processed {len(predictions)} prediction(s)")
+    log(f"Position management complete. Reviewed {len(predictions)} position(s)")
     log(f"{'=' * 60}\n")
 
 
+# Alias for backward compatibility
+run_reanalysis = run_position_management
+
+
 if __name__ == '__main__':
-    run_reanalysis()
+    run_position_management()

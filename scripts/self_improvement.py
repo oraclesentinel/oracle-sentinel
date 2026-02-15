@@ -124,6 +124,99 @@ class SelfImprovement:
         
         self._log('INFO', f"Added {len(lessons)} lessons to config")
         return True
+
+    # =========================================================
+    # BACKTEST: Simulate fix before applying
+    # =========================================================
+    def backtest_fix(self, proposal: dict) -> dict:
+        """
+        Simulate what accuracy would have been if this fix was applied earlier.
+        Returns: {'before': accuracy_before, 'after': accuracy_after, 'improvement': pct_change}
+        """
+        conn = self._get_db()
+        cursor = conn.cursor()
+        
+        fix_type = proposal.get('fix_type')
+        fix_params = proposal.get('fix_params', {})
+        
+        # Get all resolved predictions
+        cursor.execute("""
+            SELECT id, signal_type, ai_probability, market_price_at_signal, 
+                   edge_at_signal, confidence, direction_correct, category
+            FROM prediction_tracking 
+            WHERE direction_correct IS NOT NULL
+        """)
+        predictions = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        
+        if len(predictions) < 3:
+            self._log('WARN', "Not enough data for backtest (need at least 3 resolved)")
+            return {'before': None, 'after': None, 'improvement': None, 'skip_reason': 'insufficient_data'}
+        
+        # Calculate current accuracy (before fix)
+        correct_before = sum(1 for p in predictions if p['direction_correct'] == 1)
+        total_before = len(predictions)
+        accuracy_before = (correct_before / total_before) * 100 if total_before > 0 else 0
+        
+        # Simulate: which predictions would have been SKIPPED with this fix?
+        skipped_with_fix = 0
+        correct_after = 0
+        total_after = 0
+        
+        for p in predictions:
+            would_skip = False
+            
+            # Simulate threshold_adjustment
+            if fix_type == 'threshold_adjustment':
+                new_threshold = fix_params.get('proposed_value', 10)
+                edge = abs(p['edge_at_signal'] or 0)
+                if edge < new_threshold:
+                    would_skip = True
+            
+            # Simulate category_confidence_adjustment
+            elif fix_type == 'category_confidence_adjustment':
+                target_category = fix_params.get('category')
+                multiplier = fix_params.get('confidence_multiplier', 0.8)
+                if p['category'] == target_category:
+                    # With lower multiplier, need more edge
+                    current_threshold = self.config.get('min_edge_threshold', 10)
+                    adjusted_threshold = current_threshold / multiplier
+                    edge = abs(p['edge_at_signal'] or 0)
+                    if edge < adjusted_threshold:
+                        would_skip = True
+            
+            # Simulate data_requirement
+            elif fix_type == 'data_requirement':
+                # Can't backtest this without article count data
+                pass
+            
+            # Simulate probability_dampening
+            elif fix_type == 'probability_dampening':
+                # Dampening doesn't skip, just adjusts probability
+                # Hard to backtest without re-running the signal logic
+                pass
+            
+            if not would_skip:
+                total_after += 1
+                if p['direction_correct'] == 1:
+                    correct_after += 1
+            else:
+                skipped_with_fix += 1
+        
+        accuracy_after = (correct_after / total_after) * 100 if total_after > 0 else 0
+        improvement = accuracy_after - accuracy_before
+        
+        self._log('INFO', f"  📊 Backtest: {accuracy_before:.1f}% → {accuracy_after:.1f}% ({improvement:+.1f}%)")
+        self._log('INFO', f"     Predictions: {total_before} → {total_after} (skipped {skipped_with_fix})")
+        
+        return {
+            'before': round(accuracy_before, 2),
+            'after': round(accuracy_after, 2),
+            'improvement': round(improvement, 2),
+            'total_before': total_before,
+            'total_after': total_after,
+            'skipped': skipped_with_fix
+        }
     
     # =========================================================
     # Main apply function
@@ -187,22 +280,56 @@ class SelfImprovement:
             fix_params = {}
             if p['fix_type'] == 'threshold_adjustment':
                 fix_params = {'parameter': 'min_edge_threshold', 'proposed_value': 10}
+            elif p['fix_type'] == 'category_confidence_adjustment':
+                fix_params = {'category': p.get('category_affected'), 'confidence_multiplier': 0.8}
+            elif p['fix_type'] == 'probability_dampening':
+                fix_params = {'dampening_factor': 0.1}
+            elif p['fix_type'] == 'data_requirement':
+                fix_params = {'min_news_sources': 5}
             elif p['fix_type'] == 'prompt_enhancement':
                 # Get lessons from error analysis
                 error_patterns = self.diagnosis.error_analyzer.get_error_patterns()
                 fix_params = {'lessons': error_patterns.get('lessons_learned', [])}
-            
-            success = self.apply_fix({
+
+            # =========================================================
+            # BACKTEST VALIDATION: Only apply if improvement > 0
+            # =========================================================
+            backtest_result = self.backtest_fix({
                 'fix_type': p['fix_type'],
                 'fix_params': fix_params
             })
             
+            # Skip backtest for certain fix types (always beneficial)
+            skip_backtest = p['fix_type'] in ['prompt_enhancement', 'data_requirement']
+            
+            if not skip_backtest and backtest_result.get('improvement') is not None:
+                if backtest_result['improvement'] <= 0:
+                    self._log('WARN', f"  Backtest shows no improvement ({backtest_result['improvement']:+.1f}%) - SKIPPING fix")
+                    cursor.execute('''
+                        UPDATE self_improvement_log
+                        SET status = 'skipped_backtest', 
+                            backtest_before = ?, backtest_after = ?, improvement_pct = ?
+                        WHERE id = ?
+                    ''', (backtest_result.get('before'), backtest_result.get('after'), 
+                           backtest_result.get('improvement'), p['id']))
+                    failed += 1
+                    continue
+                else:
+                    self._log('INFO', f"  Backtest positive ({backtest_result['improvement']:+.1f}%) - applying fix")
+
+            success = self.apply_fix({
+                'fix_type': p['fix_type'],
+                'fix_params': fix_params
+            })
+
             if success:
                 cursor.execute('''
                     UPDATE self_improvement_log
-                    SET status = 'applied', applied_at = CURRENT_TIMESTAMP
+                    SET status = 'applied', applied_at = CURRENT_TIMESTAMP,
+                        backtest_before = ?, backtest_after = ?, improvement_pct = ?
                     WHERE id = ?
-                ''', (p['id'],))
+                ''', (backtest_result.get('before'), backtest_result.get('after'), 
+                       backtest_result.get('improvement'), p['id']))
                 applied += 1
             else:
                 cursor.execute('''
@@ -211,7 +338,7 @@ class SelfImprovement:
                     WHERE id = ?
                 ''', (p['id'],))
                 failed += 1
-        
+
         conn.commit()
         conn.close()
         
@@ -220,6 +347,133 @@ class SelfImprovement:
         
         return {'applied': applied, 'failed': failed}
     
+    # =========================================================
+    # ROLLBACK: Restore previous config version
+    # =========================================================
+    def rollback_to_version(self, target_version: int = None) -> dict:
+        """
+        Rollback config to a previous version.
+        If target_version is None, rollback to version - 1.
+        """
+        import glob
+        import shutil
+        
+        config_dir = os.path.dirname(CONFIG_PATH)
+        
+        # Get current version
+        current_version = self.config.get('version', 0)
+        
+        if target_version is None:
+            target_version = current_version - 1
+        
+        if target_version < 1:
+            self._log('ERROR', "Cannot rollback: no previous version available")
+            return {'success': False, 'error': 'No previous version'}
+        
+        # Find backup with matching version
+        backups = glob.glob(os.path.join(config_dir, 'agent_config.json.backup.*'))
+        target_backup = None
+        
+        for backup_path in sorted(backups, reverse=True):
+            try:
+                with open(backup_path, 'r') as f:
+                    backup_config = json.load(f)
+                    if backup_config.get('version') == target_version:
+                        target_backup = backup_path
+                        break
+            except:
+                continue
+        
+        if not target_backup:
+            self._log('ERROR', f"Backup for version {target_version} not found")
+            return {'success': False, 'error': f'Version {target_version} not found'}
+        
+        # Backup current config before rollback
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        shutil.copy(CONFIG_PATH, f"{CONFIG_PATH}.backup.{timestamp}")
+        self._log('INFO', f"Backed up current config (v{current_version})")
+        
+        # Restore from backup
+        shutil.copy(target_backup, CONFIG_PATH)
+        self._log('INFO', f"Restored config from {target_backup}")
+        
+        # Reload config
+        self.config = self._load_config()
+        
+        # Log rollback in database
+        conn = self._get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO self_improvement_log 
+            (diagnosis_type, diagnosis_detail, category_affected, proposed_fix, fix_type, status, applied_at)
+            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            'manual_rollback',
+            f'Rolled back from v{current_version} to v{target_version}',
+            'all',
+            f'Restore config version {target_version}',
+            'rollback',
+            'applied'
+        ))
+        conn.commit()
+        conn.close()
+        
+        self._log('INFO', f"✅ Rollback complete: v{current_version} → v{target_version}")
+        
+        return {
+            'success': True,
+            'from_version': current_version,
+            'to_version': target_version,
+            'config': self.config
+        }
+
+    def auto_rollback_if_needed(self) -> bool:
+        """
+        Check if recent predictions are performing poorly after a fix.
+        If accuracy dropped significantly, trigger auto-rollback.
+        """
+        conn = self._get_db()
+        cursor = conn.cursor()
+        
+        # Get last fix applied_at
+        cursor.execute("""
+            SELECT applied_at FROM self_improvement_log 
+            WHERE status = 'applied' AND fix_type != 'rollback'
+            ORDER BY applied_at DESC LIMIT 1
+        """)
+        row = cursor.fetchone()
+        
+        if not row or not row[0]:
+            conn.close()
+            return False
+        
+        last_fix_time = row[0]
+        
+        # Get predictions after last fix
+        cursor.execute("""
+            SELECT direction_correct FROM prediction_tracking
+            WHERE created_at > ? AND direction_correct IS NOT NULL
+            ORDER BY created_at ASC
+            LIMIT 5
+        """, (last_fix_time,))
+        
+        recent_predictions = [row[0] for row in cursor.fetchall()]
+        conn.close()
+        
+        if len(recent_predictions) < 3:
+            # Not enough data to decide
+            return False
+        
+        # Check if first 3 predictions after fix are all wrong
+        first_three = recent_predictions[:3]
+        if sum(first_three) == 0:  # All wrong
+            self._log('WARN', "⚠️ First 3 predictions after fix are ALL WRONG - triggering auto-rollback")
+            result = self.rollback_to_version()
+            return result.get('success', False)
+        
+        return False
+
+
     # =========================================================
     # Run full self-improvement cycle
     # =========================================================

@@ -509,6 +509,547 @@ def stream_logs():
         }
     )
 
+
+# =========================================================
+# SELF-IMPROVEMENT ENDPOINTS
+# =========================================================
+
+@app.route("/api/self-improvement/stats")
+def self_improvement_stats():
+    """Get self-improvement statistics and current config."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        # Get accuracy stats
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_signals,
+                SUM(CASE WHEN direction_correct IS NOT NULL THEN 1 ELSE 0 END) as resolved,
+                SUM(CASE WHEN direction_correct = 1 THEN 1 ELSE 0 END) as correct,
+                AVG(CASE WHEN direction_correct IS NOT NULL THEN edge_at_signal ELSE NULL END) as avg_edge
+            FROM prediction_tracking
+        """)
+        row = cursor.fetchone()
+        total_signals = row[0] or 0
+        resolved = row[1] or 0
+        correct = row[2] or 0
+        avg_edge = row[3] or 0
+        accuracy = (correct / resolved * 100) if resolved > 0 else 0
+        
+        # Get fix counts
+        cursor.execute("""
+            SELECT status, COUNT(*) as count
+            FROM self_improvement_log
+            GROUP BY status
+        """)
+        fix_counts = {row[0]: row[1] for row in cursor.fetchall()}
+        
+        # Get accuracy by category
+        cursor.execute("""
+            SELECT 
+                category,
+                COUNT(*) as total,
+                SUM(CASE WHEN direction_correct = 1 THEN 1 ELSE 0 END) as correct
+            FROM prediction_tracking
+            WHERE direction_correct IS NOT NULL AND category IS NOT NULL
+            GROUP BY category
+        """)
+        category_accuracy = {}
+        for row in cursor.fetchall():
+            cat, total, corr = row
+            category_accuracy[cat] = {
+                'total': total,
+                'correct': corr,
+                'accuracy': round(corr / total * 100, 1) if total > 0 else 0
+            }
+        
+        # Load current config
+        import json
+        config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'agent_config.json')
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'stats': {
+                'total_signals': total_signals,
+                'resolved': resolved,
+                'correct': correct,
+                'accuracy': round(accuracy, 1),
+                'avg_edge': round(avg_edge, 2) if avg_edge else 0
+            },
+            'fixes': {
+                'applied': fix_counts.get('applied', 0),
+                'failed': fix_counts.get('failed', 0),
+                'skipped_backtest': fix_counts.get('skipped_backtest', 0),
+                'proposed': fix_counts.get('proposed', 0)
+            },
+            'category_accuracy': category_accuracy,
+            'config': {
+                'version': config.get('version', 0),
+                'min_edge_threshold': config.get('min_edge_threshold', 10),
+                'min_news_sources': config.get('min_news_sources', 3),
+                'probability_dampening': config.get('probability_dampening', 0),
+                'lessons_count': len(config.get('lessons_learned', [])),
+                'category_thresholds': config.get('category_thresholds', {})
+            }
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route("/api/self-improvement/history")
+def self_improvement_history():
+    """Get history of all self-improvement fixes."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                id, diagnosis_type, diagnosis_detail, category_affected,
+                proposed_fix, fix_type, backtest_before, backtest_after,
+                improvement_pct, status, applied_at, created_at
+            FROM self_improvement_log
+            ORDER BY created_at DESC
+            LIMIT 50
+        """)
+        
+        history = []
+        for row in cursor.fetchall():
+            history.append({
+                'id': row[0],
+                'diagnosis_type': row[1],
+                'diagnosis_detail': row[2],
+                'category_affected': row[3],
+                'proposed_fix': row[4],
+                'fix_type': row[5],
+                'backtest_before': row[6],
+                'backtest_after': row[7],
+                'improvement_pct': row[8],
+                'status': row[9],
+                'applied_at': row[10],
+                'created_at': row[11]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'history': history,
+            'total': len(history)
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route("/api/self-improvement/accuracy-trend")
+def self_improvement_accuracy_trend():
+    """Get accuracy trend over time."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        # Get daily accuracy for last 30 days
+        cursor.execute("""
+            SELECT 
+                DATE(resolved_at) as date,
+                COUNT(*) as resolved,
+                SUM(CASE WHEN direction_correct = 1 THEN 1 ELSE 0 END) as correct
+            FROM prediction_tracking
+            WHERE resolved_at IS NOT NULL
+            GROUP BY DATE(resolved_at)
+            ORDER BY date ASC
+            LIMIT 30
+        """)
+        
+        trend = []
+        cumulative_correct = 0
+        cumulative_total = 0
+        
+        for row in cursor.fetchall():
+            date, resolved, correct = row
+            cumulative_correct += correct
+            cumulative_total += resolved
+            cumulative_accuracy = (cumulative_correct / cumulative_total * 100) if cumulative_total > 0 else 0
+            
+            trend.append({
+                'date': date,
+                'daily_resolved': resolved,
+                'daily_correct': correct,
+                'daily_accuracy': round(correct / resolved * 100, 1) if resolved > 0 else 0,
+                'cumulative_accuracy': round(cumulative_accuracy, 1),
+                'cumulative_total': cumulative_total
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'trend': trend
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route("/api/self-improvement/config-history")
+def self_improvement_config_history():
+    """Get config version history from backups."""
+    try:
+        import glob
+        config_dir = os.path.join(os.path.dirname(__file__), '..', 'config')
+        backups = glob.glob(os.path.join(config_dir, 'agent_config.json.backup.*'))
+        
+        history = []
+        for backup_path in sorted(backups, reverse=True):
+            filename = os.path.basename(backup_path)
+            # Extract timestamp from filename: agent_config.json.backup.20260213_060001
+            timestamp = filename.replace('agent_config.json.backup.', '')
+            
+            try:
+                with open(backup_path, 'r') as f:
+                    config = json.load(f)
+                    history.append({
+                        'filename': filename,
+                        'timestamp': timestamp,
+                        'version': config.get('version', 0),
+                        'min_edge_threshold': config.get('min_edge_threshold'),
+                        'lessons_count': len(config.get('lessons_learned', []))
+                    })
+            except:
+                pass
+        
+        # Add current config
+        config_path = os.path.join(config_dir, 'agent_config.json')
+        with open(config_path, 'r') as f:
+            current = json.load(f)
+            history.insert(0, {
+                'filename': 'agent_config.json (current)',
+                'timestamp': current.get('last_updated', 'unknown'),
+                'version': current.get('version', 0),
+                'min_edge_threshold': current.get('min_edge_threshold'),
+                'lessons_count': len(current.get('lessons_learned', []))
+            })
+        
+        return jsonify({
+            'status': 'success',
+            'history': history
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route("/api/self-improvement/rollback/<int:version>", methods=["POST"])
+def self_improvement_rollback(version):
+    """Rollback config to a previous version. Requires API Key."""
+    # Auth check
+    api_secret = os.getenv("API_SECRET_KEY")
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or auth_header != f"Bearer {api_secret}":
+        return jsonify({"status": "error", "message": "Unauthorized. API Key required."}), 401
+    
+    try:
+        import glob
+        import shutil
+        
+        config_dir = os.path.join(os.path.dirname(__file__), '..', 'config')
+        config_path = os.path.join(config_dir, 'agent_config.json')
+        
+        # Find backup with matching version
+        backups = glob.glob(os.path.join(config_dir, 'agent_config.json.backup.*'))
+        target_backup = None
+        
+        for backup_path in backups:
+            try:
+                with open(backup_path, 'r') as f:
+                    config = json.load(f)
+                    if config.get('version') == version:
+                        target_backup = backup_path
+                        break
+            except:
+                pass
+        
+        if not target_backup:
+            return jsonify({'status': 'error', 'message': f'Version {version} not found in backups'}), 404
+        
+        # Backup current config first
+        from datetime import datetime
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        shutil.copy(config_path, f"{config_path}.backup.{timestamp}")
+        
+        # Restore from backup
+        shutil.copy(target_backup, config_path)
+        
+        # Reload config
+        with open(config_path, 'r') as f:
+            restored_config = json.load(f)
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Rolled back to version {version}',
+            'restored_config': restored_config
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+
+@app.route("/api/positions/active")
+def active_positions():
+    """Get active positions with current P&L."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                pt.id,
+                pt.question,
+                pt.signal_type,
+                pt.market_price_at_signal,
+                pt.current_price,
+                pt.current_pnl,
+                pt.position_status,
+                pt.last_price_check,
+                pt.category,
+                pt.created_at,
+                pt.market_end_date
+            FROM prediction_tracking pt
+            WHERE pt.final_resolution IS NULL
+            ORDER BY pt.current_pnl DESC
+        """)
+        
+        positions = []
+        for row in cursor.fetchall():
+            positions.append({
+                'id': row[0],
+                'question': row[1],
+                'signal_type': row[2],
+                'entry_price': row[3],
+                'current_price': row[4],
+                'pnl': row[5],
+                'status': row[6],
+                'last_check': row[7],
+                'category': row[8],
+                'created_at': row[9],
+                'end_date': row[10]
+            })
+        
+        # Summary stats
+        winning = sum(1 for p in positions if (p['pnl'] or 0) > 0)
+        losing = sum(1 for p in positions if (p['pnl'] or 0) < 0)
+        avg_pnl = sum(p['pnl'] or 0 for p in positions) / len(positions) if positions else 0
+        
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'positions': positions,
+            'summary': {
+                'total': len(positions),
+                'winning': winning,
+                'losing': losing,
+                'avg_pnl': round(avg_pnl, 2)
+            }
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route("/api/positions/alerts")
+def position_alerts():
+    """Get recent position alerts."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                pa.id,
+                pa.alert_type,
+                pa.trigger_value,
+                pa.urgency,
+                pa.action_recommended,
+                pa.message,
+                pa.telegram_sent,
+                pa.created_at,
+                pt.question,
+                pt.signal_type
+            FROM position_alerts pa
+            JOIN prediction_tracking pt ON pt.id = pa.prediction_id
+            ORDER BY pa.created_at DESC
+            LIMIT 20
+        """)
+        
+        alerts = []
+        for row in cursor.fetchall():
+            alerts.append({
+                'id': row[0],
+                'type': row[1],
+                'trigger_value': row[2],
+                'urgency': row[3],
+                'action': row[4],
+                'message': row[5],
+                'telegram_sent': row[6],
+                'created_at': row[7],
+                'market': row[8],
+                'signal_type': row[9]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'alerts': alerts,
+            'total': len(alerts)
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+
+@app.route("/api/signals/tracked")
+def tracked_signals():
+    """Get active tracked signals with performance metrics."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                pt.id,
+                pt.question,
+                pt.signal_type,
+                pt.market_price_at_signal as entry_price,
+                pt.current_price,
+                pt.current_pnl as edge_movement,
+                pt.position_status as signal_status,
+                pt.last_price_check,
+                pt.category,
+                pt.confidence,
+                pt.ai_probability,
+                pt.created_at,
+                pt.market_end_date
+            FROM prediction_tracking pt
+            WHERE pt.final_resolution IS NULL
+            ORDER BY pt.current_pnl DESC
+        """)
+        
+        signals = []
+        for row in cursor.fetchall():
+            edge_movement = row[5] or 0
+            # Determine signal status label
+            if edge_movement >= 30:
+                status_label = "THESIS_CONFIRMED"
+            elif edge_movement <= -30:
+                status_label = "THESIS_CHALLENGED"
+            else:
+                status_label = "TRACKING"
+            
+            signals.append({
+                'id': row[0],
+                'question': row[1],
+                'signal_type': row[2],
+                'entry_price': row[3],
+                'current_price': row[4],
+                'edge_movement': edge_movement,
+                'signal_status': row[6] or status_label,
+                'last_check': row[7],
+                'category': row[8],
+                'confidence': row[9],
+                'ai_probability': row[10],
+                'created_at': row[11],
+                'end_date': row[12]
+            })
+        
+        # Summary stats
+        confirmed = sum(1 for s in signals if (s['edge_movement'] or 0) >= 20)
+        challenged = sum(1 for s in signals if (s['edge_movement'] or 0) <= -20)
+        tracking = len(signals) - confirmed - challenged
+        avg_edge = sum(s['edge_movement'] or 0 for s in signals) / len(signals) if signals else 0
+        
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'signals': signals,
+            'summary': {
+                'total': len(signals),
+                'confirmed': confirmed,
+                'challenged': challenged,
+                'tracking': tracking,
+                'avg_edge_movement': round(avg_edge, 2)
+            }
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route("/api/signals/alerts")
+def signal_alerts():
+    """Get recent signal alerts."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                pa.id,
+                pa.alert_type,
+                pa.trigger_value,
+                pa.urgency,
+                pa.action_recommended,
+                pa.message,
+                pa.telegram_sent,
+                pa.created_at,
+                pt.question,
+                pt.signal_type
+            FROM position_alerts pa
+            JOIN prediction_tracking pt ON pt.id = pa.prediction_id
+            ORDER BY pa.created_at DESC
+            LIMIT 20
+        """)
+        
+        alerts = []
+        for row in cursor.fetchall():
+            # Map action to professional terminology
+            action = row[4]
+            if action == "TAKE_PROFIT":
+                action_label = "THESIS_CONFIRMED"
+            elif action == "CUT_LOSS":
+                action_label = "THESIS_CHALLENGED"
+            elif action == "MONITOR":
+                action_label = "MONITOR"
+            else:
+                action_label = action
+            
+            alerts.append({
+                'id': row[0],
+                'type': row[1],
+                'trigger_value': row[2],
+                'urgency': row[3],
+                'action': action_label,
+                'message': row[5],
+                'telegram_sent': row[6],
+                'created_at': row[7],
+                'market': row[8],
+                'signal_type': row[9]
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'alerts': alerts,
+            'total': len(alerts)
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
 @app.route("/api/health")
 def health():
     try:

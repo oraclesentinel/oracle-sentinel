@@ -208,15 +208,20 @@ export default function OracleSentinelLanding() {
               }} onMouseEnter={e => e.target.style.color = C.frost} onMouseLeave={e => e.target.style.color = C.slate}>{t}</a>
             ))}
             <a href="/docs" style={{
-              color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
-              letterSpacing: 1.5, textDecoration: "none", border: `1px solid ${C.blue}40`,
-              padding: "6px 16px", borderRadius: 4, transition: "all 0.3s",
-            }}>DOCS</a>
+              color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+              letterSpacing: 1.5, textDecoration: "none", textTransform: "uppercase",
+              transition: "color 0.2s",
+            }} onMouseEnter={e => e.target.style.color = C.frost} onMouseLeave={e => e.target.style.color = C.slate}>DOCS</a>
             <a href="/predict" style={{
-              background: `linear-gradient(135deg, ${C.blue}, ${C.blueM})`,
-              color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600,
-              letterSpacing: 1.5, textDecoration: "none", padding: "7px 18px", borderRadius: 4,
-            }}>DASHBOARD</a>
+              color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+              letterSpacing: 1.5, textDecoration: "none", textTransform: "uppercase",
+              transition: "color 0.2s",
+            }} onMouseEnter={e => e.target.style.color = C.frost} onMouseLeave={e => e.target.style.color = C.slate}>DASHBOARD</a>
+            <a href="/code" style={{
+              color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+              letterSpacing: 1.5, textDecoration: "none", textTransform: "uppercase",
+              transition: "color 0.2s",
+            }} onMouseEnter={e => e.target.style.color = C.frost} onMouseLeave={e => e.target.style.color = C.slate}>CODE</a>
           </div>
         </div>
       </nav>
@@ -258,8 +263,8 @@ export default function OracleSentinelLanding() {
                   boxShadow: `0 4px 30px ${C.blue}20`, display: "inline-block",
                 }}>PREDICT DASHBOARD</a>
                 <a href="/code" style={{
-                  background: "transparent", border: `1px solid ${C.teal}60`,
-                  color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 500,
+                  background: `linear-gradient(135deg, ${C.teal}, ${C.green})`, border: "none",
+                  color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 500,
                   letterSpacing: 1.5, padding: "15px 32px", borderRadius: 6, textDecoration: "none",
                   display: "inline-block",
                 }}>CODE ANALYZER</a>
@@ -375,22 +380,6 @@ export default function OracleSentinelLanding() {
             </Card>
           </Reveal>
         </div>
-
-        {/* Coming Soon */}
-        <Reveal delay={0.3}>
-          <div style={{ marginTop: 24, padding: "20px 28px", background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ width: 40, height: 40, background: `${C.amber}15`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ color: C.amber, fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700 }}>T</span>
-              </div>
-              <div>
-                <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 600 }}>SENTINEL TRUST</div>
-                <div style={{ color: C.dim, fontSize: 12 }}>Token & project trust scoring based on on-chain data and code analysis</div>
-              </div>
-            </div>
-            <span style={{ color: C.amber, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "4px 12px", background: `${C.amber}15`, borderRadius: 4 }}>COMING SOON</span>
-          </div>
-        </Reveal>
       </Sec>
 
       {/* ═══════════════════════════════════════════════════════ */}
@@ -498,11 +487,6 @@ export default function OracleSentinelLanding() {
                 <span style={{ color: C.dim, fontSize: 10 }}>[COPY]</span>
               </div>
               <div style={{ marginTop: 24, display: "flex", gap: 12 }}>
-                <a href="https://jup.ag/swap/SOL-HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump" target="_blank" rel="noopener noreferrer" style={{
-                  background: `linear-gradient(135deg, ${C.amber}, ${C.amber}cc)`,
-                  color: "#000", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
-                  letterSpacing: 1, padding: "10px 16px", borderRadius: 4, textDecoration: "none",
-                }}>BUY ON JUPITER</a>
                 <a href="https://solscan.io/token/HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump" target="_blank" rel="noopener noreferrer" style={{
                   background: "transparent", border: `1px solid ${C.borderL}`,
                   color: C.frost, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 500,
@@ -552,19 +536,6 @@ export default function OracleSentinelLanding() {
             <p style={{ color: C.frost, fontSize: 14, maxWidth: 480, margin: "0 auto 32px", lineHeight: 1.7, position: "relative" }}>
               Scan prediction markets for alpha. Audit code for vulnerabilities. Or do both. Oracle Sentinel is live and ready.
             </p>
-            <div style={{ display: "flex", justifyContent: "center", gap: 14, position: "relative" }}>
-              <a href="/predict" className="cta-btn" style={{
-                background: `linear-gradient(135deg, ${C.blue}, ${C.blueM})`,
-                color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600,
-                letterSpacing: 1.5, padding: "16px 40px", borderRadius: 6, textDecoration: "none",
-                boxShadow: `0 4px 30px ${C.blue}25`,
-              }}>PREDICT DASHBOARD</a>
-              <a href="/code" style={{
-                background: `linear-gradient(135deg, ${C.teal}, ${C.green})`,
-                color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600,
-                letterSpacing: 1.5, padding: "16px 40px", borderRadius: 6, textDecoration: "none",
-              }}>ANALYZE CODE</a>
-            </div>
           </div>
         </Reveal>
       </Sec>
