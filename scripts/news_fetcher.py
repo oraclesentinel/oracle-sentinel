@@ -16,10 +16,13 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', 'config', '.env'))
 
 try:
-    from duckduckgo_search import DDGS
+    from ddgs import DDGS
 except ImportError:
-    print("Install: pip install duckduckgo-search")
-    exit(1)
+    try:
+        from duckduckgo_search import DDGS
+    except ImportError:
+        print("Install: pip install ddgs")
+        exit(1)
 
 try:
     import trafilatura

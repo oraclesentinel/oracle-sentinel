@@ -160,6 +160,49 @@ class SelfDiagnosis:
                 'expected_impact': 'AI learns from past mistakes'
             })
         
+        
+        # =========================================================
+        # DIAGNOSIS 7: Betting against near-resolved markets
+        # Detects when AI incorrectly bets against markets with >85% probability
+        # =========================================================
+        conn = self._get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT COUNT(*) as wrong_contrarian
+            FROM prediction_tracking
+            WHERE direction_correct = 0
+              AND signal_type = 'BUY_NO'
+              AND market_price_at_signal > 0.85
+        """)
+        wrong_contrarian = cursor.fetchone()[0] or 0
+        
+        cursor.execute("""
+            SELECT COUNT(*) as wrong_low_market
+            FROM prediction_tracking
+            WHERE direction_correct = 0
+              AND signal_type = 'BUY_YES'
+              AND market_price_at_signal < 0.15
+        """)
+        wrong_low_market = cursor.fetchone()[0] or 0
+        conn.close()
+        
+        total_near_resolved_errors = wrong_contrarian + wrong_low_market
+        
+        if total_near_resolved_errors >= 2:
+            proposals.append({
+                'diagnosis_type': 'near_resolved_overconfidence',
+                'diagnosis_detail': f"Found {total_near_resolved_errors} errors betting against near-resolved markets (>85% or <15%)",
+                'category_affected': 'all',
+                'severity': 'critical',
+                'proposed_fix': 'Increase near-resolved threshold from 97% to 90% to avoid contrarian bets on settled markets',
+                'fix_type': 'near_resolved_threshold',
+                'fix_params': {
+                    'old_threshold': 0.97,
+                    'new_threshold': 0.90
+                },
+                'expected_impact': 'Avoid losing bets against markets that are effectively decided'
+            })
+
         self._log('INFO', f"Generated {len(proposals)} improvement proposals")
         return proposals
     

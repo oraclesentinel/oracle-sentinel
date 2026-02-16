@@ -128,6 +128,50 @@ class SelfImprovement:
     # =========================================================
     # BACKTEST: Simulate fix before applying
     # =========================================================
+
+    def apply_near_resolved_threshold(self, fix_params: dict) -> bool:
+        """Apply near-resolved threshold adjustment to ai_brain.py"""
+        old_threshold = fix_params.get('old_threshold', 0.97)
+        new_threshold = fix_params.get('new_threshold', 0.90)
+        
+        ai_brain_path = os.path.join(os.path.dirname(__file__), 'ai_brain.py')
+        
+        try:
+            with open(ai_brain_path, 'r') as f:
+                ai_content = f.read()
+            
+            # Update the threshold in _force_recommendation
+            old_pattern = f'market_yes_price > {old_threshold} or market_yes_price < {1-old_threshold}'
+            new_pattern = f'market_yes_price > {new_threshold} or market_yes_price < {round(1-new_threshold, 2)}'
+            
+            if old_pattern in ai_content:
+                ai_content = ai_content.replace(old_pattern, new_pattern)
+                
+                with open(ai_brain_path, 'w') as f:
+                    f.write(ai_content)
+                
+                self._log('INFO', f"Updated near-resolved threshold: {old_threshold} -> {new_threshold}")
+                return True
+            else:
+                self._log('WARN', f"Pattern not found in ai_brain.py, trying alternative...")
+                # Try alternative pattern (might have different formatting)
+                import re
+                pattern = r'market_yes_price > 0\.9\d+ or market_yes_price < 0\.0\d+'
+                if re.search(pattern, ai_content):
+                    ai_content = re.sub(pattern, new_pattern, ai_content)
+                    with open(ai_brain_path, 'w') as f:
+                        f.write(ai_content)
+                    self._log('INFO', f"Updated near-resolved threshold via regex")
+                    return True
+                    
+                self._log('WARN', "Could not find threshold pattern to update")
+                return False
+                
+        except Exception as e:
+            self._log('ERROR', f"Failed to update ai_brain.py: {e}")
+            return False
+
+
     def backtest_fix(self, proposal: dict) -> dict:
         """
         Simulate what accuracy would have been if this fix was applied earlier.
@@ -245,6 +289,8 @@ class SelfImprovement:
             return self.apply_data_requirement(fix_params)
         elif fix_type == 'prompt_enhancement':
             return self.apply_prompt_enhancement(fix_params)
+        elif fix_type == 'near_resolved_threshold':
+            return self.apply_near_resolved_threshold(fix_params)
         else:
             self._log('WARN', f"Unknown fix type: {fix_type}")
             return False

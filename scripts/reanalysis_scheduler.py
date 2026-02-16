@@ -85,10 +85,17 @@ def get_current_market_price(market_id: int) -> float:
     """Get current market price from markets table"""
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT yes_price FROM markets WHERE id = ?", (market_id,))
+    cursor.execute("SELECT outcome_prices FROM markets WHERE id = ?", (market_id,))
     row = cursor.fetchone()
     conn.close()
-    return row[0] if row else None
+    if not row or not row[0]:
+        return None
+    try:
+        import json
+        prices = json.loads(row[0]) if isinstance(row[0], str) else row[0]
+        return float(prices[0]) if prices else None
+    except:
+        return None
 
 
 def calculate_pnl(entry_price: float, current_price: float, direction: str) -> float:
@@ -235,7 +242,7 @@ def get_predictions_near_close() -> list:
             m.slug,
             m.description,
             pt.signal_source,
-            m.yes_price
+            m.outcome_prices
         FROM prediction_tracking pt
         JOIN markets m ON m.id = pt.market_id
         WHERE pt.final_resolution IS NULL
@@ -260,7 +267,7 @@ def get_predictions_near_close() -> list:
             'slug': row[11],
             'description': row[12],
             'signal_source': row[13] if len(row) > 13 else 'scan',
-            'current_price': row[14] if len(row) > 14 else None
+            'current_price': (float(json.loads(row[14])[0]) if row[14] else None) if len(row) > 14 else None
         }
 
         # Parse end date and check if in window

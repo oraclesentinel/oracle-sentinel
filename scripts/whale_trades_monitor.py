@@ -202,7 +202,6 @@ def analyze_mega_whale(trade: dict) -> dict:
                 return None
             
             # Re-query setelah auto-fetch
-            cursor = conn.cursor() if 'cursor' in dir() else sqlite3.connect(DB_PATH).cursor()
             conn_new = sqlite3.connect(DB_PATH)
             cursor_new = conn_new.cursor()
             cursor_new.execute("""
