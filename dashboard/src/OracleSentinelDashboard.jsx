@@ -771,6 +771,13 @@ export default function OracleSentinelDashboard() {
   const [whaleNotifications, setWhaleNotifications] = useState([]);
   const [seenWhaleTxs, setSeenWhaleTxs] = useState(new Set());
   const logEndRef = useRef(null);
+  
+  // Live Markets State
+  const [liveMarkets, setLiveMarkets] = useState([]);
+  const [liveMarketsLoading, setLiveMarketsLoading] = useState(false);
+  const [selectedMarket, setSelectedMarket] = useState(null);
+  const [marketAnalysis, setMarketAnalysis] = useState(null);
+  const [marketAnalyzing, setMarketAnalyzing] = useState(false);
 
   useEffect(() => {
     if (!booted) return;
@@ -822,6 +829,27 @@ export default function OracleSentinelDashboard() {
     const iv = setInterval(loadWhales, 30000);
     return () => clearInterval(iv);
   }, [booted, seenWhaleTxs]);
+
+  // Fetch live markets from Polymarket API
+  useEffect(() => {
+    if (!booted) return;
+    const fetchLiveMarkets = async () => {
+      setLiveMarketsLoading(true);
+      try {
+        const res = await fetch(API_BASE + "/markets/live?limit=100");
+        if (res.ok) {
+          const json = await res.json();
+          setLiveMarkets(json.markets || []);
+        }
+      } catch (e) {
+        console.error("Failed to fetch live markets:", e);
+      }
+      setLiveMarketsLoading(false);
+    };
+    fetchLiveMarkets();
+    const iv = setInterval(fetchLiveMarkets, 60000);
+    return () => clearInterval(iv);
+  }, [booted]);
 
   // Auto-dismiss notifications after 30 seconds
   useEffect(() => {
@@ -1011,17 +1039,39 @@ export default function OracleSentinelDashboard() {
 
         {/* ── MARKETS ── */}
         {activeTab === "markets" && (
-          <Panel title="MARKET WATCHLIST" headerRight={<span style={{ color: SLATE, fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>{markets.length} monitored</span>}>
-            <ColHeaders columns={[{l:"MARKET",w:"1fr"},{l:"YES",w:"60px",a:"right"},{l:"NO",w:"60px",a:"right"},{l:"VOLUME",w:"80px",a:"right"},{l:"LIQUIDITY",w:"80px",a:"right"}]} />
-            {markets.map((m, i) => (
-              <div key={m.id} className="row-hover" style={{ display: "grid", gridTemplateColumns: "1fr 60px 60px 80px 80px", gap: "8px", alignItems: "center", padding: "8px 10px", fontSize: "13px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.03}s both` }}>
-                <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.question}</span>
-                <span style={{ color: TEAL, textAlign: "right", fontWeight: 500 }}>{(m.yes_price * 100).toFixed(1)}¢</span>
-                <span style={{ color: RED_COLD, textAlign: "right", fontWeight: 500 }}>{(m.no_price * 100).toFixed(1)}¢</span>
-                <span style={{ color: FROST, textAlign: "right" }}>${formatNum(m.volume)}</span>
-                <span style={{ color: SLATE, textAlign: "right" }}>${formatNum(m.liquidity)}</span>
-              </div>
-            ))}
+          <Panel title="MARKET EXPLORER" headerRight={<span style={{ color: SLATE, fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>{liveMarketsLoading ? "Loading..." : (liveMarkets.length)} markets · <span style={{ color: TEAL }}>LIVE</span></span>}>
+            <ColHeaders columns={[{l:"",w:"40px"},{l:"MARKET",w:"1fr"},{l:"YES",w:"60px",a:"right"},{l:"NO",w:"60px",a:"right"},{l:"VOL 24H",w:"80px",a:"right"},{l:"LIQ",w:"70px",a:"right"}]} />
+            <div style={{ maxHeight: "calc(100vh - 340px)", overflowY: "auto" }}>
+              {(liveMarkets).map((m, i) => (
+                <div key={m.id || i} className="row-hover" style={{ display: "grid", gridTemplateColumns: "40px 1fr 60px 60px 80px 70px", gap: "8px", alignItems: "center", padding: "8px 10px", fontSize: "13px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.02}s both` }}>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedMarket(m);
+                        setMarketAnalysis(null);
+                        setMarketAnalyzing(true);
+                        fetch(API_BASE + "/markets/live/" + m.id + "/analyze", { method: "POST" })
+                          .then(r => r.json())
+                          .then(d => { setMarketAnalysis(d); setMarketAnalyzing(false); })
+                          .catch(() => { setMarketAnalysis({ error: "Analysis failed" }); setMarketAnalyzing(false); });
+                      }} 
+                      style={{ width: "28px", height: "28px", borderRadius: "4px", border: `1px solid ${BLUE_DIM}`, background: `linear-gradient(135deg, ${BLUE_DARK}80, ${BG})`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s" }} 
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.background = `linear-gradient(135deg, ${TEAL}30, ${BG})`; }} 
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = BLUE_DIM; e.currentTarget.style.background = `linear-gradient(135deg, ${BLUE_DARK}80, ${BG})`; }} 
+                      title="AI Quick Analysis"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={BLUE_BRIGHT} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    </div>
+                  </div>
+                  <span style={{ color: ICE, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }} onClick={() => setSelectedMarket(m)}>{m.question}</span>
+                  <span style={{ color: TEAL, textAlign: "right", fontWeight: 500 }}>{((m.yes_price || 0) * 100).toFixed(1)}¢</span>
+                  <span style={{ color: RED_COLD, textAlign: "right", fontWeight: 500 }}>{((m.no_price || 0) * 100).toFixed(1)}¢</span>
+                  <span style={{ color: FROST, textAlign: "right" }}>${formatNum(m.volume_24h || m.volume || 0)}</span>
+                  <span style={{ color: SLATE, textAlign: "right" }}>${formatNum(m.liquidity || 0)}</span>
+                </div>
+              ))}
+            </div>
           </Panel>
         )}
 
@@ -1348,6 +1398,82 @@ export default function OracleSentinelDashboard() {
 
       {/* Whale Alert Notifications */}
       <WhaleAlertNotification notifications={whaleNotifications} onDismiss={dismissWhaleNotification} onViewAll={viewAllWhales} />
+
+      {/* Market Analysis Modal */}
+      {selectedMarket && (
+        <div onClick={() => { setSelectedMarket(null); setMarketAnalysis(null); }} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: BG_PANEL, border: `1px solid ${BORDER_LIGHT}`, borderRadius: "8px", width: "700px", maxHeight: "85vh", overflowY: "auto", fontFamily: "'JetBrains Mono', monospace", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+            {/* Header */}
+            <div style={{ padding: "18px 20px", borderBottom: `1px solid ${BORDER}`, background: `linear-gradient(90deg, ${BLUE_DARK}40, transparent)` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ flex: 1, marginRight: "16px" }}>
+                  <div style={{ color: ICE, fontSize: "14px", fontWeight: 600, lineHeight: "1.5" }}>{selectedMarket.question}</div>
+                  <div style={{ display: "flex", gap: "16px", marginTop: "12px", flexWrap: "wrap" }}>
+                    <span style={{ color: TEAL, fontSize: "14px", fontWeight: 600 }}>YES: {((selectedMarket.yes_price || 0) * 100).toFixed(1)}¢</span>
+                    <span style={{ color: RED_COLD, fontSize: "14px", fontWeight: 600 }}>NO: {((selectedMarket.no_price || 0) * 100).toFixed(1)}¢</span>
+                    <span style={{ color: FROST, fontSize: "12px" }}>Vol: ${formatNum(selectedMarket.volume_24h || selectedMarket.volume || 0)}</span>
+                    <span style={{ color: SLATE, fontSize: "12px" }}>Liq: ${formatNum(selectedMarket.liquidity || 0)}</span>
+                  </div>
+                </div>
+                <div onClick={() => { setSelectedMarket(null); setMarketAnalysis(null); }} style={{ color: SLATE, cursor: "pointer", fontSize: "20px", padding: "4px 8px", borderRadius: "4px", transition: "all 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.color = RED_COLD} onMouseLeave={(e) => e.currentTarget.style.color = SLATE}>✕</div>
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div style={{ padding: "20px" }}>
+              {/* AI Analysis Box */}
+              <div style={{ background: `linear-gradient(135deg, ${BLUE_DARK}40, ${BG})`, border: `1px solid ${BLUE_DIM}`, borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  <span style={{ color: TEAL, fontSize: "13px", fontWeight: 600, letterSpacing: "1px" }}>AI ANALYSIS</span>
+                  {!marketAnalysis && !marketAnalyzing && (
+                    <button onClick={() => {
+                      setMarketAnalyzing(true);
+                      fetch(API_BASE + "/markets/live/" + selectedMarket.id + "/analyze", { method: "POST" })
+                        .then(r => r.json())
+                        .then(d => { setMarketAnalysis(d); setMarketAnalyzing(false); })
+                        .catch(() => { setMarketAnalysis({ error: "Analysis failed" }); setMarketAnalyzing(false); });
+                    }} style={{ marginLeft: "auto", background: `linear-gradient(135deg, ${TEAL}40, ${BLUE_DIM})`, border: `1px solid ${TEAL}`, borderRadius: "4px", padding: "6px 16px", color: ICE, fontSize: "11px", fontWeight: 600, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace" }}>
+                      ANALYZE
+                    </button>
+                  )}
+                </div>
+                {marketAnalyzing ? (
+                  <div style={{ color: FROST, fontSize: "13px", textAlign: "center", padding: "24px" }}>
+                    <span style={{ animation: "pulse 1s infinite", marginRight: "8px", color: TEAL }}>●</span>Analyzing market with AI...
+                  </div>
+                ) : marketAnalysis ? (
+                  marketAnalysis.error ? (
+                    <div style={{ color: RED_COLD, fontSize: "13px", padding: "12px" }}>{marketAnalysis.error}</div>
+                  ) : (
+                    <div style={{ color: FROST, fontSize: "13px", lineHeight: "1.8", whiteSpace: "pre-wrap" }}>{marketAnalysis.analysis}</div>
+                  )
+                ) : (
+                  <div style={{ color: SLATE, fontSize: "12px", textAlign: "center", padding: "16px" }}>Click ANALYZE for AI-powered market insights</div>
+                )}
+              </div>
+              
+              {/* Market Description */}
+              {(selectedMarket.description || marketAnalysis?.description) && (
+                <div style={{ marginBottom: "16px" }}>
+                  <div style={{ color: BLUE_BRIGHT, fontSize: "11px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>RESOLUTION RULES</div>
+                  <div style={{ color: FROST, fontSize: "12px", lineHeight: "1.7", background: BG, padding: "12px", borderRadius: "6px", border: `1px solid ${GRID_LINE}`, maxHeight: "120px", overflowY: "auto" }}>
+                    {marketAnalysis?.description || selectedMarket.description}
+                  </div>
+                </div>
+              )}
+              
+              {/* Polymarket Link */}
+              <div style={{ display: "flex", justifyContent: "center", paddingTop: "8px" }}>
+                <a href={`https://polymarket.com/market/${selectedMarket.slug || selectedMarket.id}`} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: `linear-gradient(135deg, ${BLUE_DARK}, ${BG})`, border: `1px solid ${BORDER_LIGHT}`, borderRadius: "6px", padding: "10px 20px", color: FROST, fontSize: "12px", textDecoration: "none", transition: "all 0.2s" }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER_LIGHT; e.currentTarget.style.color = FROST; }}>
+                  View on Polymarket
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Signal Detail Modal */}
       {selectedSignal && (
