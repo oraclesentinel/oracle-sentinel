@@ -1,6 +1,6 @@
 # Oracle Sentinel
 
-Autonomous AI agent for Jupiter Prediction market intelligence.
+Intelligence layer for prediction markets, code security, and AI services on Solana.
 
 ![Status](https://img.shields.io/badge/status-live-brightgreen)
 ![Version](https://img.shields.io/badge/version-3.0-blue)
@@ -9,9 +9,17 @@ Autonomous AI agent for Jupiter Prediction market intelligence.
 ![Solana](https://img.shields.io/badge/token-$OSAI-teal)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## What It Does
+## What It Is
 
-Oracle Sentinel is an autonomous prediction market intelligence system that continuously monitors Jupiter Prediction, identifies mispricing opportunities using dual-model AI analysis, tracks whale activity, and maintains radical transparency on all predictions.
+Oracle Sentinel is an intelligence layer consisting of three modules:
+
+- **Sentinel Predict** — Autonomous prediction market intelligence via Jupiter Prediction
+- **Sentinel Code** — AI-powered code security scanner
+- **Sentinel Economic** — AI services marketplace with negotiation engine
+
+## Sentinel Predict
+
+Autonomous AI agent that continuously monitors Jupiter Prediction, identifies mispricing opportunities using dual-model AI analysis, tracks whale activity, and maintains radical transparency on all predictions.
 
 **Not a chatbot. An autonomous system.**
 
@@ -21,9 +29,9 @@ Oracle Sentinel is an autonomous prediction market intelligence system that cont
 - 🔄 **Self-Improving** — Learns from errors and adjusts over time
 - 📊 **Radical Transparency** — Every prediction tracked, every outcome verified
 
-## Powered by OpenClaw
+### Powered by OpenClaw
 
-Oracle Sentinel runs on [OpenClaw](https://openclaw.ai) — an AI agent gateway that gives Claude full server access.
+Sentinel Predict runs on [OpenClaw](https://openclaw.ai) — an AI agent gateway that gives Claude full server access.
 
 What it can do:
 - Execute bash commands on VPS
@@ -35,7 +43,7 @@ What it can do:
 
 OpenClaw triggers scan cycles automatically. No human intervention required.
 
-## Prediction Lifecycle
+### Prediction Lifecycle
 
 Every prediction goes through a complete lifecycle from detection to resolution:
 ```
@@ -53,13 +61,13 @@ Every prediction goes through a complete lifecycle from detection to resolution:
   └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
 ```
 
-### Phase 1: DETECT
+#### Phase 1: DETECT
 The system identifies opportunities through multiple channels:
 - **Scheduled Scans** — Regular comprehensive market analysis
 - **Anomaly Detection** — Volume spikes and significant price movements
 - **Whale Alerts** — Large trades that may indicate informed money
 
-### Phase 2: ANALYZE
+#### Phase 2: ANALYZE
 Dual-model AI analysis ensures accuracy:
 - Fetch relevant news and context
 - Claude Haiku extracts objective facts (no opinions)
@@ -67,7 +75,7 @@ Dual-model AI analysis ensures accuracy:
 - Calculate edge between AI estimate and market price
 - Apply safety overrides to reject overconfidence
 
-### Phase 3: TRACK
+#### Phase 3: TRACK
 Qualifying signals are recorded:
 - Market question and conditions
 - Signal type (BUY_YES or BUY_NO)
@@ -75,14 +83,14 @@ Qualifying signals are recorded:
 - Edge percentage and confidence level
 - Timestamp and market state
 
-### Phase 4: MONITOR
+#### Phase 4: MONITOR
 Active predictions are continuously monitored:
 - Price snapshots at regular intervals
 - Re-analysis before market close
 - Signal revision if new information changes assessment
 - Whale exit detection on tracked markets
 
-### Phase 5: RESOLVE
+#### Phase 5: RESOLVE
 Final verification and learning:
 - Compare prediction against actual outcome
 - Record win or loss
@@ -90,24 +98,24 @@ Final verification and learning:
 - Analyze errors for pattern detection
 - Adjust thresholds based on performance
 
-## Core Systems
+### Core Systems
 
-### Market Scanner
+#### Market Scanner
 Comprehensive analysis of active Jupiter Prediction markets using dual-model AI. Identifies opportunities where AI assessment differs significantly from market price.
 
-### Whale Intelligence
+#### Whale Intelligence
 Real-time monitoring of large trades on Jupiter Prediction. When significant whale activity is detected, the system runs AI analysis to validate whether the whale's direction aligns with AI assessment. Only aligned signals are tracked.
 
-### Smart Scanner
+#### Smart Scanner
 Adaptive system that detects market anomalies between scheduled scans. Catches breaking news opportunities that would otherwise be missed.
 
-### Reanalysis Engine
+#### Reanalysis Engine
 Before markets close, the system re-runs analysis with the latest information. If new data changes the assessment, signals are revised and alerts are sent.
 
-### Self-Improvement
+#### Self-Improvement
 Daily analysis of prediction performance. Identifies error patterns, adjusts confidence thresholds, and saves lessons learned to improve future accuracy.
 
-## Features
+### Features
 
 | Feature | Description |
 |---------|-------------|
@@ -119,9 +127,9 @@ Daily analysis of prediction performance. Identifies error patterns, adjusts con
 | **Quantified Edge** | Mathematical difference between AI and market consensus |
 | **Safety Overrides** | Rejects AI overconfidence automatically |
 | **Accuracy Tracking** | Every prediction recorded, every outcome verified |
-| **Dashboard AI Agent** | Chat directly with Oracle Sentinel on the web |
+| **Dashboard AI Agent** | Chat directly with Sentinel Predict on the web |
 
-## Sentinel Predict
+### Dashboard
 
 **Live at:** [predict.oraclesentinel.xyz](https://predict.oraclesentinel.xyz)
 
@@ -136,7 +144,7 @@ Daily analysis of prediction performance. Identifies error patterns, adjusts con
 
 **Real-time Whale Alerts:** Popup notifications appear when significant trades are detected, showing market, trade details, and quick navigation to full whale data.
 
-## API Endpoints
+### API Endpoints
 ```bash
 # Dashboard data (stats, signals, accuracy)
 curl https://predict.oraclesentinel.xyz/api/dashboard
@@ -165,22 +173,22 @@ curl -X POST https://predict.oraclesentinel.xyz/api/markets/live/<market_id>/ana
 curl https://predict.oraclesentinel.xyz/api/health
 ```
 
-## How to Interact
+### How to Interact
 
-### Sentinel Predict Dashboard
+#### Sentinel Predict Dashboard
 Visit [predict.oraclesentinel.xyz](https://predict.oraclesentinel.xyz) and use the AI Agent tab:
 - "Analyze this market: [Market URL]"
 - "What are the current signals?"
 - "Show me accuracy stats"
 
-### Telegram Channel
+#### Telegram Channel
 Join [@oraclesentinelsignals](https://t.me/oraclesentinelsignals) for real-time notifications:
 - Signal alerts (BUY_YES / BUY_NO)
 - Whale trade alerts
 - Signal revisions
 
-### REST API
-Integrate Oracle Sentinel intelligence into your own applications.
+#### REST API
+Integrate Sentinel Predict intelligence into your own applications.
 
 ## Tech Stack
 
@@ -226,6 +234,6 @@ Live accuracy stats: [predict.oraclesentinel.xyz](https://predict.oraclesentinel
 
 ---
 
-**Oracle Sentinel v3.0** — Autonomous Prediction Market Intelligence
+**Sentinel Predict v3.0** — Autonomous Prediction Market Intelligence
 
 Powered by Claude AI and OpenClaw
