@@ -174,7 +174,7 @@ def format_alert_message(market_alerts):
         for alert in alerts:
             lines.append(f"  {alert['emoji']} {alert['message']}")
         
-        lines.append(f"  🔗 polymarket.com/event/{slug}")
+        lines.append(f"  🔗 jup.ag/prediction/{slug}")
         lines.append("")
     
     lines.append("🤖 <i>Oracle Sentinel — Whale Intelligence</i>")

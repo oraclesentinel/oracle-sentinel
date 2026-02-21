@@ -24,8 +24,8 @@ class OpportunityDetector:
     """
 
     def __init__(self):
-        self.min_liquidity = 10000      # $10k minimum liquidity
-        self.min_volume = 50000         # $50k minimum volume
+        self.min_liquidity = 50      # $50 minimum (lowered for Jupiter)
+        self.min_volume = 100         # $100 minimum (lowered for Jupiter)
         self.spread_threshold = 0.03    # 3% spread = opportunity
         self.momentum_threshold = 0.05  # 5% price change = signal
         self.complement_threshold = 0.02 # 2% complement gap

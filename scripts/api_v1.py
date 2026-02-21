@@ -227,48 +227,59 @@ def get_bulk_signals():
 @x402_protected
 def analyze_market():
     """
-    Analyze any Polymarket URL on demand.
+    Analyze any Jupiter Prediction Market on demand.
     Price: $0.05 USDC (or free for $OSAI holders)
+    
+    Accepts:
+    - market_id: Jupiter market ID (e.g., POLY-559652)
+    - url: Jupiter URL (e.g., jup.ag/prediction/POLY-559652)
     """
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "Missing request body"}), 400
     
-    if not data or "url" not in data:
-        return jsonify({"error": "Missing 'url' in request body"}), 400
-    
-    url = data["url"]
-    
-    # Extract slug from URL
     import re
-    match = re.search(r'polymarket\.com/(?:event|sports/.+?)/([a-zA-Z0-9-]+)', url)
-    if not match:
-        return jsonify({"error": "Invalid Polymarket URL"}), 400
+    from jupiter_prediction_client import JupiterPredictionClient
     
-    slug = match.group(1)
+    # Extract market ID from various formats
+    market_id = None
     
-    # Use existing AI brain to analyze
+    # Direct market_id parameter
+    if "market_id" in data:
+        market_id = data["market_id"]
+    
+    # URL parameter
+    elif "url" in data:
+        url = data["url"]
+        # Check for POLY-XXXXX pattern
+        poly_match = re.search(r'(POLY-\d+)', url)
+        if poly_match:
+            market_id = poly_match.group(1)
+        # Check for jup.ag URL
+        jup_match = re.search(r'jup\.ag/prediction/([A-Za-z0-9-]+)', url)
+        if jup_match:
+            market_id = jup_match.group(1)
+    
+    if not market_id:
+        return jsonify({"error": "Invalid request. Provide 'market_id' or Jupiter URL"}), 400
+    
     try:
-        from ai_brain import AIBrain
-        from polymarket_client import PolymarketClient
-        
-        # Fetch market data
-        pc = PolymarketClient()
-        market_data = pc.get_market_or_event(slug)
+        jupiter = JupiterPredictionClient()
+        market_data = jupiter.get_market_or_event(market_id)
         
         if not market_data["type"]:
             return jsonify({"error": "Market not found"}), 404
         
         return jsonify({
-            "slug": slug,
+            "market_id": market_id,
             "type": market_data["type"],
             "question": market_data["question"],
             "outcomes": market_data["outcomes"][:10],
-            "volume": market_data["volume"],
+            "source": "jupiter",
             "message": "Full AI analysis available via /api/chat endpoint"
         })
-        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # ============================================================
 # INFO ENDPOINT (free)

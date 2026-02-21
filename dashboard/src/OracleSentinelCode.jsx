@@ -285,11 +285,11 @@ export default function OracleSentinelCode() {
           }}>
             SENTINEL CODE
           </span>
-          <span style={{ marginLeft: 8, fontSize: 10, color: C.grayL }}>v2.1</span>
+          <span style={{ marginLeft: 8, fontSize: 10, color: C.grayL }}>v2.2</span>
         </a>
         <nav style={{ display: "flex", gap: 24, alignItems: "center" }}>
           <a href="/" style={{ color: C.grayL, textDecoration: "none", fontSize: 13, fontWeight: 500 }}>Home</a>
-          <a href="/docs" style={{ color: C.grayL, textDecoration: "none", fontSize: 13, fontWeight: 500 }}>Docs</a>
+          <a href="https://docs.oraclesentinel.xyz" style={{ color: C.grayL, textDecoration: "none", fontSize: 13, fontWeight: 500 }}>Docs</a>
         </nav>
       </header>
 

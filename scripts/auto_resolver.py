@@ -21,7 +21,7 @@ LOG_PATH = os.path.join(os.path.dirname(__file__), '..', 'logs', 'auto_resolver.
 from config_loader import BOT_TOKEN, CHAT_IDS
 
 # Polymarket API
-GAMMA_API = "https://gamma-api.polymarket.com"
+from jupiter_prediction_client import JupiterPredictionClient
 
 
 def log(message: str):
@@ -60,15 +60,24 @@ def get_db():
     return conn
 
 
-def fetch_market_from_polymarket(polymarket_id: str) -> dict:
-    """Fetch market data from Polymarket Gamma API"""
+def fetch_market_from_jupiter(market_id: str) -> dict:
+    """Fetch market data from Jupiter Prediction API"""
     try:
-        url = f"{GAMMA_API}/markets/{polymarket_id}"
-        response = requests.get(url, timeout=15)
-        if response.status_code == 200:
-            return response.json()
+        jupiter = JupiterPredictionClient()
+        market = jupiter.get_market_by_id(market_id)
+        if market:
+            # Convert to compatible format
+            pricing = market.get('pricing', {})
+            yes_price = (pricing.get('buyYesPriceUsd', 0) or 0) / 1_000_000
+            return {
+                'id': market_id,
+                'question': market.get('title', ''),
+                'closed': market.get('status') == 'closed',
+                'outcomePrices': [yes_price, 1 - yes_price],
+                'resolved': market.get('status') == 'resolved',
+            }
         else:
-            log(f"  ⚠ API error {response.status_code} for {polymarket_id}")
+            log(f"  ⚠ Market not found: {market_id}")
             return None
     except Exception as e:
         log(f"  ⚠ Fetch error: {e}")
@@ -178,7 +187,7 @@ def send_resolution_alert(pred: dict, resolution: str, correct: bool):
 
 {emoji} <b>{'CORRECT!' if correct else 'WRONG'}</b>
 
-🔗 https://polymarket.com/event/{pred.get('slug', '')}"""
+🔗 https://jup.ag/prediction/{pred.get('slug', '')}"""
 
     send_telegram(msg)
 
@@ -210,7 +219,7 @@ def run_auto_resolver():
             log(f"  ⚠ No polymarket_id - skipping")
             continue
         
-        market_data = fetch_market_from_polymarket(pred['polymarket_id'])
+        market_data = fetch_market_from_jupiter(pred['polymarket_id'])
         if not market_data:
             log(f"  ⚠ Could not fetch market data - skipping")
             continue

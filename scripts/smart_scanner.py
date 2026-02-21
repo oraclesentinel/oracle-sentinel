@@ -22,6 +22,7 @@ from config_loader import BOT_TOKEN, CHAT_IDS
 from news_fetcher import NewsFetcher
 from ai_brain import AIBrain
 from accuracy_tracker import AccuracyTracker
+from jupiter_prediction_client import JupiterPredictionClient
 
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'polymarket.db')
 LOG_PATH = os.path.join(os.path.dirname(__file__), '..', 'logs', 'smart_scanner.log')
@@ -417,7 +418,7 @@ SIGNAL: {signal_text}
 
 REASONING: {reasoning}
 
-Link: polymarket.com/event/{slug}
+Link: jup.ag/prediction/{slug}
 
 -- Oracle Sentinel Smart Scanner"""
 
@@ -464,6 +465,15 @@ Link: polymarket.com/event/{slug}
         self._log(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self._log("=" * 60)
 
+        # Step 0: Sync fresh data from Jupiter API
+        self._log("Syncing fresh data from Jupiter API...")
+        try:
+            jupiter_client = JupiterPredictionClient()
+            sync_result = jupiter_client.sync_markets(limit=100)
+            self._log(f"  Synced {sync_result.get('synced', 0)} markets from Jupiter")
+        except Exception as e:
+            self._log(f"  Warning: Jupiter sync failed: {e}")
+        
         # Step 1: Save volume snapshots
         self.save_volume_snapshots()
 

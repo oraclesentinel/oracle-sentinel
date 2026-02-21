@@ -368,7 +368,7 @@ def send_position_alert(pred: dict, action_result: dict, current_price: float):
 <b>Reason:</b> {action_result['reason'][:200]}
 
 ⏰ Market closes in ~5 hours
-🔗 https://polymarket.com/event/{pred.get('slug', '')}"""
+🔗 https://jup.ag/prediction/{pred.get('slug', '')}"""
 
     send_telegram(msg)
 

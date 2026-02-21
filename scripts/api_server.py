@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import re
 from sports_data import SportsData
 from news_fetcher import NewsFetcher
-from polymarket_client import PolymarketClient
+from jupiter_prediction_client import JupiterPredictionClient
 
 app = Flask(__name__)
 CORS(app)
@@ -258,6 +258,163 @@ def get_markets():
     finally:
         db.close()
 
+
+
+@app.route("/api/markets/live")
+def get_live_markets():
+    """Get live markets with real-time data for Market Explorer"""
+    try:
+        limit = request.args.get('limit', 100, type=int)
+        db = get_db()
+        
+        markets = db.execute("""
+            SELECT 
+                id,
+                polymarket_id,
+                question,
+                description,
+                outcomes,
+                outcome_prices,
+                volume,
+                volume_24h,
+                liquidity,
+                end_date,
+                active,
+                closed,
+                updated_at
+            FROM markets 
+            WHERE active = 1 
+            ORDER BY volume_24h DESC 
+            LIMIT ?
+        """, (limit,)).fetchall()
+        
+        markets_list = []
+        for m in markets:
+            try:
+                outcomes = json.loads(m['outcomes']) if m['outcomes'] else ["Yes", "No"]
+                prices = json.loads(m['outcome_prices']) if m['outcome_prices'] else ["0.5", "0.5"]
+            except:
+                outcomes = ["Yes", "No"]
+                prices = ["0.5", "0.5"]
+            
+            yes_price = float(prices[0]) if prices else 0.5
+            no_price = float(prices[1]) if len(prices) > 1 else 1 - yes_price
+            
+            markets_list.append({
+                "id": m['id'],
+                "polymarket_id": m['polymarket_id'],
+                "question": m['question'],
+                "description": m['description'][:200] + "..." if m['description'] and len(m['description']) > 200 else m['description'],
+                "outcomes": outcomes,
+                "yes_price": yes_price,
+                "no_price": no_price,
+                "volume": m['volume'] or 0,
+                "volume_24h": m['volume_24h'] or 0,
+                "liquidity": m['liquidity'] or 0,
+                "end_date": m['end_date'],
+                "active": m['active'],
+                "closed": m['closed'],
+                "updated_at": m['updated_at']
+            })
+        
+        return jsonify({
+            "markets": markets_list,
+            "total": len(markets_list),
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({"error": str(e), "markets": []}), 500
+
+
+@app.route("/api/markets/live/<market_id>/analyze", methods=["POST"])
+def analyze_live_market(market_id):
+    """Run AI analysis - accepts Jupiter market ID (POLY-xxx) or database id"""
+    try:
+        db = get_db()
+        # Try by polymarket_id first (POLY-xxx format)
+        market = db.execute("SELECT * FROM markets WHERE polymarket_id = ?", (market_id,)).fetchone()
+        if not market:
+            # Fallback: try as integer database id
+            try:
+                market = db.execute("SELECT * FROM markets WHERE id = ?", (int(market_id),)).fetchone()
+            except (ValueError, TypeError):
+                pass
+        if not market:
+            return jsonify({"error": "Market not found"}), 404
+        
+        # Use database id for AI analysis
+        db_market_id = market['id']
+        
+        # Run actual AI analysis
+        from ai_brain import AIBrain
+        brain = AIBrain()
+        
+        # Prepare market data for analysis
+        market_dict = dict(market)
+        question = market_dict.get('question', '')
+        description = market_dict.get('description', '')
+        
+        # Parse outcome_prices
+        outcome_prices = market_dict.get('outcome_prices', '[0.5, 0.5]')
+        if isinstance(outcome_prices, str):
+            import json as json_lib
+            try:
+                prices = json_lib.loads(outcome_prices)
+            except:
+                prices = [0.5, 0.5]
+        else:
+            prices = outcome_prices
+        
+        yes_price = float(prices[0]) if prices else 0.5
+        
+        # First, fetch news articles for this market
+        try:
+            from news_fetcher import NewsFetcher
+            fetcher = NewsFetcher()
+            news_result = fetcher.fetch_for_market(db_market_id, question)
+            articles_fetched = news_result.get('stats', {}).get('saved', 0)
+        except Exception as news_err:
+            print(f"News fetch warning: {news_err}")
+            articles_fetched = 0
+        
+        # Run AI analysis - only pass market_id
+        result = brain.analyze_market(db_market_id)
+        
+        if result and result.get('status') == 'skipped':
+            return jsonify({
+                "error": f"Analysis skipped: {result.get('reason', 'Unknown reason')}",
+                "status": "skipped"
+            })
+        elif result and result.get('reasoning'):
+            # Format analysis text
+            analysis_text = f"""AI Probability: {result.get('ai_probability', 0)*100:.1f}%
+Market Price: {yes_price*100:.1f}%
+Edge: {result.get('edge', 0):+.1f}%
+Confidence: {result.get('confidence', 'N/A')}
+Recommendation: {result.get('recommendation', 'N/A')}
+
+{result.get('reasoning', '')}"""
+            
+            return jsonify({
+                "success": True,
+                "analysis": analysis_text,
+                "ai_probability": result.get('ai_probability', 0),
+                "market_price": yes_price,
+                "edge": result.get('edge', 0),
+                "confidence": result.get('confidence', ''),
+                "recommendation": result.get('recommendation', ''),
+                "reasoning": result.get('reasoning', '')
+            })
+        else:
+            return jsonify({
+                "error": "Analysis could not be completed",
+                "detail": result.get('reasoning', 'Unknown error') if result else 'No result'
+            })
+            
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Analysis failed: {str(e)}"}), 500
 
 @app.route("/api/predictions")
 def get_predictions():
@@ -1086,71 +1243,62 @@ def ai_chat():
         data_sources = []
         market_question = user_message  # default: use raw message
 
-        # Check if message contains Polymarket URL → fetch market data (supports multi-outcome)
+        # Check if message contains Jupiter market ID or URL → fetch market data
         try:
-            url_match = re.search(r'polymarket\.com/(?:event|sports/.+?)/([a-zA-Z0-9-]+)(?:\?|$|\s)', user_message + ' ')
-            if url_match:
-                slug = url_match.group(1)
-                pc = PolymarketClient()
-                
-                # Use smart fetch that handles both binary and multi-outcome markets
-                market_data = pc.get_market_or_event(slug)
+            # Support formats:
+            # - Direct market ID: POLY-559652
+            # - Jupiter URL: jup.ag/prediction/POLY-559652
+            # - Legacy Polymarket URL: polymarket.com/event/slug (will search Jupiter)
+            market_id = None
+            
+            # Check for POLY-XXXXX pattern
+            poly_match = re.search(r'(POLY-\d+)', user_message)
+            if poly_match:
+                market_id = poly_match.group(1)
+            
+            # Check for jup.ag URL
+            jup_match = re.search(r'jup\.ag/prediction/([A-Za-z0-9-]+)', user_message)
+            if jup_match:
+                market_id = jup_match.group(1)
+            
+            if market_id:
+                jupiter = JupiterPredictionClient()
+                market_data = jupiter.get_market_or_event(market_id)
                 
                 if market_data['type']:
                     question = market_data['question'] or ''
-                    description = market_data['description'] or ''
-                    volume = market_data['volume']
-                    liquidity = market_data['liquidity']
-                    end_date = market_data['end_date'] or ''
                     outcomes = market_data['outcomes']
                     market_type = market_data['type']
                     
                     if market_type == 'binary':
-                        # Binary market (YES/NO)
-                        outcome1 = outcomes[0] if outcomes else {'name': 'YES', 'probability': 0}
-                        outcome2 = outcomes[1] if len(outcomes) > 1 else {'name': 'NO', 'probability': 0}
-                        
+                        outcome1 = outcomes[0] if outcomes else {'name': 'YES', 'probability': 0, 'price': 0}
+                        outcome2 = outcomes[1] if len(outcomes) > 1 else {'name': 'NO', 'probability': 0, 'price': 0}
                         live_context += f"""
-POLYMARKET DATA (live from API):
+JUPITER PREDICTION MARKET DATA:
   Market Type: Binary (YES/NO)
+  Market ID: {market_id}
   Question: {question}
-  {outcome1['name']} Price: ${outcome1['price']:.4f} ({outcome1['probability']:.1f}%)
-  {outcome2['name']} Price: ${outcome2['price']:.4f} ({outcome2['probability']:.1f}%)
-  Volume: ${float(volume):,.0f}
-  Liquidity: ${float(liquidity):,.0f}
-  End Date: {end_date}
-
-RESOLUTION RULES:
-{description}
+  {outcome1.get('name', 'YES')} Price: ${outcome1.get('price', 0):.4f} ({outcome1.get('probability', 0):.1f}%)
+  {outcome2.get('name', 'NO')} Price: ${outcome2.get('price', 0):.4f} ({outcome2.get('probability', 0):.1f}%)
 """
                     else:
-                        # Multi-outcome market
                         live_context += f"""
-POLYMARKET DATA (live from API):
+JUPITER PREDICTION MARKET DATA:
   Market Type: Multi-Outcome ({len(outcomes)} options)
+  Market ID: {market_id}
   Question: {question}
-  Volume: ${float(volume):,.0f}
-  Liquidity: ${float(liquidity):,.0f}
-  End Date: {end_date}
 
 OUTCOME PROBABILITIES (sorted by likelihood):
 """
-                        for i, o in enumerate(outcomes[:15]):  # Show top 15
-                            vol_str = f" (Vol: ${o.get('volume', 0):,.0f})" if o.get('volume') else ""
-                            live_context += f"  {i+1}. {o['name']}: {o['probability']:.1f}%{vol_str}\n"
-                        
+                        for i, o in enumerate(outcomes[:15]):
+                            live_context += f"  {i+1}. {o.get('name', 'Unknown')}: {o.get('probability', 0):.1f}%\n"
                         if len(outcomes) > 15:
                             live_context += f"  ... and {len(outcomes) - 15} more options\n"
-                        
-                        live_context += f"""
-RESOLUTION RULES:
-{description}
-"""
                     
-                    market_question = question  # use actual market question
-                    data_sources.append(f"Polymarket API ({market_type}, slug: {slug})")
+                    market_question = question
+                    data_sources.append(f"Jupiter Prediction API ({market_type}, ID: {market_id})")
         except Exception as e:
-            live_context += f"\n[Polymarket fetch error: {e}]"
+            live_context += f"\n[Jupiter fetch error: {e}]"
 
         # Check if message is about sports
         try:
@@ -1286,7 +1434,7 @@ CONFIDENCE BREAKDOWN:
             large_whales = db.execute("""
                 SELECT market_title, trade_size, trade_side, outcome, trader_name
                 FROM whale_trades_alerted
-                WHERE trade_size >= 10000
+                WHERE trade_size >= 500
                 ORDER BY trade_size DESC LIMIT 10
             """).fetchall()
             
@@ -1483,306 +1631,115 @@ Keep responses concise but data-driven. Plain text only, no formatting."""
 
 
 
+# ─── OPENAPI SPEC ───────────────────────────────────────────────
+@app.route("/openapi.json")
+@app.route("/v1/openapi.json")
+def openapi_spec():
+    """Serve OpenAPI specification"""
+    spec_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'openapi.json')
+    with open(spec_path, 'r') as f:
+        spec = json.load(f)
+    return jsonify(spec)
 
-# ─── MARKET QUICK ANALYSIS ───────────────────────────────────
-@app.route("/api/market/<int:market_id>/analyze", methods=["POST"])
-def analyze_market_quick(market_id):
-    """
-    Quick AI analysis for a market without BUY/SELL recommendation.
-    Returns factual analysis only.
-    """
+
+@app.route("/")
+def index():
+    """Root endpoint"""
+    return jsonify({
+        "name": "Oracle Sentinel Predict API",
+        "version": "1.0.0",
+        "docs": "/openapi.json",
+        "endpoints": {
+            "dashboard": "/api/dashboard",
+            "signals": "/api/signals",
+            "markets": "/api/markets",
+            "whales": "/api/whales",
+            "health": "/api/health"
+        }
+    })
+
+
+
+@app.route("/api/markets/live/fresh")
+def get_fresh_markets():
+    """Fetch fresh markets from Jupiter Prediction API (primary) with Polymarket fallback"""
     try:
-        db = get_db()
+        limit = request.args.get('limit', 20, type=int)
+        source_param = request.args.get('source', 'jupiter')  # Allow override
+        category = request.args.get('category', None)
         
-        # Get market data
-        market = db.execute("SELECT * FROM markets WHERE id = ?", (market_id,)).fetchone()
-        if not market:
-            db.close()
-            return jsonify({"error": "Market not found"}), 404
-        
-        # Get news/signals for this market
-        signals = db.execute("""
-            SELECT source_name, title, content, url, timestamp
-            FROM signals WHERE market_id = ?
-            ORDER BY timestamp DESC LIMIT 5
-        """, (market_id,)).fetchall()
-        
-        db.close()
-        
-        # Parse market data
-        question = market["question"]
-        description = market["description"] or ""
-        outcome_prices = json.loads(market["outcome_prices"]) if market["outcome_prices"] else []
-        yes_price = float(outcome_prices[0]) if outcome_prices else 0
-        no_price = float(outcome_prices[1]) if len(outcome_prices) > 1 else 0
-        volume = market["volume"] or 0
-        liquidity = market["liquidity"] or 0
-        end_date = market["end_date"] or "Unknown"
-        
-        # Build news context
-        news_context = ""
-        if signals:
-            news_context = "\n\nRECENT NEWS:\n"
-            for s in signals:
-                news_context += f"- [{s['source_name']}] {s['title']}\n"
-                if s['content']:
-                    news_context += f"  {s['content'][:200]}...\n"
-        
-        # AI Analysis prompt (no BUY/SELL)
-        current_time_utc = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
-        
-        system_prompt = f"""You are Oracle Sentinel, an expert prediction market analyst.
-CURRENT TIME: {current_time_utc}
-
-Your task is to provide a FACTUAL ANALYSIS of this prediction market. 
-DO NOT provide any trading recommendations (no BUY, SELL, or trading advice).
-Focus on:
-1. Key facts relevant to this market
-2. Important factors that could influence the outcome
-3. Risks and uncertainties
-4. Timeline considerations
-
-Keep your analysis concise but insightful. Use plain text, no markdown formatting."""
-
-        user_prompt = f"""MARKET: {question}
-
-CURRENT PRICES:
-- YES: {yes_price*100:.1f}% (${yes_price:.4f})
-- NO: {no_price*100:.1f}% (${no_price:.4f})
-- Volume: ${volume:,.0f}
-- Liquidity: ${liquidity:,.0f}
-- End Date: {end_date}
-
-RESOLUTION RULES:
-{description[:1000] if description else "Not specified"}
-{news_context}
-
-Provide a brief factual analysis of this market. What are the key factors? What are the risks? No trading recommendations."""
-
-        # Call OpenRouter
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-        }
-        
-        payload = {
-            "model": "anthropic/claude-3.5-haiku",
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "max_tokens": 800,
-            "temperature": 0.3
-        }
-        
-        response = http_requests.post(
-            OPENROUTER_URL,
-            headers=headers,
-            json=payload,
-            timeout=60
-        )
-        
-        if response.status_code != 200:
-            return jsonify({"error": "AI analysis failed", "details": response.text[:200]}), 503
-        
-        result = response.json()
-        analysis = result.get("choices", [{}])[0].get("message", {}).get("content", "Analysis unavailable")
-        
-        return jsonify({
-            "market_id": market_id,
-            "question": question,
-            "yes_price": yes_price,
-            "no_price": no_price,
-            "volume": volume,
-            "liquidity": liquidity,
-            "end_date": end_date,
-            "analysis": analysis,
-            "news_count": len(signals),
-            "analyzed_at": datetime.utcnow().isoformat()
-        })
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-
-# ─── REAL-TIME MARKETS FROM POLYMARKET API ───────────────────
-@app.route("/api/markets/live")
-def get_live_markets():
-    """
-    Fetch markets directly from Polymarket Gamma API in real-time.
-    """
-    try:
-        import requests as http_req
-        
-        limit = request.args.get('limit', 50, type=int)
-        offset = request.args.get('offset', 0, type=int)
-        
-        # Fetch from Polymarket Gamma API
-        gamma_url = "https://gamma-api.polymarket.com/markets"
-        params = {
-            'limit': min(limit, 100),
-            'offset': offset,
-            'active': 'true',
-            'closed': 'false',
-            'order': 'volume24hr',
-            'ascending': 'false'
-        }
-        
-        response = http_req.get(gamma_url, params=params, timeout=15)
-        
-        if response.status_code != 200:
-            return jsonify({"error": "Failed to fetch from Polymarket", "status": response.status_code}), 503
-        
-        raw_markets = response.json()
-        
-        # Transform to our format
         markets_list = []
-        for m in raw_markets:
+        source_used = "jupiter"
+        
+        # Try Jupiter first (primary source)
+        if source_param != 'polymarket_only':
             try:
-                # Parse outcome prices
-                outcomes = m.get('outcomePrices', '[]')
-                if isinstance(outcomes, str):
-                    import json
-                    outcomes = json.loads(outcomes)
+                jupiter_client = JupiterPredictionClient()
+                jupiter_markets = jupiter_client.get_markets(limit=limit, category=category, active_only=True)
                 
-                yes_price = float(outcomes[0]) if len(outcomes) > 0 else 0
-                no_price = float(outcomes[1]) if len(outcomes) > 1 else 1 - yes_price
+                for m in jupiter_markets:
+                    try:
+                        event_info = m.get('_event', {})
+                        pricing = m.get('pricing', {})
+                        metadata = m.get('metadata', {})
+                        
+                        # Convert micro USD to decimal
+                        yes_price = (pricing.get('buyYesPriceUsd', 0) or 0) / 1_000_000
+                        no_price = (pricing.get('buyNoPriceUsd', 0) or 0) / 1_000_000
+                        volume = (pricing.get('volume', 0) or 0) / 1_000_000
+                        
+                        # Build question from event + market title
+                        event_title = event_info.get('title', '')
+                        market_title = metadata.get('title', '')
+                        if market_title and market_title != event_title:
+                            question = f"{event_title}: {market_title}"
+                        else:
+                            question = event_title or market_title or 'Unknown'
+                        
+                        markets_list.append({
+                            "id": m.get('marketId'),
+                            "polymarket_id": m.get('marketId'),  # For compatibility
+                            "jupiter_market_id": m.get('marketId'),
+                            "question": question,
+                            "description": metadata.get('rulesPrimary', '')[:200] + "..." if metadata.get('rulesPrimary') and len(metadata.get('rulesPrimary', '')) > 200 else metadata.get('rulesPrimary', ''),
+                            "outcomes": ["Yes", "No"],
+                            "yes_price": yes_price,
+                            "no_price": no_price,
+                            "volume": volume,
+                            "volume_24h": volume,
+                            "liquidity": 0,
+                            "end_date": datetime.fromtimestamp(m.get('closeTime', 0)).isoformat() if m.get('closeTime') else '',
+                            "active": m.get('status') == 'open',
+                            "closed": m.get('status') == 'closed',
+                            "slug": f"{event_title}-{market_title}".lower().replace(' ', '-')[:50],
+                            "category": event_info.get('category', ''),
+                            "source": "jupiter_api",
+                            "event_id": event_info.get('eventId', ''),
+                            "image_url": event_info.get('imageUrl', '')
+                        })
+                    except Exception as e:
+                        continue
                 
-                markets_list.append({
-                    "id": m.get('id'),
-                    "condition_id": m.get('conditionId'),
-                    "question": m.get('question', 'Unknown'),
-                    "slug": m.get('slug', ''),
-                    "yes_price": yes_price,
-                    "no_price": no_price,
-                    "volume": float(m.get('volume', 0) or 0),
-                    "volume_24h": float(m.get('volume24hr', 0) or 0),
-                    "liquidity": float(m.get('liquidity', 0) or 0),
-                    "end_date": m.get('endDate'),
-                    "description": m.get('description', '')[:500] if m.get('description') else '',
-                    "active": m.get('active', True),
-                    "closed": m.get('closed', False),
-                })
+                if markets_list:
+                    source_used = "jupiter_api"
+                    
             except Exception as e:
-                continue
+                print(f"[WARN] Jupiter API failed, falling back to Polymarket: {e}")
+        
+        # Jupiter is the only source - no fallback needed
+                
+            except Exception as e:
+                return jsonify({"error": f"Both Jupiter and Polymarket failed: {e}", "markets": []}), 500
         
         return jsonify({
             "markets": markets_list,
-            "count": len(markets_list),
-            "source": "polymarket_live",
-            "fetched_at": datetime.utcnow().isoformat()
+            "total": len(markets_list),
+            "source": source_used,
+            "timestamp": datetime.now().isoformat()
         })
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ─── REAL-TIME SINGLE MARKET ANALYSIS ────────────────────────
-@app.route("/api/markets/live/<market_id>/analyze", methods=["POST"])
-def analyze_live_market(market_id):
-    """
-    Analyze a market fetched directly from Polymarket (not from local DB).
-    """
-    try:
-        import requests as http_req
-        
-        # Fetch market from Polymarket
-        gamma_url = f"https://gamma-api.polymarket.com/markets/{market_id}"
-        response = http_req.get(gamma_url, timeout=15)
-        
-        if response.status_code != 200:
-            return jsonify({"error": "Market not found on Polymarket"}), 404
-        
-        m = response.json()
-        
-        # Parse data
-        question = m.get('question', 'Unknown')
-        description = m.get('description', '')[:1000]
-        outcomes = m.get('outcomePrices', '[]')
-        if isinstance(outcomes, str):
-            outcomes = json.loads(outcomes)
-        
-        yes_price = float(outcomes[0]) if len(outcomes) > 0 else 0
-        no_price = float(outcomes[1]) if len(outcomes) > 1 else 1 - yes_price
-        volume = float(m.get('volume', 0) or 0)
-        liquidity = float(m.get('liquidity', 0) or 0)
-        end_date = m.get('endDate', 'Unknown')
-        
-        # AI Analysis
-        current_time_utc = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
-        
-        system_prompt = f"""You are Oracle Sentinel, an expert prediction market analyst.
-CURRENT TIME: {current_time_utc}
-
-Provide a FACTUAL ANALYSIS of this prediction market.
-DO NOT provide trading recommendations (no BUY, SELL, or trading advice).
-Focus on:
-1. Key facts relevant to this market
-2. Important factors that could influence the outcome
-3. Risks and uncertainties
-4. Timeline considerations
-
-Keep your analysis concise (3-4 paragraphs). Use plain text, no markdown."""
-
-        user_prompt = f"""MARKET: {question}
-
-CURRENT PRICES:
-- YES: {yes_price*100:.1f}%
-- NO: {no_price*100:.1f}%
-- Volume: ${volume:,.0f}
-- Liquidity: ${liquidity:,.0f}
-- End Date: {end_date}
-
-RESOLUTION RULES:
-{description}
-
-Provide a brief factual analysis of this market."""
-
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-        }
-        
-        payload = {
-            "model": "anthropic/claude-3.5-haiku",
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "max_tokens": 600,
-            "temperature": 0.3
-        }
-        
-        ai_response = http_req.post(
-            OPENROUTER_URL,
-            headers=headers,
-            json=payload,
-            timeout=60
-        )
-        
-        if ai_response.status_code != 200:
-            return jsonify({"error": "AI analysis failed"}), 503
-        
-        result = ai_response.json()
-        analysis = result.get("choices", [{}])[0].get("message", {}).get("content", "Analysis unavailable")
-        
-        return jsonify({
-            "market_id": market_id,
-            "question": question,
-            "yes_price": yes_price,
-            "no_price": no_price,
-            "volume": volume,
-            "liquidity": liquidity,
-            "end_date": end_date,
-            "description": description,
-            "analysis": analysis,
-            "source": "polymarket_live",
-            "analyzed_at": datetime.utcnow().isoformat()
-        })
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e), "markets": []}), 500
 
 
 if __name__ == "__main__":

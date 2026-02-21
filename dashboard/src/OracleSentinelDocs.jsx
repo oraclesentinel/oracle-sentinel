@@ -1,1278 +1,1943 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 
 // ═══════════════════════════════════════════════════════════════
-// ORACLE SENTINEL — DOCUMENTATION / LANDING PAGE
-// Cinematic Cold-Intelligence Aesthetic
+// ORACLE SENTINEL — DOCUMENTATION
+// Clean Documentation Style (PayAI-inspired)
 // ═══════════════════════════════════════════════════════════════
 
 const C = {
-  bg: "#060a10", bgPanel: "#0a0f18", bgCard: "#0c1220",
-  blue: "#4da6ff", blueMid: "#2d7fd4", blueDim: "#1a5a9e", blueDark: "#0d2847",
-  ice: "#c8ddf0", frost: "#8badc4", slate: "#5a7184", slateD: "#3a4f60",
-  red: "#e05565", teal: "#4ecdc4", amber: "#d4a843", green: "#5cb85c",
-  border: "#141e2e", borderL: "#1c2d42", grid: "#0f1924",
-  glow: "rgba(77,166,255,0.08)", glowT: "rgba(78,205,196,0.06)",
+  bg: "#0a0f16",
+  bgSidebar: "#080c12",
+  bgContent: "#0d1219",
+  bgCard: "#111820",
+  bgHover: "#151d28",
+  blue: "#4da6ff",
+  blueMid: "#2d7fd4",
+  blueDim: "#1a5a9e",
+  ice: "#e1eaf5",
+  frost: "#a0b4c8",
+  slate: "#6b7f92",
+  slateD: "#4a5a6a",
+  teal: "#4ecdc4",
+  amber: "#d4a843",
+  green: "#4ade80",
+  red: "#e05565",
+  border: "#1a2332",
+  borderL: "#243040",
 };
 
-const SECTIONS = [
-  { id: "hero", label: "ORACLE" },
-  { id: "problem", label: "PROBLEM" },
-  { id: "architecture", label: "ARCH" },
-  { id: "features", label: "FEATURES" },
-  { id: "filters", label: "FILTERS" },
-  { id: "pipeline", label: "PIPELINE" },
-  { id: "tech", label: "STACK" },
-  { id: "accuracy", label: "ACCURACY" },
-  { id: "sentinel-code", label: "CODE" },
-  { id: "api", label: "API" },
-  { id: "sdk", label: "SDK" },
-  { id: "token", label: "TOKEN" },
-  { id: "openclaw", label: "OPENCLAW" },
-  { id: "agents", label: "AGENTS" },
+// Sidebar Navigation Structure
+const NAV_STRUCTURE = [
+  {
+    category: "Oracle Sentinel",
+    items: [
+      { id: "introduction", label: "Introduction" },
+      { id: "getting-started", label: "Getting Started" },
+      { id: "architecture", label: "Architecture Overview" },
+    ]
+  },
+  {
+    category: "Sentinel Predict",
+    items: [
+      { id: "predict-overview", label: "Overview" },
+      { id: "predict-how-it-works", label: "How It Works" },
+      { id: "predict-dual-model", label: "Dual-Model AI System" },
+      { id: "predict-market-analysis", label: "Market Analysis" },
+      { id: "predict-signal-types", label: "Signal Types" },
+      { id: "predict-accuracy", label: "Accuracy Tracking" },
+      { id: "predict-whale-detection", label: "Whale Detection" },
+    ]
+  },
+  {
+    category: "Sentinel Code",
+    items: [
+      { id: "code-overview", label: "Overview" },
+      { id: "code-how-it-works", label: "How It Works" },
+      { id: "code-security-scanner", label: "Security Scanner" },
+      { id: "code-bug-detection", label: "Bug Detection" },
+      { id: "code-quality", label: "Code Quality Analysis" },
+      { id: "code-languages", label: "Supported Languages" },
+    ]
+  },
+  {
+    category: "Sentinel Economic",
+    items: [
+      { id: "economic-overview", label: "Overview" },
+      { id: "economic-how-it-works", label: "How It Works" },
+      { id: "economic-negotiation", label: "AI Negotiation Engine" },
+      { id: "economic-payments", label: "Payment Methods" },
+      { id: "economic-marketplace", label: "Marketplace" },
+      { id: "economic-api-key", label: "Using Your API Key" },
+    ]
+  },
+  {
+    category: "$OSAI Token",
+    items: [
+      { id: "token-overview", label: "Overview" },
+      { id: "token-utility", label: "Token Utility" },
+      { id: "token-benefits", label: "Holder Benefits" },
+      { id: "token-how-to-buy", label: "How to Buy" },
+    ]
+  },
 ];
 
-// ── Particle Canvas ──
-function ParticleField() {
-  const canvasRef = useRef(null);
-  const particles = useRef([]);
-  const animRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    let w = canvas.width = window.innerWidth;
-    let h = canvas.height = window.innerHeight * 6;
-
-    const init = () => {
-      particles.current = Array.from({ length: 80 }, () => ({
-        x: Math.random() * w, y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.15 - 0.05,
-        r: Math.random() * 1.5 + 0.3, a: Math.random() * 0.4 + 0.05,
-      }));
-    };
-    init();
-
-    const draw = () => {
-      ctx.clearRect(0, 0, w, h);
-      particles.current.forEach(p => {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
-        if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(77,166,255,${p.a})`;
-        ctx.fill();
-      });
-      // connection lines
-      for (let i = 0; i < particles.current.length; i++) {
-        for (let j = i + 1; j < particles.current.length; j++) {
-          const dx = particles.current[i].x - particles.current[j].x;
-          const dy = particles.current[i].y - particles.current[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 150) {
-            ctx.beginPath();
-            ctx.moveTo(particles.current[i].x, particles.current[i].y);
-            ctx.lineTo(particles.current[j].x, particles.current[j].y);
-            ctx.strokeStyle = `rgba(77,166,255,${0.04 * (1 - dist / 150)})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
+// ═══════════════════════════════════════════════════════════════
+// STYLES
+// ═══════════════════════════════════════════════════════════════
+function Styles() {
+  return (
+    <style>{`
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: ${C.bg}; }
+      
+      .docs-container {
+        display: flex;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
-      animRef.current = requestAnimationFrame(draw);
-    };
-    draw();
-    const onResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight * 6; init(); };
-    window.addEventListener("resize", onResize);
-    return () => { cancelAnimationFrame(animRef.current); window.removeEventListener("resize", onResize); };
-  }, []);
-
-  return <canvas ref={canvasRef} style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0, opacity: 0.6 }} />;
-}
-
-// ── Animated counter ──
-function AnimNum({ target, suffix = "", duration = 2000 }) {
-  const [val, setVal] = useState(0);
-  const ref = useRef(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !started.current) {
-        started.current = true;
-        const start = performance.now();
-        const tick = (now) => {
-          const p = Math.min((now - start) / duration, 1);
-          const ease = 1 - Math.pow(1 - p, 3);
-          setVal(Math.round(target * ease));
-          if (p < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
+      
+      /* Sidebar */
+      .sidebar {
+        width: 280px;
+        background: ${C.bgSidebar};
+        border-right: 1px solid ${C.border};
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 24px 0;
       }
-    }, { threshold: 0.3 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [target, duration]);
-
-  return <span ref={ref}>{val}{suffix}</span>;
-}
-
-// ── Reveal on scroll ──
-function Reveal({ children, delay = 0, style = {} }) {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.15 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-  return (
-    <div ref={ref} style={{
-      ...style,
-      opacity: visible ? 1 : 0,
-      transform: visible ? "translateY(0)" : "translateY(30px)",
-      transition: `all 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
-    }}>{children}</div>
+      
+      .sidebar-logo {
+        padding: 0 24px 24px;
+        border-bottom: 1px solid ${C.border};
+        margin-bottom: 16px;
+      }
+      
+      .sidebar-category {
+        padding: 16px 24px 8px;
+        color: ${C.slate};
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      
+      .sidebar-item {
+        display: block;
+        padding: 10px 24px 10px 32px;
+        color: ${C.frost};
+        font-size: 14px;
+        text-decoration: none;
+        transition: all 0.15s ease;
+        cursor: pointer;
+        border-left: 2px solid transparent;
+      }
+      
+      .sidebar-item:hover {
+        background: ${C.bgHover};
+        color: ${C.ice};
+      }
+      
+      .sidebar-item.active {
+        background: ${C.blue}10;
+        color: ${C.blue};
+        border-left-color: ${C.blue};
+      }
+      
+      /* Main Content */
+      .main-content {
+        margin-left: 280px;
+        flex: 1;
+        display: flex;
+      }
+      
+      .content-area {
+        flex: 1;
+        max-width: 800px;
+        padding: 48px 64px;
+      }
+      
+      /* On This Page */
+      .on-this-page {
+        width: 220px;
+        padding: 48px 24px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      
+      .on-this-page-title {
+        color: ${C.slate};
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+      }
+      
+      .on-this-page-item {
+        display: block;
+        padding: 6px 0;
+        color: ${C.frost};
+        font-size: 13px;
+        text-decoration: none;
+        transition: color 0.15s ease;
+        cursor: pointer;
+      }
+      
+      .on-this-page-item:hover {
+        color: ${C.blue};
+      }
+      
+      /* Typography */
+      .doc-title {
+        color: ${C.ice};
+        font-size: 36px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        line-height: 1.2;
+      }
+      
+      .doc-subtitle {
+        color: ${C.frost};
+        font-size: 18px;
+        line-height: 1.6;
+        margin-bottom: 32px;
+      }
+      
+      .doc-section {
+        margin-bottom: 48px;
+      }
+      
+      .doc-heading {
+        color: ${C.ice};
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        padding-top: 24px;
+      }
+      
+      .doc-subheading {
+        color: ${C.ice};
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        padding-top: 16px;
+      }
+      
+      .doc-text {
+        color: ${C.frost};
+        font-size: 15px;
+        line-height: 1.7;
+        margin-bottom: 16px;
+      }
+      
+      .doc-list {
+        color: ${C.frost};
+        font-size: 15px;
+        line-height: 1.8;
+        margin-bottom: 16px;
+        padding-left: 24px;
+      }
+      
+      .doc-list li {
+        margin-bottom: 8px;
+      }
+      
+      /* Code Blocks */
+      .code-block {
+        background: ${C.bgCard};
+        border: 1px solid ${C.border};
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+      }
+      
+      .code-block pre {
+        color: ${C.ice};
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        margin: 0;
+      }
+      
+      .code-inline {
+        background: ${C.bgCard};
+        color: ${C.teal};
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      
+      /* Cards */
+      .feature-card {
+        background: ${C.bgCard};
+        border: 1px solid ${C.border};
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 16px;
+        transition: border-color 0.2s ease;
+      }
+      
+      .feature-card:hover {
+        border-color: ${C.borderL};
+      }
+      
+      .feature-card-title {
+        color: ${C.ice};
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .feature-card-text {
+        color: ${C.frost};
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      
+      /* API Endpoint */
+      .api-endpoint {
+        background: ${C.bgCard};
+        border: 1px solid ${C.border};
+        border-radius: 8px;
+        margin-bottom: 16px;
+        overflow: hidden;
+      }
+      
+      .api-endpoint-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid ${C.border};
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      
+      .api-method {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+      
+      .api-method.get { background: ${C.green}20; color: ${C.green}; }
+      .api-method.post { background: ${C.amber}20; color: ${C.amber}; }
+      .api-method.put { background: ${C.blue}20; color: ${C.blue}; }
+      .api-method.delete { background: ${C.red}20; color: ${C.red}; }
+      
+      .api-path {
+        color: ${C.ice};
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px;
+      }
+      
+      .api-endpoint-body {
+        padding: 20px;
+      }
+      
+      .api-desc {
+        color: ${C.frost};
+        font-size: 14px;
+        margin-bottom: 16px;
+      }
+      
+      /* Table */
+      .doc-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+      
+      .doc-table th {
+        background: ${C.bgCard};
+        color: ${C.slate};
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid ${C.border};
+      }
+      
+      .doc-table td {
+        color: ${C.frost};
+        font-size: 14px;
+        padding: 12px 16px;
+        border-bottom: 1px solid ${C.border};
+      }
+      
+      .doc-table tr:last-child td {
+        border-bottom: none;
+      }
+      
+      /* Badge */
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .badge-blue { background: ${C.blue}20; color: ${C.blue}; }
+      .badge-teal { background: ${C.teal}20; color: ${C.teal}; }
+      .badge-amber { background: ${C.amber}20; color: ${C.amber}; }
+      .badge-green { background: ${C.green}20; color: ${C.green}; }
+      
+      /* Scrollbar */
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: ${C.bgSidebar}; }
+      ::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: ${C.borderL}; }
+      
+      /* Responsive */
+      @media (max-width: 1200px) {
+        .on-this-page { display: none; }
+      }
+      
+      @media (max-width: 900px) {
+        .sidebar { width: 240px; }
+        .main-content { margin-left: 240px; }
+        .content-area { padding: 32px 40px; }
+      }
+    `}</style>
   );
 }
 
-// ── Code block ──
-function CodeBlock({ code, lang = "python" }) {
-  return (
-    <pre style={{
-      background: "#070b12", border: `1px solid ${C.border}`, borderRadius: 6,
-      padding: "16px 20px", fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
-      color: C.frost, overflowX: "auto", lineHeight: 1.7, position: "relative",
-    }}>
-      <span style={{ position: "absolute", top: 8, right: 12, fontSize: 9, color: C.slateD, letterSpacing: 1 }}>{lang.toUpperCase()}</span>
-      <code>{code}</code>
-    </pre>
-  );
-}
 
-// ── Glowing card ──
-function GlowCard({ children, style = {}, accent = C.blue }) {
-  const [hover, setHover] = useState(false);
+// ═══════════════════════════════════════════════════════════════
+// SIDEBAR COMPONENT
+// ═══════════════════════════════════════════════════════════════
+function Sidebar({ activeSection, onNavigate }) {
   return (
-    <div
-      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-      style={{
-        background: C.bgCard, border: `1px solid ${hover ? accent + "40" : C.border}`,
-        borderRadius: 8, padding: "28px 24px", position: "relative", overflow: "hidden",
-        transition: "all 0.4s ease", cursor: "default",
-        boxShadow: hover ? `0 0 40px ${accent}10, inset 0 1px 0 ${accent}15` : "none",
-        ...style,
-      }}
-    >
-      {hover && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${accent}60, transparent)` }} />}
-      {children}
-    </div>
-  );
-}
-
-// ── Section wrapper ──
-function Section({ id, children, style = {} }) {
-  return (
-    <section id={id} style={{ position: "relative", zIndex: 1, padding: "100px 0", ...style }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 32px" }}>{children}</div>
-    </section>
-  );
-}
-
-// ── Section label ──
-function SectionLabel({ text, sub }) {
-  return (
-    <div style={{ marginBottom: 48 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-        <div style={{ width: 32, height: 1, background: C.blue }} />
-        <span style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600, letterSpacing: 3 }}>{text}</span>
+    <div className="sidebar">
+      <div className="sidebar-logo">
+        <a href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}>
+          <img src="/logo.png" alt="Oracle Sentinel" style={{ width: 32, height: 32, borderRadius: 6 }} />
+          <span style={{ color: C.ice, fontWeight: 700, fontSize: 16 }}>Oracle Sentinel</span>
+        </a>
       </div>
-      {sub && <h2 style={{ color: C.ice, fontFamily: "'Space Mono', 'JetBrains Mono', monospace", fontSize: 32, fontWeight: 700, lineHeight: 1.2, marginTop: 8 }}>{sub}</h2>}
+      
+      {NAV_STRUCTURE.map((section, idx) => (
+        <div key={idx}>
+          <div className="sidebar-category">{section.category}</div>
+          {section.items.map(item => (
+            <div
+              key={item.id}
+              className={`sidebar-item ${activeSection === item.id ? 'active' : ''}`}
+              onClick={() => onNavigate(item.id)}
+            >
+              {item.label}
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
-  );
-}
-
-// ── Pipeline step ──
-function PipelineStep({ num, title, desc, icon, delay }) {
-  return (
-    <Reveal delay={delay} style={{ flex: 1 }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", position: "relative" }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-          background: `linear-gradient(135deg, ${C.blueDark}, ${C.bgCard})`,
-          border: `2px solid ${C.blue}30`, fontSize: 24, marginBottom: 16,
-          boxShadow: `0 0 30px ${C.blue}10`,
-        }}>{num}</div>
-        <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 6 }}>STEP {num}</div>
-        <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 600, marginBottom: 8 }}>{title}</div>
-        <div style={{ color: C.slate, fontSize: 12, lineHeight: 1.6, maxWidth: 200 }}>{desc}</div>
-      </div>
-    </Reveal>
-  );
-}
-
-// ── Nav dot ──
-function NavDot({ active, label, onClick }) {
-  return (
-    <button onClick={onClick} title={label} style={{
-      width: active ? 24 : 8, height: 8, borderRadius: 4, border: "none", cursor: "pointer",
-      background: active ? C.blue : C.border, transition: "all 0.3s",
-      opacity: active ? 1 : 0.5,
-    }} />
   );
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MAIN DOCS PAGE
+// CONTENT SECTIONS
+// ═══════════════════════════════════════════════════════════════
+
+// Introduction
+function IntroductionContent() {
+  return (
+    <>
+      <h1 className="doc-title">Introduction</h1>
+      <p className="doc-subtitle">
+        Welcome to Oracle Sentinel — an autonomous intelligence layer built on Solana for prediction markets, code analysis, and AI agent economy.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="welcome">Welcome to Oracle Sentinel</h2>
+        <p className="doc-text">
+          Oracle Sentinel is a suite of AI-powered tools designed to provide actionable intelligence for traders, developers, and AI agents. Our platform combines advanced machine learning with blockchain technology to deliver real-time insights and autonomous services.
+        </p>
+        <p className="doc-text">
+          Our open-source technologies empower developers to create, monetize, and integrate AI agents and services seamlessly.
+        </p>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="modules">Intelligence Modules</h2>
+        <div className="feature-card">
+          <div className="feature-card-title">
+            <span className="badge badge-blue">PREDICT</span>
+            Sentinel Predict
+          </div>
+          <p className="feature-card-text">
+            AI-powered prediction market intelligence. Dual-model analysis of Jupiter prediction markets with 57% historical accuracy, whale detection, and real-time trading signals.
+          </p>
+        </div>
+        
+        <div className="feature-card">
+          <div className="feature-card-title">
+            <span className="badge badge-teal">CODE</span>
+            Sentinel Code
+          </div>
+          <p className="feature-card-text">
+            GitHub repository analyzer for security vulnerabilities, bugs, and code quality. Supports 15+ programming languages with AI-powered fix suggestions.
+          </p>
+        </div>
+        
+        <div className="feature-card">
+          <div className="feature-card-title">
+            <span className="badge badge-amber">ECONOMIC</span>
+            Sentinel Economic
+          </div>
+          <p className="feature-card-text">
+            Decentralized marketplace for AI services. Buy, sell, and negotiate API access with AI-powered pricing, USDC payments, and $OSAI token gating.
+          </p>
+        </div>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="quick-links">Quick Links</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th>Dashboard</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Sentinel Predict</td>
+              <td><a href="https://predict.oraclesentinel.xyz" target="_blank" rel="noopener noreferrer" style={{ color: C.blue }}>predict.oraclesentinel.xyz</a></td>
+              <td><span className="badge badge-green">LIVE</span></td>
+            </tr>
+            <tr>
+              <td>Sentinel Code</td>
+              <td><a href="https://code.oraclesentinel.xyz" target="_blank" rel="noopener noreferrer" style={{ color: C.teal }}>code.oraclesentinel.xyz</a></td>
+              <td><span className="badge badge-green">LIVE</span></td>
+            </tr>
+            <tr>
+              <td>Sentinel Economic</td>
+              <td><a href="https://economic.oraclesentinel.xyz" target="_blank" rel="noopener noreferrer" style={{ color: C.amber }}>economic.oraclesentinel.xyz</a></td>
+              <td><span className="badge badge-green">LIVE</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+// Getting Started
+function GettingStartedContent() {
+  return (
+    <>
+      <h1 className="doc-title">Getting Started</h1>
+      <p className="doc-subtitle">
+        Get up and running with Oracle Sentinel in minutes.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="prerequisites">Prerequisites</h2>
+        <p className="doc-text">To use Oracle Sentinel services, you need:</p>
+        <ul className="doc-list">
+          <li>A Solana wallet (Phantom, Solflare, or any compatible wallet)</li>
+          <li>USDC for paid API access, or</li>
+          <li>1,000+ $OSAI tokens for free unlimited access</li>
+        </ul>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="connect-wallet">Step 1: Connect Your Wallet</h2>
+        <p className="doc-text">
+          Visit any Oracle Sentinel dashboard and click "Connect Wallet" in the top right corner. We support Phantom, Solflare, Coinbase Wallet, and Ledger.
+        </p>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="get-api-key">Step 2: Get Your API Key</h2>
+        <p className="doc-text">There are two ways to get an API key:</p>
+        
+        <h3 className="doc-subheading">Option A: Purchase Access</h3>
+        <p className="doc-text">
+          Go to <a href="https://economic.oraclesentinel.xyz" target="_blank" rel="noopener noreferrer" style={{ color: C.amber }}>Sentinel Economic</a>, browse available services, and purchase access using USDC. You can also negotiate prices with our AI agent.
+        </p>
+        
+        <h3 className="doc-subheading">Option B: Token Holder (Free)</h3>
+        <p className="doc-text">
+          If you hold 1,000+ $OSAI tokens, you get free unlimited API access. Simply connect your wallet and claim your VIP access from the dashboard.
+        </p>
+      </div>
+
+      <div className="doc-section">
+        <h2 className="doc-heading" id="explore-modules">Step 3: Explore the Modules</h2>
+        <p className="doc-text">Now that you have access, explore each module to get started:</p>
+        
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "16px" }}>
+          <a href="https://predict.oraclesentinel.xyz" target="_blank" rel="noopener noreferrer" style={{ display: "block", padding: "16px", background: "#0f172a", borderRadius: "8px", border: "1px solid #1e3a5f", textDecoration: "none" }}>
+            <div style={{ color: "#60a5fa", fontWeight: 600, marginBottom: "4px" }}>Sentinel Predict</div>
+            <div style={{ color: "#94a3b8", fontSize: "13px" }}>AI-powered prediction market intelligence with real-time signals and whale detection.</div>
+          </a>
+          <a href="https://code.oraclesentinel.xyz" target="_blank" rel="noopener noreferrer" style={{ display: "block", padding: "16px", background: "#0f172a", borderRadius: "8px", border: "1px solid #1e3a5f", textDecoration: "none" }}>
+            <div style={{ color: "#2dd4bf", fontWeight: 600, marginBottom: "4px" }}>Sentinel Code</div>
+            <div style={{ color: "#94a3b8", fontSize: "13px" }}>GitHub repository analyzer for security vulnerabilities, bugs, and code quality.</div>
+          </a>
+          <a href="https://economic.oraclesentinel.xyz" target="_blank" rel="noopener noreferrer" style={{ display: "block", padding: "16px", background: "#0f172a", borderRadius: "8px", border: "1px solid #1e3a5f", textDecoration: "none" }}>
+            <div style={{ color: "#fbbf24", fontWeight: 600, marginBottom: "4px" }}>Sentinel Economic</div>
+            <div style={{ color: "#94a3b8", fontSize: "13px" }}>Marketplace to buy, sell, and negotiate API access with USDC payments.</div>
+          </a>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Architecture
+function ArchitectureContent() {
+  return (
+    <>
+      <h1 className="doc-title">Architecture Overview</h1>
+      <p className="doc-subtitle">
+        Understanding how Oracle Sentinel's components work together.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="system-design">System Design</h2>
+        <p className="doc-text">
+          Oracle Sentinel is built as a modular system with three main intelligence modules, each operating independently but sharing common infrastructure for authentication, payments, and data.
+        </p>
+
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <img 
+            src="/images/oracle-sentinel-system.png" 
+            alt="Oracle Sentinel System Architecture" 
+            style={{ maxWidth: "100%", height: "auto", borderRadius: "8px" }}
+          />
+        </div>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="tech-stack">Technology Stack</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>Technology</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Frontend</td><td>React, Vite</td></tr>
+            <tr><td>Backend</td><td>Python, Flask</td></tr>
+            <tr><td>AI Models</td><td>Claude Haiku, Claude Sonnet (Anthropic)</td></tr>
+            <tr><td>Blockchain</td><td>Solana</td></tr>
+            <tr><td>Payments</td><td>USDC (SPL Token)</td></tr>
+            <tr><td>Database</td><td>SQLite, PostgreSQL</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// SENTINEL PREDICT CONTENT
+// ═══════════════════════════════════════════════════════════════
+
+function PredictOverviewContent() {
+  return (
+    <>
+      <h1 className="doc-title">Sentinel Predict</h1>
+      <p className="doc-subtitle">
+        AI-powered prediction market intelligence with 57% historical accuracy.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="what-is-predict">What is Sentinel Predict?</h2>
+        <p className="doc-text">
+          Sentinel Predict is an autonomous AI system that scans prediction markets (Jupiter Prediction Market) every 4 hours to identify mispriced opportunities. It uses a dual-model AI architecture to analyze market data, news, and sentiment to generate actionable trading signals.
+        </p>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="key-features">Key Features</h2>
+        <div className="feature-card">
+          <div className="feature-card-title">Dual-Model AI Analysis</div>
+          <p className="feature-card-text">Claude Haiku extracts facts, Claude Sonnet assesses probabilities. Two models cross-validate to eliminate hallucinations.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-card-title">Whale Detection</div>
+          <p className="feature-card-text">Real-time monitoring of large trades ($10K+) to identify smart money movements.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-card-title">Edge Calculator</div>
+          <p className="feature-card-text">Quantified edge percentage showing the mathematical difference between AI probability and market consensus.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-card-title">Accuracy Tracking</div>
+          <p className="feature-card-text">Transparent performance metrics with historical accuracy of 57.1%.</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function PredictHowItWorksContent() {
+  return (
+    <>
+      <h1 className="doc-title">How It Works</h1>
+      <p className="doc-subtitle">
+        The complete pipeline from data collection to signal generation.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="pipeline">Analysis Pipeline</h2>
+        <p className="doc-text">Every 4 hours, Sentinel Predict executes the following pipeline:</p>
+        <ul className="doc-list">
+          <li><strong>Data Collection:</strong> Fetch active markets from Jupiter API, current prices, volumes, and metadata</li>
+          <li><strong>Market Filtering:</strong> Apply filters for liquidity, time to resolution, and market type</li>
+          <li><strong>AI Analysis (Haiku):</strong> Extract factual information about each market question</li>
+          <li><strong>AI Analysis (Sonnet):</strong> Generate probability estimates based on extracted facts</li>
+          <li><strong>Edge Calculation:</strong> Compare AI probability vs market price to find mispriced opportunities</li>
+          <li><strong>Signal Generation:</strong> Generate BUY_YES, BUY_NO, or NO_TRADE signals</li>
+          <li><strong>Whale Monitoring:</strong> Track large trades for confirmation or divergence</li>
+        </ul>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="scan-interval">Scan Interval</h2>
+        <p className="doc-text">
+          The system runs automatically every 4 hours (6 times per day). This interval balances freshness with API costs and prevents over-trading on volatile short-term movements.
+        </p>
+      </div>
+    </>
+  );
+}
+
+function PredictDualModelContent() {
+  return (
+    <>
+      <h1 className="doc-title">Dual-Model AI System</h1>
+      <p className="doc-subtitle">
+        How two AI models work together to eliminate hallucinations.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="why-dual-model">Why Two Models?</h2>
+        <p className="doc-text">
+          Single-model AI systems are prone to hallucinations and overconfidence. By using two different models with different strengths, we achieve cross-validation that significantly improves reliability.
+        </p>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="model-roles">Model Roles</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Role</th>
+              <th>Strength</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span className="badge badge-blue">Claude Haiku</span></td>
+              <td>Fact Extraction</td>
+              <td>Fast, efficient, good at structured data extraction</td>
+            </tr>
+            <tr>
+              <td><span className="badge badge-teal">Claude Sonnet</span></td>
+              <td>Probability Assessment</td>
+              <td>Better reasoning, nuanced analysis, calibrated confidence</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="cross-validation">Cross-Validation Process</h2>
+        <p className="doc-text">
+          If the two models disagree significantly (>15% probability difference), the system flags the market for manual review or reduces confidence in the signal. This prevents acting on hallucinated information.
+        </p>
+      </div>
+    </>
+  );
+}
+
+function PredictMarketAnalysisContent() {
+  return (
+    <>
+      <h1 className="doc-title">Market Analysis</h1>
+      <p className="doc-subtitle">
+        How Sentinel Predict analyzes prediction markets.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="market-selection">Market Selection Criteria</h2>
+        <p className="doc-text">Not all markets are suitable for analysis. We filter for:</p>
+        <ul className="doc-list">
+          <li><strong>Liquidity:</strong> Minimum $10,000 in trading volume</li>
+          <li><strong>Time to Resolution:</strong> Between 24 hours and 90 days</li>
+          <li><strong>Market Type:</strong> Binary outcomes (Yes/No) preferred</li>
+          <li><strong>Verifiability:</strong> Clear resolution criteria</li>
+        </ul>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="analysis-factors">Analysis Factors</h2>
+        <p className="doc-text">Each market is analyzed across multiple dimensions:</p>
+        <ul className="doc-list">
+          <li>Historical data and base rates</li>
+          <li>Recent news and developments</li>
+          <li>Market sentiment and trading patterns</li>
+          <li>Expert opinions and forecasts</li>
+          <li>Statistical models where applicable</li>
+        </ul>
+      </div>
+    </>
+  );
+}
+
+function PredictSignalTypesContent() {
+  return (
+    <>
+      <h1 className="doc-title">Signal Types</h1>
+      <p className="doc-subtitle">
+        Understanding the different trading signals.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="signal-types">Signal Types</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Signal</th>
+              <th>Meaning</th>
+              <th>When Generated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span style={{ color: C.green, fontWeight: 600 }}>BUY_YES</span></td>
+              <td>AI believes YES is underpriced</td>
+              <td>AI probability > Market price + Edge threshold</td>
+            </tr>
+            <tr>
+              <td><span style={{ color: C.red, fontWeight: 600 }}>BUY_NO</span></td>
+              <td>AI believes NO is underpriced</td>
+              <td>AI probability &lt; Market price - Edge threshold</td>
+            </tr>
+            <tr>
+              <td><span style={{ color: C.slate, fontWeight: 600 }}>NO_TRADE</span></td>
+              <td>No significant edge detected</td>
+              <td>AI probability ≈ Market price (within threshold)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="edge-threshold">Edge Threshold</h2>
+        <p className="doc-text">
+          The default edge threshold is 5%. This means a signal is only generated when the AI's probability estimate differs from the market price by more than 5 percentage points. This reduces noise and focuses on higher-confidence opportunities.
+        </p>
+      </div>
+    </>
+  );
+}
+
+function PredictAccuracyContent() {
+  return (
+    <>
+      <h1 className="doc-title">Accuracy Tracking</h1>
+      <p className="doc-subtitle">
+        Transparent performance metrics and historical accuracy.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="current-accuracy">Current Accuracy</h2>
+        <div className="feature-card" style={{ borderColor: C.green + '40' }}>
+          <div className="feature-card-title" style={{ fontSize: 32, color: C.green }}>57.1%</div>
+          <p className="feature-card-text">Historical accuracy across all resolved predictions</p>
+        </div>
+        <p className="doc-text">
+          This accuracy rate is calculated based on all predictions where the market has resolved. A 57% accuracy with proper position sizing and bankroll management can generate positive returns over time.
+        </p>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="accuracy-methodology">Methodology</h2>
+        <p className="doc-text">Accuracy is calculated as:</p>
+        <div className="code-block">
+          <pre>{`Accuracy = Correct Predictions / Total Resolved Predictions × 100%
+
+Where:
+- Correct BUY_YES = Market resolved YES
+- Correct BUY_NO = Market resolved NO
+- NO_TRADE signals are excluded from accuracy calculation`}</pre>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function PredictWhaleDetectionContent() {
+  return (
+    <>
+      <h1 className="doc-title">Whale Detection</h1>
+      <p className="doc-subtitle">
+        Tracking large trades to identify smart money movements.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="what-is-whale">What is a Whale?</h2>
+        <p className="doc-text">
+          In prediction markets, a "whale" is a trader who places large bets (typically $5,000+). These traders often have better information or more sophisticated analysis, so tracking their movements can provide valuable signals.
+        </p>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="detection-method">Detection Method</h2>
+        <p className="doc-text">Sentinel Predict monitors:</p>
+        <ul className="doc-list">
+          <li>Single trades above $5,000</li>
+          <li>Rapid accumulation patterns ($5,000+ within 1 hour)</li>
+          <li>Unusual volume spikes compared to 7-day average</li>
+          <li>New wallet addresses placing large initial trades</li>
+        </ul>
+      </div>
+      
+
+      <div className="doc-section">
+        <h2 className="doc-heading" id="whale-alerts">Whale Alerts</h2>
+        <p className="doc-text">
+          Sentinel Predict has two levels of whale alerts:
+        </p>
+        <div className="feature-card" style={{ marginTop: "12px" }}>
+          <div className="feature-card-title">🐋 Standard Whale Alert</div>
+          <p className="feature-card-text">Trades between $5,000 - $19,999. Flagged in the dashboard to confirm or contradict AI signals.</p>
+        </div>
+        <div className="feature-card" style={{ marginTop: "12px" }}>
+          <div className="feature-card-title">🔥 Mega Whale Alert</div>
+          <p className="feature-card-text">Trades of $20,000 or more. These high-conviction moves are automatically added to the Signals feed as they often indicate significant market-moving information.</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// SENTINEL CODE CONTENT
+// ═══════════════════════════════════════════════════════════════
+
+function CodeOverviewContent() {
+  return (
+    <>
+      <h1 className="doc-title">Sentinel Code</h1>
+      <p className="doc-subtitle">
+        AI-powered GitHub repository analyzer for security and code quality.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="what-is-code">What is Sentinel Code?</h2>
+        <p className="doc-text">
+          Sentinel Code is an AI-powered tool that analyzes GitHub repositories to identify security vulnerabilities, bugs, and code quality issues. Perfect for developers auditing their own code or investors evaluating crypto projects.
+        </p>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="key-features">Key Features</h2>
+        <div className="feature-card">
+          <div className="feature-card-title">Security Scanning</div>
+          <p className="feature-card-text">Detect SQL injection, XSS, hardcoded secrets, insecure dependencies, and more.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-card-title">Bug Detection</div>
+          <p className="feature-card-text">Find logic errors, null pointer exceptions, race conditions, and potential crashes.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-card-title">Code Quality</div>
+          <p className="feature-card-text">Analyze code complexity, maintainability, test coverage, and best practices.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-card-title">Auto-Fix Suggestions</div>
+          <p className="feature-card-text">Get AI-generated fix suggestions with exact file and line references.</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function CodeHowItWorksContent() {
+  return (
+    <>
+      <h1 className="doc-title">How It Works</h1>
+      <p className="doc-subtitle">
+        The analysis pipeline from repository input to report generation.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="analysis-pipeline">Analysis Pipeline</h2>
+        <ul className="doc-list">
+          <li><strong>Repository Fetch:</strong> Clone or fetch the repository from GitHub</li>
+          <li><strong>Language Detection:</strong> Identify programming languages and frameworks</li>
+          <li><strong>File Parsing:</strong> Parse source files into abstract syntax trees</li>
+          <li><strong>Pattern Matching:</strong> Run security and bug detection patterns</li>
+          <li><strong>AI Analysis:</strong> Deep analysis using Claude for complex issues</li>
+          <li><strong>Report Generation:</strong> Compile findings with severity ratings and fix suggestions</li>
+        </ul>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="analysis-time">Analysis Time</h2>
+        <p className="doc-text">
+          Typical analysis takes 30-60 seconds depending on repository size. Large repositories (1000+ files) may take up to 2 minutes.
+        </p>
+      </div>
+    </>
+  );
+}
+
+function CodeSecurityScannerContent() {
+  return (
+    <>
+      <h1 className="doc-title">Security Scanner</h1>
+      <p className="doc-subtitle">
+        Comprehensive security vulnerability detection.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="vulnerability-types">Vulnerability Types Detected</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Examples</th>
+              <th>Severity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Injection</td>
+              <td>SQL injection, Command injection, LDAP injection</td>
+              <td><span className="badge badge-amber">HIGH</span></td>
+            </tr>
+            <tr>
+              <td>XSS</td>
+              <td>Reflected XSS, Stored XSS, DOM-based XSS</td>
+              <td><span className="badge badge-amber">HIGH</span></td>
+            </tr>
+            <tr>
+              <td>Secrets</td>
+              <td>Hardcoded API keys, passwords, private keys</td>
+              <td><span className="badge badge-amber">CRITICAL</span></td>
+            </tr>
+            <tr>
+              <td>Dependencies</td>
+              <td>Known vulnerable packages, outdated libraries</td>
+              <td><span className="badge badge-blue">MEDIUM</span></td>
+            </tr>
+            <tr>
+              <td>Authentication</td>
+              <td>Weak passwords, missing auth checks, session issues</td>
+              <td><span className="badge badge-amber">HIGH</span></td>
+            </tr>
+            <tr>
+              <td>Cryptography</td>
+              <td>Weak algorithms, improper key management</td>
+              <td><span className="badge badge-blue">MEDIUM</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function CodeBugDetectionContent() {
+  return (
+    <>
+      <h1 className="doc-title">Bug Detection</h1>
+      <p className="doc-subtitle">
+        Finding bugs before they reach production.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="bug-categories">Bug Categories</h2>
+        <ul className="doc-list">
+          <li><strong>Null/Undefined Errors:</strong> Accessing properties on null objects</li>
+          <li><strong>Type Errors:</strong> Incorrect type usage, missing type checks</li>
+          <li><strong>Logic Errors:</strong> Incorrect conditionals, off-by-one errors</li>
+          <li><strong>Race Conditions:</strong> Async issues, deadlocks, data races</li>
+          <li><strong>Memory Leaks:</strong> Unreleased resources, circular references</li>
+          <li><strong>Error Handling:</strong> Missing try/catch, swallowed exceptions</li>
+        </ul>
+      </div>
+    </>
+  );
+}
+
+function CodeQualityContent() {
+  return (
+    <>
+      <h1 className="doc-title">Code Quality Analysis</h1>
+      <p className="doc-subtitle">
+        Measuring maintainability and best practices.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="quality-metrics">Quality Metrics</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Description</th>
+              <th>Good Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Complexity Score</td>
+              <td>Cyclomatic complexity of functions</td>
+              <td>1-10 per function</td>
+            </tr>
+            <tr>
+              <td>Duplication</td>
+              <td>Percentage of duplicated code</td>
+              <td>&lt; 5%</td>
+            </tr>
+            <tr>
+              <td>Documentation</td>
+              <td>Comment coverage and quality</td>
+              <td>&gt; 20%</td>
+            </tr>
+            <tr>
+              <td>Test Coverage</td>
+              <td>Percentage of code covered by tests</td>
+              <td>&gt; 70%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function CodeLanguagesContent() {
+  return (
+    <>
+      <h1 className="doc-title">Supported Languages</h1>
+      <p className="doc-subtitle">
+        15+ programming languages supported.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="languages">Languages</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Language</th>
+              <th>Security Scan</th>
+              <th>Bug Detection</th>
+              <th>Quality Analysis</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>JavaScript/TypeScript</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Python</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Rust</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Solidity</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Go</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Java</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>C/C++</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Ruby</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>PHP</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Swift</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Kotlin</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Scala</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>C#</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Dart</td><td>✓</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Shell/Bash</td><td>✓</td><td>✓</td><td>-</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// SENTINEL ECONOMIC CONTENT
+// ═══════════════════════════════════════════════════════════════
+
+function EconomicOverviewContent() {
+  return (
+    <>
+      <h1 className="doc-title">Sentinel Economic</h1>
+      <p className="doc-subtitle">
+        Decentralized marketplace for AI services with AI-powered price negotiation.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="what-is-economic">What is Sentinel Economic?</h2>
+        <p className="doc-text">
+          Sentinel Economic is a decentralized marketplace that enables AI agents and humans to buy, sell, and negotiate access to AI-powered services. Built on Solana with USDC payments and $OSAI token gating for free access.
+        </p>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="key-features">Key Features</h2>
+        <div className="feature-card">
+          <div className="feature-card-title">AI-Powered Negotiation</div>
+          <p className="feature-card-text">Negotiate prices with our AI agent. The AI uses behavioral analysis and market data to find fair prices.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-card-title">USDC Payments</div>
+          <p className="feature-card-text">Stable, accurate pricing with USDC on Solana. No gas fee surprises.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-card-title">Token Gating</div>
+          <p className="feature-card-text">Hold 1,000+ $OSAI tokens to get free unlimited API access to all services.</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-card-title">Seller Dashboard</div>
+          <p className="feature-card-text">List your own AI services, set pricing tiers, and earn from API access sales.</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function EconomicHowItWorksContent() {
+  return (
+    <>
+      <h1 className="doc-title">How It Works</h1>
+      <p className="doc-subtitle">
+        The complete flow from browsing to API access.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="buyer-flow">Buyer Flow</h2>
+        <ul className="doc-list">
+          <li><strong>1. Connect Wallet:</strong> Connect your Solana wallet (Phantom, Solflare, etc.)</li>
+          <li><strong>2. Browse Services:</strong> Explore available AI services in the marketplace</li>
+          <li><strong>3. Choose Access Type:</strong> Select per-request, daily, weekly, or monthly access</li>
+          <li><strong>4. Negotiate (Optional):</strong> Start a negotiation with the AI to get a better price</li>
+          <li><strong>5. Pay with USDC:</strong> Complete payment using USDC on Solana</li>
+          <li><strong>6. Get API Key:</strong> Receive your API key instantly after payment confirmation</li>
+        </ul>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="seller-flow">Seller Flow</h2>
+        <ul className="doc-list">
+          <li><strong>1. Register as Seller:</strong> Switch to seller mode in the dashboard</li>
+          <li><strong>2. Add Service:</strong> Provide service details, endpoints, and pricing</li>
+          <li><strong>3. Set Pricing Tiers:</strong> Configure per-request, daily, weekly, monthly prices</li>
+          <li><strong>4. Enable AI Negotiation:</strong> Let our AI handle price negotiations for you</li>
+          <li><strong>5. Earn Revenue:</strong> Receive USDC payments directly to your wallet</li>
+        </ul>
+      </div>
+    </>
+  );
+}
+
+function EconomicNegotiationContent() {
+  return (
+    <>
+      <h1 className="doc-title">AI Negotiation Engine</h1>
+      <p className="doc-subtitle">
+        How our AI negotiates prices on behalf of sellers.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="negotiation-process">Negotiation Process</h2>
+        <p className="doc-text">
+          When a buyer starts a negotiation, our AI agent evaluates the offer and responds with either acceptance, counter-offer, or rejection based on multiple factors.
+        </p>
+        <div className="code-block">
+          <pre>{`Buyer offers: $0.005
+     ↓
+AI evaluates offer against:
+  • Base price: $0.01
+  • Buyer history: New buyer
+  • Market conditions: Normal demand
+     ↓
+AI responds: Counter-offer $0.0075
+     ↓
+Buyer accepts or counters again
+     ↓
+Final price locked, ready for payment`}</pre>
+        </div>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="strategies">AI Strategies</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Strategy</th>
+              <th>When Used</th>
+              <th>Behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span className="badge badge-blue">Anchor High</span></td>
+              <td>New buyers, low-ball offers</td>
+              <td>Counter at 85-90% of asking price</td>
+            </tr>
+            <tr>
+              <td><span className="badge badge-teal">Meet Halfway</span></td>
+              <td>Returning buyers, reasonable offers</td>
+              <td>Split the difference between offer and asking</td>
+            </tr>
+            <tr>
+              <td><span className="badge badge-amber">Firm Stance</span></td>
+              <td>Very low offers (&lt;50% of asking)</td>
+              <td>Minimal movement, emphasize value</td>
+            </tr>
+            <tr>
+              <td><span className="badge badge-green">Generous</span></td>
+              <td>High-value buyers, bulk purchases</td>
+              <td>Quick acceptance, loyalty discount</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="buyer-profiling">Buyer Profiling</h2>
+        <p className="doc-text">The AI builds a profile of each buyer based on:</p>
+        <ul className="doc-list">
+          <li><strong>Transaction History:</strong> Number of past purchases, total spent</li>
+          <li><strong>Offer Patterns:</strong> Average offer-to-ask ratio</li>
+          <li><strong>Acceptance Rate:</strong> How often they accept counter-offers</li>
+          <li><strong>Negotiation Rounds:</strong> Average rounds before agreement</li>
+        </ul>
+      </div>
+    </>
+  );
+}
+
+function EconomicPaymentsContent() {
+  return (
+    <>
+      <h1 className="doc-title">Payment Methods</h1>
+      <p className="doc-subtitle">
+        How to pay for API access.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="usdc-payments">USDC Payments</h2>
+        <p className="doc-text">
+          The primary payment method is USDC on Solana. USDC is a stablecoin pegged 1:1 to the US Dollar, providing stable and predictable pricing.
+        </p>
+        <div className="feature-card">
+          <div className="feature-card-title">Payment Flow</div>
+          <p className="feature-card-text">
+            1. Select service and access type → 2. Review price → 3. Click "Pay with USDC" → 4. Approve transaction in wallet → 5. API key issued instantly
+          </p>
+        </div>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="token-gating">Token Gating (Free Access)</h2>
+        <p className="doc-text">
+          Hold $OSAI tokens to get free API access without paying per-request.
+        </p>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th>Tokens Required</th>
+              <th>Benefit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span className="badge badge-teal">VIP</span></td>
+              <td>1,000+ $OSAI</td>
+              <td>FREE unlimited API access to all services</td>
+            </tr>
+            <tr>
+              <td><span className="badge badge-blue">Premium</span></td>
+              <td>100+ $OSAI</td>
+              <td>20% discount on all purchases</td>
+            </tr>
+            <tr>
+              <td><span className="badge badge-green">Holder</span></td>
+              <td>1+ $OSAI</td>
+              <td>10% discount on all purchases</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="claim-access">How to Claim Free Access</h2>
+        <ul className="doc-list">
+          <li>Connect your wallet with 1,000+ $OSAI tokens</li>
+          <li>Go to any service in the marketplace</li>
+          <li>Click "Claim Free (VIP)" button</li>
+          <li>Your API key will be generated instantly</li>
+        </ul>
+      </div>
+    </>
+  );
+}
+
+function EconomicMarketplaceContent() {
+  return (
+    <>
+      <h1 className="doc-title">Marketplace</h1>
+      <p className="doc-subtitle">
+        Buying and selling AI services.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="buying">Buying Services</h2>
+        <p className="doc-text">
+          Browse the marketplace to find AI services. Each service shows:
+        </p>
+        <ul className="doc-list">
+          <li><strong>Service Name & Description:</strong> What the service does</li>
+          <li><strong>Endpoints:</strong> Available API endpoints and their purposes</li>
+          <li><strong>Pricing Tiers:</strong> Per-request, daily, weekly, monthly options</li>
+          <li><strong>Seller Info:</strong> Who provides the service</li>
+          <li><strong>AI Negotiation:</strong> Whether price negotiation is enabled</li>
+        </ul>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="selling">Selling Services</h2>
+        <p className="doc-text">To list your own service:</p>
+        <ul className="doc-list">
+          <li><strong>1. Register as Seller:</strong> Click "Switch to Seller" in the dashboard</li>
+          <li><strong>2. Add Service:</strong> Provide name, description, base URL</li>
+          <li><strong>3. Configure Endpoints:</strong> Add API endpoints with methods and paths</li>
+          <li><strong>4. Set Pricing:</strong> Configure pricing for each access tier</li>
+          <li><strong>5. Submit for Review:</strong> Admin will approve your service</li>
+        </ul>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="pricing-tiers">Pricing Tiers</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th>Description</th>
+              <th>Best For</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Per-Request</td>
+              <td>Pay for each API call</td>
+              <td>Testing, low-volume usage</td>
+            </tr>
+            <tr>
+              <td>Daily</td>
+              <td>Unlimited calls for 24 hours</td>
+              <td>Short-term projects</td>
+            </tr>
+            <tr>
+              <td>Weekly</td>
+              <td>Unlimited calls for 7 days</td>
+              <td>Medium-term projects</td>
+            </tr>
+            <tr>
+              <td>Monthly</td>
+              <td>Unlimited calls for 30 days</td>
+              <td>Production applications</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function EconomicAPIKeyContent() {
+  return (
+    <>
+      <h1 className="doc-title">Using Your API Key</h1>
+      <p className="doc-subtitle">
+        How to authenticate and make API requests after purchasing access.
+      </p>
+
+      <div className="doc-section">
+        <h2 className="doc-heading" id="getting-api-key">Getting Your API Key</h2>
+        <p className="doc-text">
+          After purchasing access to a service on Sentinel Economic, you'll receive an API key starting with <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: "3px" }}>se_</code>. You can find your API keys in the <strong>MY ACCESS</strong> tab.
+        </p>
+      </div>
+
+      <div className="doc-section">
+        <h2 className="doc-heading" id="authentication">Authentication</h2>
+        <p className="doc-text">
+          Include your API key in the Authorization header for all requests:
+        </p>
+        <div className="code-block">
+          <pre>{`Authorization: Bearer se_your_api_key_here`}</pre>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <h2 className="doc-heading" id="example-curl">cURL Example</h2>
+        <div className="code-block">
+          <pre>{`curl -X GET "https://[service-url]/api/endpoint" \\
+  -H "Authorization: Bearer se_your_api_key_here"`}</pre>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <h2 className="doc-heading" id="example-python">Python Example</h2>
+        <div className="code-block">
+          <pre>{`import requests
+
+API_KEY = "se_your_api_key_here"
+SERVICE_URL = "https://[service-url]"  # URL from purchased service
+
+headers = {
+    "Authorization": f"Bearer {API_KEY}"
+}
+
+response = requests.get(f"{SERVICE_URL}/api/endpoint", headers=headers)
+data = response.json()
+print(data)`}</pre>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <h2 className="doc-heading" id="example-javascript">JavaScript Example</h2>
+        <div className="code-block">
+          <pre>{`const API_KEY = "se_your_api_key_here";
+const SERVICE_URL = "https://[service-url]";  // URL from purchased service
+
+const response = await fetch(\`\${SERVICE_URL}/api/endpoint\`, {
+  headers: {
+    "Authorization": \`Bearer \${API_KEY}\`
+  }
+});
+
+const data = await response.json();
+console.log(data);`}</pre>
+        </div>
+      </div>
+
+      <div className="doc-section">
+        <h2 className="doc-heading" id="error-codes">Error Codes</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Status Code</th>
+              <th>Description</th>
+              <th>Solution</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>200</td>
+              <td>Success</td>
+              <td>-</td>
+            </tr>
+            <tr>
+              <td>401</td>
+              <td>Invalid or missing API key</td>
+              <td>Check your API key format (must start with se_)</td>
+            </tr>
+            <tr>
+              <td>403</td>
+              <td>Access denied or expired</td>
+              <td>Purchase new access on Sentinel Economic</td>
+            </tr>
+            <tr>
+              <td>429</td>
+              <td>Rate limit exceeded</td>
+              <td>Wait before making more requests</td>
+            </tr>
+            <tr>
+              <td>500</td>
+              <td>Server error</td>
+              <td>Retry later or contact the service provider</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="doc-section">
+        <h2 className="doc-heading" id="tips">Tips</h2>
+        <ul className="doc-list">
+          <li>Keep your API key secure - never share it publicly</li>
+          <li>Each service has its own endpoint URL - check the service details</li>
+          <li>Monitor your usage in the MY ACCESS tab</li>
+          <li>Contact the service provider for API-specific documentation</li>
+        </ul>
+      </div>
+    </>
+  );
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// $OSAI TOKEN CONTENT
+// ═══════════════════════════════════════════════════════════════
+
+function TokenOverviewContent() {
+  return (
+    <>
+      <h1 className="doc-title">$OSAI Token</h1>
+      <p className="doc-subtitle">
+        The utility token powering the Oracle Sentinel ecosystem.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="what-is-osai">What is $OSAI?</h2>
+        <p className="doc-text">
+          $OSAI is the native utility token of Oracle Sentinel. It provides holders with free API access, governance rights, and exclusive benefits across all Sentinel modules.
+        </p>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="token-info">Token Information</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Name</td><td>Oracle Sentinel AI</td></tr>
+            <tr><td>Symbol</td><td>$OSAI</td></tr>
+            <tr><td>Blockchain</td><td>Solana</td></tr>
+            <tr><td>Token Standard</td><td>SPL Token</td></tr>
+            <tr>
+              <td>Contract Address</td>
+              <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
+                <a href="https://solscan.io/token/HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump" target="_blank" rel="noopener noreferrer" style={{ color: C.blue }}>
+                  HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function TokenUtilityContent() {
+  return (
+    <>
+      <h1 className="doc-title">Token Utility</h1>
+      <p className="doc-subtitle">
+        How $OSAI provides value in the ecosystem.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="utilities">Utilities</h2>
+        <div className="feature-card">
+          <div className="feature-card-title">
+            <span className="badge badge-teal">ACCESS</span>
+            Free API Access
+          </div>
+          <p className="feature-card-text">
+            Hold 1,000+ $OSAI to get free unlimited access to all Sentinel APIs (Predict, Code, Economic). No per-request fees, no subscriptions needed.
+          </p>
+        </div>
+        
+        <div className="feature-card">
+          <div className="feature-card-title">
+            <span className="badge badge-blue">DISCOUNT</span>
+            Purchase Discounts
+          </div>
+          <p className="feature-card-text">
+            Holders with 1-999 tokens receive 10-20% discount on all API purchases in Sentinel Economic.
+          </p>
+        </div>
+        
+        <div className="feature-card">
+          <div className="feature-card-title">
+            <span className="badge badge-amber">GOVERNANCE</span>
+            Governance Rights
+          </div>
+          <p className="feature-card-text">
+            Vote on protocol decisions, new features, and fee structures. (Coming soon)
+          </p>
+        </div>
+        
+        <div className="feature-card">
+          <div className="feature-card-title">
+            <span className="badge badge-green">REVENUE</span>
+            Revenue Sharing
+          </div>
+          <p className="feature-card-text">
+            Earn a share of protocol revenue based on token holdings. (Coming soon)
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function TokenBenefitsContent() {
+  return (
+    <>
+      <h1 className="doc-title">Holder Benefits</h1>
+      <p className="doc-subtitle">
+        Benefits by token holding tier.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="tiers">Holder Tiers</h2>
+        
+        <div className="feature-card" style={{ borderColor: C.teal + '40' }}>
+          <div className="feature-card-title">
+            <span className="badge badge-teal">VIP TIER</span>
+            1,000+ $OSAI
+          </div>
+          <ul className="doc-list" style={{ marginTop: 12 }}>
+            <li>FREE unlimited API access to Sentinel Predict</li>
+            <li>FREE unlimited API access to Sentinel Code</li>
+            <li>FREE unlimited API access to Sentinel Economic</li>
+            <li>Priority support</li>
+            <li>Early access to new features</li>
+            <li>Governance voting rights</li>
+          </ul>
+        </div>
+        
+        <div className="feature-card" style={{ borderColor: C.blue + '40' }}>
+          <div className="feature-card-title">
+            <span className="badge badge-blue">PREMIUM TIER</span>
+            100+ $OSAI
+          </div>
+          <ul className="doc-list" style={{ marginTop: 12 }}>
+            <li>20% discount on all API purchases</li>
+            <li>Extended API rate limits</li>
+            <li>Governance voting rights</li>
+          </ul>
+        </div>
+        
+        <div className="feature-card" style={{ borderColor: C.green + '40' }}>
+          <div className="feature-card-title">
+            <span className="badge badge-green">HOLDER TIER</span>
+            1+ $OSAI
+          </div>
+          <ul className="doc-list" style={{ marginTop: 12 }}>
+            <li>10% discount on all API purchases</li>
+            <li>Access to holder-only channels</li>
+          </ul>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function TokenHowToBuyContent() {
+  return (
+    <>
+      <h1 className="doc-title">How to Buy $OSAI</h1>
+      <p className="doc-subtitle">
+        Step-by-step guide to purchasing $OSAI tokens.
+      </p>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="step-1">Step 1: Get a Solana Wallet</h2>
+        <p className="doc-text">
+          Download and set up a Solana wallet. We recommend:
+        </p>
+        <ul className="doc-list">
+          <li><strong>Phantom</strong> - Most popular, easy to use</li>
+          <li><strong>Solflare</strong> - Feature-rich, mobile friendly</li>
+          <li><strong>Backpack</strong> - Multi-chain support</li>
+        </ul>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="step-2">Step 2: Get SOL</h2>
+        <p className="doc-text">
+          You need SOL to pay for transaction fees and to swap for $OSAI. Buy SOL from any major exchange (Coinbase, Binance, Kraken) and send it to your wallet.
+        </p>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="step-3">Step 3: Swap for $OSAI</h2>
+        <p className="doc-text">
+          Use a Solana DEX to swap SOL for $OSAI:
+        </p>
+        <ul className="doc-list">
+          <li><strong>Jupiter:</strong> <a href="https://jup.ag" target="_blank" rel="noopener noreferrer" style={{ color: C.blue }}>jup.ag</a> - Best rates, aggregates all DEXs</li>
+          <li><strong>Raydium:</strong> <a href="https://raydium.io" target="_blank" rel="noopener noreferrer" style={{ color: C.blue }}>raydium.io</a></li>
+        </ul>
+        <p className="doc-text" style={{ marginTop: 16 }}>
+          Token address to search:
+        </p>
+        <div className="code-block">
+          <pre>HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump</pre>
+        </div>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="step-4">Step 4: Verify & Connect</h2>
+        <p className="doc-text">
+          After purchasing, connect your wallet to Oracle Sentinel dashboard. If you hold 1,000+ tokens, you'll automatically see the VIP badge and can claim free API access.
+        </p>
+      </div>
+      
+      <div className="doc-section">
+        <h2 className="doc-heading" id="social-media">Social Media</h2>
+        <p className="doc-text">Stay connected with Oracle Sentinel:</p>
+        <table className="doc-table">
+          <tbody>
+            <tr>
+              <td style={{ fontWeight: 600 }}>Website</td>
+              <td><a href="https://oraclesentinel.xyz" target="_blank" rel="noopener noreferrer" style={{ color: C.blue }}>oraclesentinel.xyz</a></td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 600 }}>X</td>
+              <td><a href="https://x.com/oracle_sentinel" target="_blank" rel="noopener noreferrer" style={{ color: C.blue }}>@oracle_sentinel</a></td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 600 }}>Telegram</td>
+              <td><a href="https://t.me/oraclesentinelsignals" target="_blank" rel="noopener noreferrer" style={{ color: C.blue }}>@oraclesentinelsignals</a></td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 600 }}>GitHub</td>
+              <td><a href="https://github.com/oraclesentinel" target="_blank" rel="noopener noreferrer" style={{ color: C.blue }}>github.com/oraclesentinel</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONTENT ROUTER
+// ═══════════════════════════════════════════════════════════════
+
+function ContentRouter({ section }) {
+  const contentMap = {
+    // Introduction
+    'introduction': <IntroductionContent />,
+    'getting-started': <GettingStartedContent />,
+    'architecture': <ArchitectureContent />,
+    
+    // Predict
+    'predict-overview': <PredictOverviewContent />,
+    'predict-how-it-works': <PredictHowItWorksContent />,
+    'predict-dual-model': <PredictDualModelContent />,
+    'predict-market-analysis': <PredictMarketAnalysisContent />,
+    'predict-signal-types': <PredictSignalTypesContent />,
+    'predict-accuracy': <PredictAccuracyContent />,
+    'predict-whale-detection': <PredictWhaleDetectionContent />,
+    
+    // Code
+    'code-overview': <CodeOverviewContent />,
+    'code-how-it-works': <CodeHowItWorksContent />,
+    'code-security-scanner': <CodeSecurityScannerContent />,
+    'code-bug-detection': <CodeBugDetectionContent />,
+    'code-quality': <CodeQualityContent />,
+    'code-languages': <CodeLanguagesContent />,
+    
+    // Economic
+    'economic-overview': <EconomicOverviewContent />,
+    'economic-how-it-works': <EconomicHowItWorksContent />,
+    'economic-negotiation': <EconomicNegotiationContent />,
+    'economic-payments': <EconomicPaymentsContent />,
+    'economic-marketplace': <EconomicMarketplaceContent />,
+    'economic-api-key': <EconomicAPIKeyContent />,
+    
+    // Token
+    'token-overview': <TokenOverviewContent />,
+    'token-utility': <TokenUtilityContent />,
+    'token-benefits': <TokenBenefitsContent />,
+    'token-how-to-buy': <TokenHowToBuyContent />,
+  };
+  
+  return contentMap[section] || <IntroductionContent />;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ON THIS PAGE COMPONENT
+// ═══════════════════════════════════════════════════════════════
+
+function OnThisPage({ section }) {
+  const [headings, setHeadings] = useState([]);
+  
+  useEffect(() => {
+    // Get all h2 headings from the content area
+    setTimeout(() => {
+      const h2Elements = document.querySelectorAll('.doc-heading');
+      const items = Array.from(h2Elements).map(el => ({
+        id: el.id,
+        text: el.textContent
+      }));
+      setHeadings(items);
+    }, 100);
+  }, [section]);
+  
+  if (headings.length === 0) return null;
+  
+  return (
+    <div className="on-this-page">
+      <div className="on-this-page-title">On this page</div>
+      {headings.map((h, i) => (
+        
+        <a
+          key={i}
+          className="on-this-page-item"
+          onClick={() => {
+            const el = document.getElementById(h.id);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+        >
+          {h.text}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
 
 export default function OracleSentinelDocs() {
-  const [activeSection, setActiveSection] = useState("hero");
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const onScroll = () => {
-      setScrollY(window.scrollY);
-      const sections = SECTIONS.map(s => {
-        const el = document.getElementById(s.id);
-        if (!el) return { id: s.id, top: 99999 };
-        return { id: s.id, top: Math.abs(el.getBoundingClientRect().top) };
-      });
-      sections.sort((a, b) => a.top - b.top);
-      if (sections[0]) setActiveSection(sections[0].id);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const scrollTo = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  const [activeSection, setActiveSection] = useState('introduction');
+  
+  const handleNavigate = (sectionId) => {
+    setActiveSection(sectionId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
+  
   return (
-    <div style={{ background: C.bg, color: C.frost, fontFamily: "'Syne', 'JetBrains Mono', monospace", minHeight: "100vh", position: "relative", overflowX: "hidden" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        ::selection { background: ${C.blue}30; color: ${C.ice}; }
-        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: ${C.bg}; } ::-webkit-scrollbar-thumb { background: ${C.borderL}; border-radius: 3px; }
-        html { scroll-behavior: smooth; }
-        body { background: ${C.bg}; }
-        @keyframes heroGlow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
-        @keyframes scanline { 0% { top: -10%; } 100% { top: 110%; } }
-        @keyframes typewriter { from { width: 0; } to { width: 100%; } }
-      `}</style>
-
-      <ParticleField />
-
-      {/* ── Scanline effect ── */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none", zIndex: 9998,
-        background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(13,40,71,0.015) 3px, rgba(13,40,71,0.015) 4px)",
-      }} />
-
-      {/* ── Side nav dots ── */}
-      <div style={{
-        position: "fixed", right: 20, top: "50%", transform: "translateY(-50%)", zIndex: 100,
-        display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end",
-      }}>
-        {SECTIONS.map(s => <NavDot key={s.id} active={activeSection === s.id} label={s.label} onClick={() => scrollTo(s.id)} />)}
-      </div>
-
-      {/* ── Top bar ── */}
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: scrollY > 50 ? `${C.bg}ee` : "transparent",
-        backdropFilter: scrollY > 50 ? "blur(12px)" : "none",
-        borderBottom: scrollY > 50 ? `1px solid ${C.border}` : "none",
-        transition: "all 0.3s", padding: "12px 32px",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ color: C.blue, fontSize: 8, animation: "pulse 2s infinite" }}>●</span>
-          <a href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-            <img src="/logo.png" alt="Oracle Sentinel" style={{ width: 60, height: 60, borderRadius: "50%" }} />
-            <span style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, letterSpacing: 3 }}>ORACLE SENTINEL</span>
-          </a>
-          <span style={{ color: C.slateD, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1, marginLeft: 4 }}>DOCS</span>
-        </div>
-        <div style={{ display: "flex", gap: 24 }}>
-          {["architecture", "api", "sdk", "token", "openclaw"].map(s => (
-            <button key={s} onClick={() => scrollTo(s)} style={{
-              background: "none", border: "none", color: activeSection === s ? C.blue : C.slate,
-              fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 1.5, cursor: "pointer",
-              transition: "color 0.2s", textTransform: "uppercase",
-            }}>{s}</button>
-          ))}
+    <>
+      <Styles />
+      <div className="docs-container">
+        <Sidebar activeSection={activeSection} onNavigate={handleNavigate} />
+        <div className="main-content">
+          <div className="content-area">
+            <ContentRouter section={activeSection} />
+          </div>
+          <OnThisPage section={activeSection} />
         </div>
       </div>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* HERO */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="hero" style={{ padding: "160px 0 120px", minHeight: "100vh", display: "flex", alignItems: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          {/* Glow orb */}
-          <div style={{
-            position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)",
-            width: 500, height: 500, borderRadius: "50%",
-            background: `radial-gradient(circle, ${C.blue}08 0%, transparent 70%)`,
-            animation: "heroGlow 4s ease-in-out infinite", pointerEvents: "none",
-          }} />
-
-          <Reveal>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: C.blue, letterSpacing: 4, marginBottom: 20 }}>
-              POLYMARKET PREDICTION INTELLIGENCE
-            </div>
-          </Reveal>
-
-          <Reveal delay={0.1}>
-            <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: "clamp(48px, 7vw, 80px)", fontWeight: 800, lineHeight: 1.05, color: C.ice, marginBottom: 24 }}>
-              ORACLE<br />
-              <span style={{ color: C.blue }}>SENTINEL</span>
-            </h1>
-          </Reveal>
-
-          <Reveal delay={0.2}>
-            <p style={{ fontSize: 16, color: C.frost, maxWidth: 560, lineHeight: 1.8, marginBottom: 40, margin: "0 auto 40px" }}>
-              Autonomous AI system that scans prediction markets 24/7, detects mispriced opportunities using multi-model intelligence, and tracks its own accuracy with radical transparency.
-            </p>
-          </Reveal>
-        </div>
-      </Section>
-
-      {/* ── SOCIAL PROOF BAR ── */}
-      <Section style={{ padding: "48px 0", borderTop: `1px solid ${C.border}` }}>
-        <Reveal>
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 40, flexWrap: "wrap" }}>
-            {[
-              { l: "Powered by", v: "Anthropic Claude", c: C.blue },
-              { l: "Data from", v: "Polymarket", c: C.teal },
-              { l: "Automated via", v: "OpenClaw", c: C.amber },
-              { l: "Alerts via", v: "Telegram", c: C.frost },
-              { l: "Payments via", v: "PayAI Network", c: C.green },
-              { l: "Listed on", v: "JUICE", c: C.amber },
-              { l: "Built on", v: "Solana", c: C.blue },
-            ].map((b, i) => (
-              <div key={i} style={{ textAlign: "center" }}>
-                <div style={{ color: C.slateD, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 2, marginBottom: 4 }}>{b.l}</div>
-                <div style={{ color: b.c, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600 }}>{b.v}</div>
-              </div>
-            ))}
-          </div>
-        </Reveal>
-      </Section>
-
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* PROBLEM */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="problem" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="THE PROBLEM" sub="Prediction markets are inefficient." /></Reveal>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
-          <Reveal delay={0.1}>
-            <GlowCard accent={C.red}>
-              <div style={{ color: C.red, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 12 }}>WITHOUT ORACLE SENTINEL</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {[
-                  "Manual scanning of hundreds of markets",
-                  "Emotional trading decisions based on gut feel",
-                  "No systematic edge calculation",
-                  "No accountability — wins are remembered, losses forgotten",
-                  "Information asymmetry favors whales",
-                ].map((t, i) => (
-                  <div key={i} style={{ display: "flex", gap: 10, fontSize: 13, color: C.frost, lineHeight: 1.6 }}>
-                    <span style={{ color: C.red, fontSize: 14, flexShrink: 0 }}>✕</span>{t}
-                  </div>
-                ))}
-              </div>
-            </GlowCard>
-          </Reveal>
-          <Reveal delay={0.2}>
-            <GlowCard accent={C.teal}>
-              <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 12 }}>WITH ORACLE SENTINEL</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {[
-                  "Autonomous 4-hour market scanning cycles",
-                  "AI probability assessment with reasoning chains",
-                  "Quantified edge with confidence scoring",
-                  "Every prediction tracked, every result transparent",
-                  "Whale signal detection levels the playing field",
-                ].map((t, i) => (
-                  <div key={i} style={{ display: "flex", gap: 10, fontSize: 13, color: C.frost, lineHeight: 1.6 }}>
-                    <span style={{ color: C.teal, fontSize: 14, flexShrink: 0 }}>✓</span>{t}
-                  </div>
-                ))}
-              </div>
-            </GlowCard>
-          </Reveal>
-        </div>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* ARCHITECTURE */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="architecture" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="SYSTEM ARCHITECTURE" sub="Intelligence stack, end to end." /></Reveal>
-        <Reveal delay={0.1}>
-          <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, padding: "40px 36px", position: "relative" }}>
-            {/* Architecture diagram */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              {/* Layer 1: Data Ingestion */}
-              <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-                {["Polymarket API", "News Scrapers", "Whale Tracker", "Order Book"].map((t, i) => (
-                  <div key={i} style={{
-                    background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4,
-                    padding: "10px 20px", fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
-                    color: C.frost, textAlign: "center",
-                  }}>
-                    <div style={{ color: C.slate, fontSize: 8, letterSpacing: 1.5, marginBottom: 4 }}>INPUT</div>
-                    {t}
-                  </div>
-                ))}
-              </div>
-              {/* Arrow */}
-              <div style={{ textAlign: "center", color: C.blue, fontSize: 20, padding: "12px 0", opacity: 0.5 }}>▼</div>
-              {/* Layer 2: Processing */}
-              <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-                {[
-                  { t: "Haiku 3.5", s: "Fact Extraction", c: C.amber },
-                  { t: "Sonnet 4.5", s: "Probability Assessment", c: C.blue },
-                  { t: "Edge Calculator", s: "Signal Generation", c: C.teal },
-                ].map((item, i) => (
-                  <div key={i} style={{
-                    background: `linear-gradient(135deg, ${item.c}08, ${C.bgCard})`,
-                    border: `1px solid ${item.c}25`, borderRadius: 6,
-                    padding: "14px 24px", textAlign: "center", flex: 1,
-                  }}>
-                    <div style={{ color: item.c, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600 }}>{item.t}</div>
-                    <div style={{ color: C.slate, fontSize: 10, marginTop: 4 }}>{item.s}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ textAlign: "center", color: C.blue, fontSize: 20, padding: "12px 0", opacity: 0.5 }}>▼</div>
-              {/* Layer 3: Storage & Output */}
-              <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-                {[
-                  { t: "SQLite Database", c: C.blue },
-                  { t: "Accuracy Tracker", s: "1h / 6h / 24h Snapshots", c: C.teal },
-                ].map((item, i) => (
-                  <div key={i} style={{
-                    background: C.bg, border: `1px solid ${item.c}20`, borderRadius: 6,
-                    padding: "14px 28px", textAlign: "center", flex: 1,
-                  }}>
-                    <div style={{ color: item.c, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600 }}>{item.t}</div>
-                    <div style={{ color: C.slate, fontSize: 10, marginTop: 4 }}>{item.s}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ textAlign: "center", color: C.blue, fontSize: 20, padding: "12px 0", opacity: 0.5 }}>▼</div>
-              {/* Layer 4: Distribution */}
-              <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-                {[
-                  { t: "Terminal Dashboard" },
-                  { t: "Telegram Bot" },
-                  { t: "REST API" },
-                ].map((item, i) => (
-                  <div key={i} style={{
-                    background: `linear-gradient(135deg, ${C.blueDark}40, ${C.bg})`,
-                    border: `1px solid ${C.borderL}`, borderRadius: 6,
-                    padding: "14px 20px", textAlign: "center", flex: 1,
-                  }}>
-                    <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600 }}>{item.t}</div>
-                    <div style={{ color: C.slate, fontSize: 10, marginTop: 4 }}>{item.s}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Reveal>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* FEATURES */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="features" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="CORE CAPABILITIES" sub="What makes Sentinel Predict different." /></Reveal>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
-          {[
-            { title: "Dual-Model AI Brain", desc: "Stage 1: Claude Haiku extracts facts. Stage 2: Claude Sonnet assesses probability. Two models, one verdict — eliminating single-model bias.", accent: C.blue },
-            { title: "Whale Signal Detection", desc: "Tracks large bids/asks, order book imbalance, and sentiment shifts. When smart money moves, Oracle Sentinel sees it first.", accent: C.teal },
-            { title: "Quantified Edge", desc: "Every signal includes exact edge percentage: the difference between AI probability and market price. No vague calls — pure math.", accent: C.amber },
-            { title: "Radical Transparency", desc: "Every prediction is tracked at 1h, 6h, and 24h intervals. No hiding losses. Accuracy is computed live, not cherry-picked.", accent: C.red },
-            { title: "Autonomous Operation", desc: "OpenClaw cron triggers every 4 hours. Zero human intervention. Scan, analyze, signal, track — all automated.", accent: C.green },
-            { title: "Safety Override", desc: "Even if AI says BUY, high edge + medium confidence triggers NO_TRADE override. The system protects against its own overconfidence.", accent: C.blue },
-          ].map((f, i) => (
-            <Reveal key={i} delay={i * 0.08}>
-              <GlowCard accent={f.accent} style={{ height: "100%" }}>
-                <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 600, marginBottom: 10, lineHeight: 1.4 }}>{f.title}</div>
-                <div style={{ color: C.slate, fontSize: 13, lineHeight: 1.7 }}>{f.desc}</div>
-              </GlowCard>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* QUALITY FILTERS */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="filters" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="QUALITY FILTERS" sub="Intelligence gates that ensure signal reliability." /></Reveal>
-        
-        <Reveal delay={0.1}>
-          <div style={{ marginBottom: 32 }}>
-            <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>MARKET QUALITY GATES</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              {[
-                { 
-                  title: "Short-Term Filter", 
-                  desc: "Markets closing in <24 hours are automatically skipped. Short-term price predictions are inherently volatile and unpredictable — Oracle Sentinel focuses on longer-timeframe opportunities where analysis has higher signal-to-noise ratio.",
-                  color: C.amber
-                },
-                { 
-                  title: "Liquidity Filter", 
-                  desc: "Markets with <$10,000 liquidity are rejected. Thin markets are easily manipulated by single large trades and don't reflect genuine price discovery. Only liquid markets with real two-sided depth are analyzed.",
-                  color: C.teal
-                },
-                { 
-                  title: "Timestamp Validation", 
-                  desc: "Closed or expired markets are automatically filtered out with 2-hour buffer. The system validates end dates before analysis to prevent wasting compute on resolved events. Current UTC time is injected into AI context for temporal awareness.",
-                  color: C.blue
-                },
-                { 
-                  title: "Resolution Parser", 
-                  desc: "Market descriptions are parsed to extract exact resolution criteria — thresholds, time ranges, data sources, and special cases. This structured parsing ensures AI analyzes based on actual resolution mechanics, not just question titles.",
-                  color: C.green
-                },
-              ].map((f, i) => (
-                <Reveal key={i} delay={0.1 + i * 0.05}>
-                  <GlowCard accent={f.color} style={{ height: "100%" }}>
-                    <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 600, marginBottom: 10, lineHeight: 1.4 }}>{f.title}</div>
-                    <div style={{ color: C.slate, fontSize: 13, lineHeight: 1.7 }}>{f.desc}</div>
-                  </GlowCard>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-
-        <Reveal delay={0.3}>
-          <div style={{ marginBottom: 32 }}>
-            <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>CATEGORY-SPECIFIC ANALYSIS</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-              {[
-                { 
-                  category: "Crypto Markets", 
-                  calibration: [
-                    "Bitcoin/Ethereum can swing 5-10% in 24 hours",
-                    "Short-term price moves (<48h) are extremely difficult to predict",
-                    "24/7 markets mean overnight volatility is common",
-                    "Historical volatility: BTC averages 3-5% daily (10%+ in volatile periods)",
-                  ],
-                  color: C.amber
-                },
-                { 
-                  category: "Sports Markets", 
-                  calibration: [
-                    "Recent form (last 10 matches) matters more than reputation",
-                    "League standings show current position and gap to leader",
-                    "Head-to-head stats reveal matchup-specific dynamics",
-                    "Betting streaks (goals, clean sheets) indicate momentum",
-                  ],
-                  color: C.green
-                },
-                { 
-                  category: "Political Markets", 
-                  calibration: [
-                    "Politicians often delay, extend deadlines, or find last-minute compromises",
-                    "Government shutdowns usually resolve with temporary measures",
-                    "Announced intentions ≠ actual outcomes (consider base rates)",
-                    "Political brinkmanship goes to the wire then resolves",
-                  ],
-                  color: C.blue
-                },
-              ].map((cat, i) => (
-                <Reveal key={i} delay={0.3 + i * 0.05}>
-                  <GlowCard accent={cat.color} style={{ height: "100%" }}>
-                    <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{cat.category}</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      {cat.calibration.map((rule, j) => (
-                        <div key={j} style={{ display: "flex", gap: 8, fontSize: 12, color: C.slate, lineHeight: 1.6 }}>
-                          <span style={{ color: cat.color, flexShrink: 0 }}>•</span>
-                          <span>{rule}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </GlowCard>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-
-        <Reveal delay={0.5}>
-          <div>
-            <div style={{ color: C.red, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>NEWS QUALITY CONTROL</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-              {[
-                { 
-                  title: "Date Validation", 
-                  desc: "Articles with impossible future dates are automatically rejected. News claiming to be from tomorrow is either misdated or fabricated — the system validates publish timestamps against current time.",
-                  color: C.red
-                },
-                { 
-                  title: "Freshness Filter", 
-                  desc: "Articles older than 30 days are filtered out. Stale news lacks relevance for real-time market analysis. Only recent, contextual information is fed to the AI assessment layer.",
-                  color: C.amber
-                },
-                { 
-                  title: "Source Diversity", 
-                  desc: "News scoring prioritizes multiple credible sources over single-source claims. Trusted outlets (Reuters, Bloomberg, AP) receive bonus weighting. The system discourages echo chambers.",
-                  color: C.teal
-                },
-              ].map((item, i) => (
-                <Reveal key={i} delay={0.5 + i * 0.05}>
-                  <GlowCard accent={item.color} style={{ height: "100%" }}>
-                    <div style={{ color: item.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{item.title}</div>
-                    <div style={{ color: C.slate, fontSize: 12, lineHeight: 1.7 }}>{item.desc}</div>
-                  </GlowCard>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* PIPELINE */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="pipeline" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="ANALYSIS PIPELINE" sub="From raw data to actionable signal." /></Reveal>
-        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", position: "relative" }}>
-          {/* Connector line */}
-          <div style={{ position: "absolute", top: 32, left: "10%", right: "10%", height: 1, background: `linear-gradient(90deg, transparent, ${C.blue}30, ${C.blue}30, transparent)`, zIndex: 0 }} />
-          {[
-            { num: "01", title: "INGEST", desc: "Pull markets, prices, volume, and news from Polymarket API" },
-            { num: "02", title: "EXTRACT", desc: "Claude Haiku distills raw articles into structured facts" },
-            { num: "03", title: "ASSESS", desc: "Claude Sonnet computes AI probability with full reasoning" },
-            { num: "04", title: "SIGNAL", desc: "Edge calculator generates BUY_YES / BUY_NO / NO_TRADE" },
-            { num: "05", title: "TRACK", desc: "Accuracy tracker snapshots at 1h, 6h, 24h intervals" },
-          ].map((s, i) => (
-            <PipelineStep key={i} num={s.num} title={s.title} desc={s.desc} icon={s.icon} delay={i * 0.1} />
-          ))}
-        </div>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* TECH STACK */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="tech" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="TECHNOLOGY STACK" sub="Built for reliability and speed." /></Reveal>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-          {[
-            { cat: "AI / LLM", items: [{ n: "Claude Sonnet 4.5", d: "Probability assessment" }, { n: "Claude Haiku 3.5", d: "Fact extraction" }, { n: "OpenRouter", d: "API gateway" }] },
-            { cat: "INFRA", items: [{ n: "OpenClaw", d: "Cron automation" }, { n: "Moltbook", d: "Social publishing" }, { n: "Telegram Bot API", d: "Alert distribution" }] },
-          ].map((group, i) => (
-            <Reveal key={i} delay={i * 0.1}>
-              <GlowCard>
-                <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>{group.cat}</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {group.items.map((item, j) => (
-                    <div key={j} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 500 }}>{item.n}</span>
-                      <span style={{ color: C.slateD, fontSize: 11 }}>{item.d}</span>
-                    </div>
-                  ))}
-                </div>
-              </GlowCard>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* ACCURACY */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="accuracy" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="TRUST FRAMEWORK" sub="Don't trust claims. Verify data." /></Reveal>
-        <Reveal delay={0.1}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-            {[
-              { title: "Verifiable Track Record", desc: "Every signal is permanently recorded in the database the moment it's generated. No edits, no deletions, no retroactive changes. What the AI said is what the AI said.", color: C.blue },
-              { title: "No Human Interference", desc: "From market scan to signal generation to accuracy tracking — zero manual override. The AI decides, publishes, and measures itself autonomously.", color: C.teal },
-              { title: "Open Audit Trail", desc: "All predictions, signals, and market data are accessible via REST API. Anyone can independently verify every claim Oracle Sentinel makes.", color: C.amber },
-            ].map((t, i) => (
-              <Reveal key={i} delay={i * 0.08}>
-                <GlowCard accent={t.color} style={{ height: "100%" }}>
-                  <div style={{ color: t.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, marginBottom: 10 }}>{t.title}</div>
-                  <div style={{ color: C.slate, fontSize: 13, lineHeight: 1.7 }}>{t.desc}</div>
-                </GlowCard>
-              </Reveal>
-            ))}
-          </div>
-        </Reveal>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* SENTINEL CODE */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="sentinel-code" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="SENTINEL CODE" sub="AI-Powered Code Analysis." /></Reveal>
-
-        <Reveal delay={0.1}>
-          <GlowCard accent={C.teal} style={{ marginBottom: 32 }}>
-            <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>WHAT IS SENTINEL CODE</div>
-            <p style={{ color: C.frost, fontSize: 14, lineHeight: 1.8, marginBottom: 16 }}>
-              Sentinel Code is an AI-powered code analysis module that scans any public GitHub repository for security vulnerabilities, bugs, and code quality issues. It provides detailed reports with exact file locations, code snippets, and fix suggestions.
-            </p>
-            <p style={{ color: C.slate, fontSize: 13, lineHeight: 1.7 }}>
-              Built for developers who want cleaner code and investors who want to verify the quality of projects they're holding. Drop a repo URL, get a comprehensive audit in 30-60 seconds.
-            </p>
-          </GlowCard>
-        </Reveal>
-
-        {/* Use Cases */}
-        <Reveal delay={0.15}>
-          <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>USE CASES</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
-            {[
-              { title: "For Developers", desc: "Catch security issues before hackers do. Find bugs, missing error handling, and code quality problems. Get AI-suggested fixes with exact code examples.", color: C.teal },
-              { title: "For Investors", desc: "Verify if the project you're holding is actually well-built. Check for red flags like hardcoded secrets, SQL injection risks, or missing authentication.", color: C.amber },
-              { title: "For Code Reviews", desc: "Automate the first pass of code review. Identify obvious issues so human reviewers can focus on architecture and logic.", color: C.blue },
-              { title: "For Due Diligence", desc: "Before integrating a dependency or forking a project, understand its code quality and security posture.", color: C.green },
-            ].map((item, i) => (
-              <Reveal key={i} delay={0.15 + i * 0.05}>
-                <GlowCard accent={item.color} style={{ height: "100%" }}>
-                  <div style={{ color: item.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{item.title}</div>
-                  <div style={{ color: C.slate, fontSize: 12, lineHeight: 1.7 }}>{item.desc}</div>
-                </GlowCard>
-              </Reveal>
-            ))}
-          </div>
-        </Reveal>
-
-        {/* What It Detects */}
-        <Reveal delay={0.2}>
-          <div style={{ color: C.red, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>WHAT IT DETECTS</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, marginBottom: 32 }}>
-            {[
-              { cat: "CRITICAL", items: ["SQL Injection", "XSS Vulnerabilities", "Hardcoded Secrets", "API Keys Exposed"], color: C.red },
-              { cat: "BUGS", items: ["Null Pointers", "Race Conditions", "Unhandled Exceptions", "Memory Leaks"], color: C.amber },
-              { cat: "QUALITY", items: ["No Error Handling", "No Input Validation", "Code Duplication", "Complex Functions"], color: C.blue },
-              { cat: "IMPROVEMENTS", items: ["Missing Type Hints", "No Documentation", "No Unit Tests", "Outdated Patterns"], color: C.green },
-            ].map((cat, i) => (
-              <Reveal key={i} delay={0.2 + i * 0.04}>
-                <GlowCard accent={cat.color} style={{ padding: "20px 16px" }}>
-                  <div style={{ color: cat.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 1.5, marginBottom: 12 }}>{cat.cat}</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {cat.items.map((item, j) => (
-                      <div key={j} style={{ color: C.frost, fontSize: 11, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ color: cat.color, fontSize: 8 }}>●</span>{item}
-                      </div>
-                    ))}
-                  </div>
-                </GlowCard>
-              </Reveal>
-            ))}
-          </div>
-        </Reveal>
-
-        {/* Output Format */}
-        <Reveal delay={0.25}>
-          <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>OUTPUT FORMAT</div>
-          <GlowCard accent={C.teal} style={{ marginBottom: 32 }}>
-            <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6, padding: "20px", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, lineHeight: 1.7, color: C.frost, overflowX: "auto" }}>
-              <div style={{ color: C.blue, marginBottom: 8 }}>SENTINEL CODE REVIEW</div>
-              <div style={{ color: C.slate, marginBottom: 16 }}>Repo: github.com/user/project | Python 92% | 12 files analyzed</div>
-              <div style={{ color: C.red, marginBottom: 4 }}>CRITICAL ISSUES (2)</div>
-              <div style={{ color: C.frost, marginBottom: 2 }}>1. SQL Injection Vulnerability</div>
-              <div style={{ color: C.slate, marginBottom: 2 }}>   File: app/routes.py:47</div>
-              <div style={{ color: C.slate, marginBottom: 2 }}>   Code: f"SELECT * FROM users WHERE id = &#123;user_input&#125;"</div>
-              <div style={{ color: C.teal, marginBottom: 12 }}>   Fix: Use parameterized queries</div>
-              <div style={{ color: C.amber, marginBottom: 4 }}>WARNINGS (4)</div>
-              <div style={{ color: C.slate, marginBottom: 12 }}>   - No rate limiting on API endpoints (routes.py)</div>
-              <div style={{ color: C.green, marginBottom: 4 }}>IMPROVEMENTS (5)</div>
-              <div style={{ color: C.slate, marginBottom: 12 }}>   - Add type hints for better maintainability</div>
-            </div>
-          </GlowCard>
-        </Reveal>
-
-        {/* How to Use */}
-        <Reveal delay={0.3}>
-          <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>HOW TO USE</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <GlowCard accent={C.blue}>
-              <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600, marginBottom: 12 }}>Web Interface</div>
-              <div style={{ color: C.frost, fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
-                Visit oraclesentinel.xyz/code, paste any GitHub repository URL, and click Analyze. Results appear in 30-60 seconds.
-              </div>
-              <a href="/code" style={{
-                display: "inline-block", background: `linear-gradient(135deg, ${C.blue}, ${C.blueMid})`,
-                color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600,
-                letterSpacing: 1, padding: "10px 16px", borderRadius: 4, textDecoration: "none",
-              }}>OPEN CODE ANALYZER</a>
-            </GlowCard>
-            <GlowCard accent={C.teal}>
-              <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 600, marginBottom: 12 }}>API Endpoint</div>
-              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, padding: "12px", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: C.frost, marginBottom: 12 }}>
-                POST /api/code/analyze<br/>
-                &#123; "repo_url": "https://github.com/user/repo" &#125;
-              </div>
-              <div style={{ color: C.slate, fontSize: 11 }}>FREE for all users. No authentication required.</div>
-            </GlowCard>
-          </div>
-        </Reveal>
-
-        {/* Supported Languages */}
-        <Reveal delay={0.35}>
-          <div style={{ marginTop: 32, color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>SUPPORTED LANGUAGES</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            {["Python", "JavaScript", "TypeScript", "Rust", "Solidity", "Go", "Java", "C++", "C", "Ruby", "PHP", "React JSX", "React TSX", "Solana Programs", "Smart Contracts"].map((lang, i) => (
-              <span key={i} style={{
-                background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 4,
-                padding: "6px 14px", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: C.frost,
-              }}>{lang}</span>
-            ))}
-          </div>
-        </Reveal>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* API REFERENCE */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="api" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="API REFERENCE" sub="Integrate Oracle Sentinel data." /></Reveal>
-        
-        {/* Free Endpoints */}
-        <Reveal delay={0.1}>
-          <div style={{ marginBottom: 32 }}>
-            <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>FREE ENDPOINTS</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {[
-                { method: "GET", path: "/api/signals", desc: "Active BUY_YES and BUY_NO trading signals", res: '[ { question, signal_type, edge, confidence, ai_probability, ... } ]' },
-                { method: "GET", path: "/api/markets", desc: "All monitored markets with current prices", res: '[ { question, yes_price, no_price, volume, liquidity, slug } ]' },
-                { method: "GET", path: "/api/predictions", desc: "Tracked predictions with price snapshots", res: '[ { question, signal_type, edge_at_signal, price_after_1h, ... } ]' },
-                { method: "GET", path: "/api/dashboard", desc: "Complete dashboard payload", res: '{ active_signals, markets, predictions, accuracy_stats, ... }' },
-                { method: "GET", path: "/api/health", desc: "System health check", res: '{ status: "ok", markets: 79, server_time: "..." }' },
-                { method: "POST", path: "/api/code/analyze", desc: "Analyze GitHub repository", res: '{ repo, files_analyzed, languages, analysis }' },
-                { method: "GET", path: "/api/code/health", desc: "Code analyzer health check", res: '{ status: "ok", service: "sentinel-code" }' },
-              ].map((ep, i) => (
-                <GlowCard key={i} style={{ padding: "14px 20px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-                    <span style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, background: `${C.teal}15`, padding: "3px 8px", borderRadius: 3 }}>{ep.method}</span>
-                    <span style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600 }}>{ep.path}</span>
-                    <span style={{ color: C.slate, fontSize: 11, marginLeft: "auto" }}>{ep.desc}</span>
-                  </div>
-                  <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, padding: "6px 12px", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: C.frost, overflowX: "auto" }}>{ep.res}</div>
-                </GlowCard>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-
-        {/* Protected Endpoints */}
-        <Reveal delay={0.2}>
-          <div style={{ marginBottom: 32 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-              <div style={{ color: C.amber, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2 }}>PROTECTED ENDPOINTS</div>
-              <span style={{ color: C.slateD, fontSize: 10, fontFamily: "'JetBrains Mono', monospace" }}>x402 Payment Protocol</span>
-            </div>
-            <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden", marginBottom: 16 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "70px 220px 1fr 80px", gap: 12, padding: "12px 16px", borderBottom: `1px solid ${C.border}`, background: C.bgPanel }}>
-                <span style={{ color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1 }}>METHOD</span>
-                <span style={{ color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1 }}>ENDPOINT</span>
-                <span style={{ color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1 }}>DESCRIPTION</span>
-                <span style={{ color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1, textAlign: "right" }}>PRICE</span>
-              </div>
-              {[
-                { m: "GET", p: "/api/v1/signal/{slug}", d: "Trading signal for specific market", price: "$0.01" },
-                { m: "GET", p: "/api/v1/analysis/{slug}", d: "Full AI analysis with reasoning", price: "$0.03" },
-                { m: "GET", p: "/api/v1/whale/{slug}", d: "Whale trading activity", price: "$0.02" },
-                { m: "GET", p: "/api/v1/bulk", d: "Top 10 active signals", price: "$0.08" },
-                { m: "POST", p: "/api/v1/analyze", d: "Analyze any Polymarket URL", price: "$0.05" },
-              ].map((ep, i) => (
-                <div key={i} style={{ display: "grid", gridTemplateColumns: "70px 220px 1fr 80px", gap: 12, padding: "12px 16px", borderBottom: i < 4 ? `1px solid ${C.border}` : "none" }}>
-                  <span style={{ color: ep.m === "POST" ? C.amber : C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600 }}>{ep.m}</span>
-                  <span style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{ep.p}</span>
-                  <span style={{ color: C.frost, fontSize: 11 }}>{ep.d}</span>
-                  <span style={{ color: C.amber, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600, textAlign: "right" }}>{ep.price}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ padding: "14px 18px", background: `${C.teal}08`, border: `1px solid ${C.teal}25`, borderRadius: 6 }}>
-              <span style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>Hold 1,000+ $OSAI = FREE unlimited access to all protected endpoints</span>
-            </div>
-          </div>
-        </Reveal>
-
-        {/* Usage Example */}
-        <Reveal delay={0.3}>
-          <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 12 }}>USAGE EXAMPLE</div>
-          <CodeBlock lang="python" code={`import requests
-
-# Free endpoint
-signals = requests.get("https://oraclesentinel.xyz/api/signals").json()
-
-for signal in signals:
-    print(f"[{signal['signal_type']}] {signal['question']}")
-    print(f"  Edge: {signal['edge']}% | Confidence: {signal['confidence']}")`} />
-        </Reveal>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* SDK */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="sdk" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="PYTHON SDK" sub="Integrate in minutes." /></Reveal>
-        
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
-          <Reveal delay={0.1}>
-            <GlowCard accent={C.blue} style={{ height: "100%" }}>
-              <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>INSTALLATION</div>
-              <CodeBlock lang="bash" code={`# Basic installation
-pip install oracle-sentinel
-
-# With Solana support (for token gating)
-pip install oracle-sentinel[solana]`} />
-              <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
-                <a href="https://pypi.org/project/oracle-sentinel/" target="_blank" rel="noopener noreferrer" style={{
-                  background: `linear-gradient(135deg, ${C.blue}, ${C.blueMid})`,
-                  color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600,
-                  letterSpacing: 1, padding: "10px 16px", borderRadius: 4, textDecoration: "none",
-                }}>VIEW ON PYPI</a>
-                <a href="https://github.com/oraclesentinel/oracle-sentinel-python" target="_blank" rel="noopener noreferrer" style={{
-                  background: "transparent", border: `1px solid ${C.borderL}`,
-                  color: C.frost, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 500,
-                  letterSpacing: 1, padding: "10px 16px", borderRadius: 4, textDecoration: "none",
-                }}>GITHUB</a>
-              </div>
-            </GlowCard>
-          </Reveal>
-
-          <Reveal delay={0.15}>
-            <GlowCard accent={C.teal} style={{ height: "100%" }}>
-              <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>FEATURES</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {[
-                  "Automatic signature verification for token gating",
-                  "Built-in x402 micropayments",
-                  "FREE access for 1000+ $OSAI holders",
-                  "Async support & type hints",
-                  "Comprehensive error handling",
-                ].map((f, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ color: C.teal, fontSize: 12 }}>✓</span>
-                    <span style={{ color: C.frost, fontSize: 12 }}>{f}</span>
-                  </div>
-                ))}
-              </div>
-            </GlowCard>
-          </Reveal>
-        </div>
-
-        <Reveal delay={0.2}>
-          <div style={{ marginTop: 32, color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 12 }}>QUICK START</div>
-          <CodeBlock lang="python" code={`from oracle_sentinel import OracleSentinelClient
-
-# Initialize with private key for FREE access (if holding 1000+ $OSAI)
-client = OracleSentinelClient(
-    private_key="YOUR_SOLANA_PRIVATE_KEY"
-)
-
-# Get bulk signals (FREE for holders, $0.08 otherwise)
-result = client.get_bulk_signals()
-for signal in result["signals"]:
-    print(f"{signal['signal']}: {signal['question']}")
-    print(f"  Edge: {signal['edge']}%")
-
-# Analyze any Polymarket URL
-analysis = client.analyze_url("https://polymarket.com/event/...")
-print(analysis["recommendation"])`} />
-        </Reveal>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* TOKEN */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="token" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="$OSAI TOKEN" sub="Unlock free API access." /></Reveal>
-        
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
-          <Reveal delay={0.1}>
-            <GlowCard accent={C.amber} style={{ height: "100%" }}>
-              <div style={{ color: C.amber, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>CONTRACT ADDRESS</div>
-              <div style={{ 
-                display: "flex", alignItems: "center", gap: 12, padding: "14px", 
-                background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6,
-                cursor: "pointer", transition: "all 0.2s",
-              }}
-              onClick={() => navigator.clipboard.writeText("HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump")}
-              >
-                <span style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, flex: 1, wordBreak: "break-all" }}>HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump</span>
-                <span style={{ color: C.amber, fontSize: 12, flexShrink: 0 }}>COPY</span>
-              </div>
-              <div style={{ color: C.slateD, fontSize: 10, marginTop: 8, fontFamily: "'JetBrains Mono', monospace" }}>Click to copy</div>
-              
-              <div style={{ marginTop: 20, display: "flex", gap: 12 }}>
-                <a href="https://jup.ag/swap/SOL-HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump" target="_blank" rel="noopener noreferrer" style={{
-                  background: `linear-gradient(135deg, ${C.amber}, ${C.amber}cc)`,
-                  color: "#000", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700,
-                  letterSpacing: 1, padding: "10px 16px", borderRadius: 4, textDecoration: "none",
-                }}>BUY ON JUPITER</a>
-                <a href="https://solscan.io/token/HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump" target="_blank" rel="noopener noreferrer" style={{
-                  background: "transparent", border: `1px solid ${C.borderL}`,
-                  color: C.frost, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 500,
-                  letterSpacing: 1, padding: "10px 16px", borderRadius: 4, textDecoration: "none",
-                }}>SOLSCAN</a>
-              </div>
-            </GlowCard>
-          </Reveal>
-
-          <Reveal delay={0.15}>
-            <GlowCard accent={C.teal} style={{ height: "100%" }}>
-              <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>HOLDER BENEFITS</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {[
-                  { tier: "1,000+ $OSAI", benefit: "FREE unlimited API access", color: C.teal },
-                  { tier: "10,000+ $OSAI", benefit: "Premium tier (coming soon)", color: C.blue },
-                  { tier: "100,000+ $OSAI", benefit: "VIP tier (coming soon)", color: C.amber },
-                ].map((t, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 6 }}>
-                    <span style={{ color: t.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600, minWidth: 110 }}>{t.tier}</span>
-                    <span style={{ color: C.frost, fontSize: 11 }}>{t.benefit}</span>
-                  </div>
-                ))}
-              </div>
-            </GlowCard>
-          </Reveal>
-        </div>
-
-        <Reveal delay={0.2}>
-          <div style={{ marginTop: 32 }}>
-            <GlowCard accent={C.green}>
-              <div style={{ color: C.green, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 12 }}>HOW TOKEN GATING WORKS</div>
-              <div style={{ color: C.frost, fontSize: 13, lineHeight: 1.8 }}>
-                When you use the SDK with your Solana private key, the system verifies your wallet signature and checks your $OSAI balance on-chain. 
-                If you hold 1,000+ tokens, all protected API endpoints become FREE. No payment required, no rate limits. 
-                The verification happens automatically on each request.
-              </div>
-            </GlowCard>
-          </div>
-        </Reveal>
-      </Section>
-
-      {/* OPENCLAW INTEGRATION */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="openclaw" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="AI AGENT LAYER" sub="OpenClaw: The brain behind the bot." /></Reveal>
-        
-        <Reveal delay={0.1}>
-          <GlowCard accent={C.teal} style={{ marginBottom: 32 }}>
-            <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>WHAT IS OPENCLAW</div>
-            <p style={{ color: C.frost, fontSize: 14, lineHeight: 1.8, marginBottom: 16 }}>
-              OpenClaw is an autonomous AI agent gateway running Claude Sonnet 4.5 directly on the Oracle Sentinel server. It's not a simple chatbot — it's a full AI agent with access to execute commands, fetch web data, search the internet, read/write files, and control the entire system via natural language.
-            </p>
-            <p style={{ color: C.slate, fontSize: 13, lineHeight: 1.7 }}>
-              When you send a message via Telegram, OpenClaw receives it, reads Oracle Sentinel's skill configuration, decides what actions to take, executes them autonomously, and returns formatted results — all without human intervention.
-            </p>
-          </GlowCard>
-        </Reveal>
-
-        {/* Architecture Flow */}
-        <Reveal delay={0.15}>
-          <div style={{ background: C.bgCard, border: `1px solid ${C.border}`, borderRadius: 8, padding: "36px 32px", marginBottom: 32 }}>
-            <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 24 }}>MESSAGE FLOW</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              {[
-                { label: "USER", text: "Telegram Message", color: C.frost },
-                { label: "GATEWAY", text: "OpenClaw (port 18789)", color: C.blue },
-                { label: "AI MODEL", text: "Claude Sonnet 4.5 via OpenRouter", color: C.amber },
-                { label: "SKILL", text: "Read SKILL.md → Understand Oracle Sentinel", color: C.teal },
-                { label: "EXECUTE", text: "Run tools: exec, web_fetch, web_search, browser", color: C.green },
-                { label: "RESPONSE", text: "Format results → Send back to Telegram", color: C.frost },
-              ].map((step, i) => (
-                <div key={i}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 0" }}>
-                    <span style={{
-                      color: step.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 9,
-                      letterSpacing: 1.5, width: 80, textAlign: "right", flexShrink: 0, opacity: 0.7,
-                    }}>{step.label}</span>
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: step.color, opacity: 0.6, flexShrink: 0 }} />
-                    <span style={{ color: C.frost, fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>{step.text}</span>
-                  </div>
-                  {i < 5 && <div style={{ marginLeft: 96, width: 1, height: 12, background: `${C.blue}30` }} />}
-                </div>
-              ))}
-            </div>
-          </div>
-        </Reveal>
-
-        {/* Tools Grid */}
-        <Reveal delay={0.2}>
-          <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>AVAILABLE TOOLS</div>
-        </Reveal>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, marginBottom: 32 }}>
-          {[
-            { name: "exec", desc: "Execute bash commands on server" },
-            { name: "web_fetch", desc: "Fetch & parse web pages" },
-            { name: "web_search", desc: "Search internet for live info" },
-            { name: "browser", desc: "Control headless browser" },
-            { name: "read", desc: "Read files & directories" },
-            { name: "write", desc: "Create & edit files" },
-            { name: "cron", desc: "Schedule recurring tasks" },
-            { name: "memory", desc: "Persist context across sessions" },
-          ].map((tool, i) => (
-            <Reveal key={i} delay={0.2 + i * 0.04}>
-              <GlowCard style={{ padding: "18px 16px", textAlign: "center" }}>
-                <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 700, marginBottom: 8, opacity: 0.5 }}>{">"}</div>
-                <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{tool.name}</div>
-                <div style={{ color: C.slateD, fontSize: 10, lineHeight: 1.5 }}>{tool.desc}</div>
-              </GlowCard>
-            </Reveal>
-          ))}
-        </div>
-
-        {/* Telegram Commands */}
-        <Reveal delay={0.25}>
-          <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>TELEGRAM COMMANDS</div>
-        </Reveal>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
-          {[
-            { cmd: "Show active signals", desc: "Query API and display current BUY_YES/BUY_NO signals with edge, confidence, and reasoning", color: C.teal },
-            { cmd: "Check accuracy", desc: "Pull prediction data, compute win rate by confidence level, and format detailed accuracy report", color: C.amber },
-            { cmd: "Check health", desc: "Run system health check — database status, uptime, next scan time", color: C.green },
-            { cmd: "Run a scan now", desc: "Trigger manual market scan — sync markets, fetch news, run AI analysis, send Telegram report", color: C.blue },
-            { cmd: "Analyze this market: [URL]", desc: "Fetch Polymarket page, extract data, assess probability, provide recommendation with key factors", color: C.red },
-          ].map((item, i) => (
-            <Reveal key={i} delay={0.25 + i * 0.05}>
-              <GlowCard style={{ padding: "16px 24px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{
-                    color: item.color, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600,
-                    background: `${item.color}12`, padding: "4px 12px", borderRadius: 4, flexShrink: 0,
-                  }}>"{item.cmd}"</span>
-                  <span style={{ color: C.slate, fontSize: 12, lineHeight: 1.5 }}>{item.desc}</span>
-                </div>
-              </GlowCard>
-            </Reveal>
-          ))}
-        </div>
-
-        {/* Why Powerful */}
-        <Reveal delay={0.3}>
-          <GlowCard accent={C.blue}>
-            <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>WHY THIS IS POWERFUL</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-              {[
-                { title: "Not a Fixed Bot", desc: "Traditional bots execute pre-coded commands. OpenClaw thinks — if you ask something outside its skill definition, it figures out how to answer using available tools." },
-                { title: "Full Server Access", desc: "Claude Sonnet 4.5 has direct access to execute commands on the VPS. It can query databases, read logs, run scripts, and modify configurations." },
-                { title: "Context Aware", desc: "OpenClaw reads the Oracle Sentinel skill file to understand the entire system — project structure, API endpoints, database schema, and operational context." },
-                { title: "Real-time Intelligence", desc: "Combines web search, page fetching, and local execution to provide analysis grounded in both live internet data and Oracle Sentinel's internal database." },
-              ].map((item, i) => (
-                <div key={i}>
-                  <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{item.title}</div>
-                  <div style={{ color: C.slate, fontSize: 12, lineHeight: 1.7 }}>{item.desc}</div>
-                </div>
-              ))}
-            </div>
-          </GlowCard>
-        </Reveal>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* FOR AI AGENTS */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <Section id="agents" style={{ borderTop: `1px solid ${C.border}` }}>
-        <Reveal><SectionLabel text="FOR AI AGENTS" sub="Integrate with Oracle Sentinel." /></Reveal>
-        
-        <Reveal delay={0.1}>
-          <GlowCard accent={C.teal} style={{ marginBottom: 24 }}>
-            <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>SKILL FILE</div>
-            <p style={{ color: C.frost, fontSize: 14, lineHeight: 1.8, marginBottom: 16 }}>
-              AI agents can read Oracle Sentinel's skill file to understand how to interact with the system. The skill file contains API endpoints, usage examples, signal types, and integration instructions.
-            </p>
-            <CodeBlock lang="bash" code={`curl -s https://oraclesentinel.xyz/skill.md`} />
-          </GlowCard>
-        </Reveal>
-
-        <Reveal delay={0.15}>
-          <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>WHAT AGENTS CAN DO</div>
-        </Reveal>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-          {[
-            { title: "Fetch Trading Signals", desc: "Get active BUY_YES/BUY_NO signals with AI probability, edge calculation, and confidence level.", code: "curl -s https://oraclesentinel.xyz/api/signals" },
-            { title: "Monitor Markets", desc: "Access 79+ monitored Polymarket markets with current prices, volume, and liquidity data.", code: "curl -s https://oraclesentinel.xyz/api/markets" },
-            { title: "Track Predictions", desc: "View tracked predictions with price snapshots at 1h, 6h, 24h intervals for accuracy verification.", code: "curl -s https://oraclesentinel.xyz/api/predictions" },
-            { title: "Interactive Analysis", desc: "Send Polymarket URLs to the Telegram bot for real-time AI analysis with resolution rules breakdown.", code: "Message @oraclesentinel_pm_bot" },
-          ].map((item, i) => (
-            <Reveal key={i} delay={0.15 + i * 0.05}>
-              <GlowCard style={{ height: "100%" }}>
-                <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{item.title}</div>
-                <div style={{ color: C.slate, fontSize: 12, lineHeight: 1.6, marginBottom: 12 }}>{item.desc}</div>
-                <div style={{
-                  background: C.bg, border: `1px solid ${C.border}`, borderRadius: 4, padding: "8px 12px",
-                  fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: C.teal,
-                }}>{item.code}</div>
-              </GlowCard>
-            </Reveal>
-          ))}
-        </div>
-
-        <Reveal delay={0.25}>
-          <GlowCard accent={C.blue}>
-            <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 16 }}>INTEGRATION EXAMPLE</div>
-            <CodeBlock lang="python" code={`# AI Agent integration with Oracle Sentinel
-import requests
-
-# 1. Read the skill file to understand capabilities
-skill = requests.get("https://oraclesentinel.xyz/skill.md").text
-
-# 2. Fetch active signals
-signals = requests.get("https://oraclesentinel.xyz/api/signals").json()
-
-# 3. Filter high-confidence opportunities
-for signal in signals:
-    if signal["edge"] > 10 and signal["confidence"] == "HIGH":
-        print(f"🎯 {signal['signal_type']}: {signal['question']}")
-        print(f"   Edge: +{signal['edge']}%")
-        print(f"   AI Probability: {signal['ai_probability']*100:.1f}%")
-        print(f"   Market Price: {signal['market_price']*100:.1f}%")`} />
-          </GlowCard>
-        </Reveal>
-      </Section>
-
-      {/* ═══════════════════════════════════════════════════════ */}
-      {/* FOOTER */}
-      {/* ═══════════════════════════════════════════════════════ */}
-      <footer style={{
-        borderTop: `1px solid ${C.border}`, padding: "48px 32px", textAlign: "center",
-        position: "relative", zIndex: 1,
-      }}>
-        <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, letterSpacing: 4, marginBottom: 8 }}>ORACLE SENTINEL</div>
-        <div style={{ color: C.slateD, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 24 }}>AUTONOMOUS PREDICTION INTELLIGENCE</div>
-        <div style={{ display: "flex", justifyContent: "center", gap: 32, marginBottom: 24 }}>
-          {[
-            { l: "Dashboard", h: "/predict" },
-            { l: "X", h: "https://x.com/oracle_sentinel" },
-            { l: "GitHub", h: "https://github.com/oraclesentinel?tab=repositories" },
-            { l: "Telegram", h: "https://t.me/oraclesentinelsignals" },
-            { l: "$OSAI", h: "https://solscan.io/token/HuDBwWRsa4bu8ueaCb7PPgJrqBeZDkcyFqMW5bbXpump" },
-          ].map((lnk, i) => (
-            <a key={i} href={lnk.h} target="_blank" rel="noopener noreferrer" style={{
-              color: C.frost, fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
-              textDecoration: "none", borderBottom: `1px solid ${C.border}`, paddingBottom: 2,
-            }}>{lnk.l}</a>
-          ))}
-        </div>
-        <div style={{ color: C.slateD, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1 }}>
-          Built on Solana ecosystem principles · Powered by Anthropic Claude · © 2026
-        </div>
-      </footer>
-    </div>
+    </>
   );
 }

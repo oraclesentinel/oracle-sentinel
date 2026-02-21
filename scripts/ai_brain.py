@@ -353,24 +353,11 @@ Include the source for each fact."""
             except Exception as e:
                 self._log('WARN', f'Failed to check timeframe: {e}')
         
-        # VALIDATION 3: Check liquidity threshold
-        # Low liquidity markets are easily manipulated
-        liquidity_threshold = 10000  # $10K minimum
-        liquidity_val = market_data.get('liquidity', 0)
-        
-        if liquidity_val < liquidity_threshold:
-            self._log('WARN', f'  Market liquidity ${liquidity_val:,.0f} below threshold ${liquidity_threshold:,.0f}. Skipping.')
-            return {
-                'probability': market_data.get('yes_price', 0.5),
-                'confidence': 'SKIP',
-                'reasoning': f'Market liquidity (${liquidity_val:,.0f}) is too low. Thin markets below ${liquidity_threshold:,.0f} are easily manipulated and unreliable.',
-                'recommendation': 'SKIP',
-                'key_factors_for': [],
-                'key_factors_against': [],
-                'risks': 'N/A - Low liquidity',
-                'edge_assessment': 'N/A - Thin market',
-                'whale_interpretation': 'N/A - Low liquidity'
-            }
+        # VALIDATION 3: Liquidity/volume check - DISABLED
+        # Jupiter aggregates to Polymarket, so actual liquidity exists on Polymarket
+        # Volume shown in Jupiter is only Jupiter's volume, not total market liquidity
+        # Skipping this check since market quality is determined by Polymarket backend
+        self._log('INFO', '  Liquidity check skipped (Jupiter aggregates to Polymarket)')
 
         # Market context
         yes_price = market_data.get('yes_price', 0)

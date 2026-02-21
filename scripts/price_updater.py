@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Polymarket Intelligence System - Price Updater
+Oracle Sentinel - Price Updater
 Fetches latest prices for all tracked markets
+Primary: Jupiter Prediction API
 """
 
 import sqlite3
@@ -9,110 +10,95 @@ import os
 import json
 import time
 from datetime import datetime
-from polymarket_client import PolymarketClient
+from jupiter_prediction_client import JupiterPredictionClient
 
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'polymarket.db')
 
 
 class PriceUpdater:
-    """Updates prices for tracked markets"""
-    
+    """Updates prices for tracked markets using Jupiter API"""
+
     def __init__(self):
-        self.client = PolymarketClient()
+        self.jupiter = JupiterPredictionClient()
         self.db_path = DB_PATH
-    
+
     def _get_db(self):
-        return sqlite3.connect(self.db_path)
-    
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
     def _log(self, level: str, message: str):
         timestamp = datetime.now().strftime("%H:%M:%S")
         print(f"[{timestamp}] [{level}] {message}")
-        
+
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute(
+                'INSERT INTO system_logs (level, component, message) VALUES (?, ?, ?)',
+                (level, 'price_updater', message)
+            )
+            conn.commit()
+            conn.close()
+        except:
+            pass
+
+    def get_markets_to_update(self) -> list:
+        """Get all active markets from database"""
         conn = self._get_db()
         cursor = conn.cursor()
-        cursor.execute(
-            'INSERT INTO system_logs (level, component, message) VALUES (?, ?, ?)',
-            (level, 'price_updater', message)
-        )
-        conn.commit()
-        conn.close()
-    
-    def get_tokens_to_update(self) -> list:
-        """Get all token IDs from database"""
-        conn = self._get_db()
-        cursor = conn.cursor()
-        
+
         cursor.execute('''
-            SELECT t.id, t.market_id, t.token_id, t.outcome, m.question
-            FROM tokens t
-            JOIN markets m ON t.market_id = m.id
-            WHERE m.active = 1 
-              AND m.closed = 0
-              AND (m.end_date IS NULL OR m.end_date > datetime('now'))
-              AND t.token_id IS NOT NULL 
-              AND t.token_id != ''
+            SELECT id, polymarket_id, question, outcome_prices
+            FROM markets
+            WHERE active = 1
+              AND closed = 0
+              AND (end_date IS NULL OR end_date > datetime('now'))
+              AND polymarket_id IS NOT NULL
+              AND polymarket_id != ''
         ''')
-        
+
         rows = cursor.fetchall()
         conn.close()
-        
-        return [
-            {
-                'id': row[0],
-                'market_id': row[1],
-                'token_id': row[2],
-                'outcome': row[3],
-                'question': row[4]
-            }
-            for row in rows
-        ]
-    
-    def update_token_price(self, token: dict) -> bool:
-        """Update price for a single token"""
-        token_id = token['token_id']
-        
-        # Skip invalid token IDs
-        if not token_id or len(str(token_id)) < 20:
-            return False
+
+        return [dict(row) for row in rows]
+
+    def update_market_price_jupiter(self, market: dict) -> bool:
+        """Update price for a Jupiter market (POLY-XXXXXX format)"""
+        market_id = market['polymarket_id']
         
         try:
-            # Get midpoint price
-            mid = self.client.get_midpoint(token_id)
+            # Fetch market data from Jupiter
+            jupiter_market = self.jupiter.get_market_by_id(market_id)
             
-            if mid is None or mid == 0:
-                # Coba get price sebagai alternatif
-                mid = self.client.get_price(token_id, "BUY")
-            
-            if mid is None:
+            if not jupiter_market:
                 return False
             
-            # Get spread if available
-            bid = None
-            ask = None
-            try:
-                spread_data = self.client.get_spread(token_id)
-                if spread_data:
-                    bid = float(spread_data.get('bid', 0) or 0)
-                    ask = float(spread_data.get('ask', 0) or 0)
-            except:
-                pass  # Spread optional
+            # Extract prices
+            pricing = jupiter_market.get('pricing', {})
+            yes_price = (pricing.get('buyYesPriceUsd', 0) or 0) / 1_000_000
+            no_price = (pricing.get('buyNoPriceUsd', 0) or 0) / 1_000_000
             
-            # Save to database
+            if yes_price == 0 and no_price == 0:
+                return False
+            
+            # Update database
             conn = self._get_db()
             cursor = conn.cursor()
             
-            # Update token current price
-            cursor.execute(
-                'UPDATE tokens SET price = ? WHERE id = ?',
-                (mid, token['id'])
-            )
+            # Update market outcome_prices
+            new_prices = json.dumps([yes_price, no_price])
+            cursor.execute('''
+                UPDATE markets 
+                SET outcome_prices = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', (new_prices, market['id']))
             
             # Save price history
-            spread = (ask - bid) if (ask and bid and ask > 0 and bid > 0) else None
             cursor.execute('''
                 INSERT INTO prices (market_id, token_id, price, bid, ask, spread)
                 VALUES (?, ?, ?, ?, ?, ?)
-            ''', (token['market_id'], token_id, mid, bid, ask, spread))
+            ''', (market['id'], market_id, yes_price, None, None, None))
             
             conn.commit()
             conn.close()
@@ -120,59 +106,69 @@ class PriceUpdater:
             return True
             
         except Exception as e:
-            # Uncomment untuk debug:
-            # print(f"   Debug error for {token_id[:20]}: {e}")
+            # Uncomment for debug:
+            # print(f"   Debug error for {market_id}: {e}")
             return False
-    
+
     def update_all_prices(self) -> dict:
-        """Update prices for all tracked tokens"""
-        self._log('INFO', "Starting price update...")
+        """Update prices for all tracked markets"""
+        self._log('INFO', "Starting Jupiter price update...")
+
+        markets = self.get_markets_to_update()
         
-        tokens = self.get_tokens_to_update()
-        self._log('INFO', f"Found {len(tokens)} tokens to update")
+        # Separate Jupiter vs legacy Polymarket markets
+        jupiter_markets = [m for m in markets if m['polymarket_id'].startswith('POLY-')]
+        legacy_markets = [m for m in markets if not m['polymarket_id'].startswith('POLY-')]
         
+        self._log('INFO', f"Found {len(jupiter_markets)} Jupiter markets, {len(legacy_markets)} legacy markets")
+
         success = 0
         failed = 0
-        
-        for i, token in enumerate(tokens):
-            if self.update_token_price(token):
+
+        # Update Jupiter markets
+        for i, market in enumerate(jupiter_markets):
+            if self.update_market_price_jupiter(market):
                 success += 1
             else:
                 failed += 1
-            
-            # Rate limiting - don't hammer the API
-            if (i + 1) % 10 == 0:
-                self._log('INFO', f"Progress: {i+1}/{len(tokens)}")
-                time.sleep(1)  # Pause every 10 requests
+
+            # Rate limiting
+            if (i + 1) % 20 == 0:
+                self._log('INFO', f"Progress: {i+1}/{len(jupiter_markets)}")
+                time.sleep(0.5)
+
+        self._log('INFO', f"Jupiter price update complete: {success} success, {failed} failed")
         
-        self._log('INFO', f"Price update complete: {success} success, {failed} failed")
-        
+        # Note: Legacy Polymarket markets will be updated by resolve_legacy_polymarket.py
+        if legacy_markets:
+            self._log('INFO', f"Skipped {len(legacy_markets)} legacy Polymarket markets (use resolve_legacy_polymarket.py)")
+
         return {
-            'total': len(tokens),
+            'total': len(jupiter_markets),
             'success': success,
             'failed': failed,
+            'legacy_skipped': len(legacy_markets),
             'timestamp': datetime.now().isoformat()
         }
-    
+
     def get_price_changes(self, hours: int = 1) -> list:
         """Get markets with significant price changes"""
         conn = self._get_db()
         cursor = conn.cursor()
-        
-        # Get latest vs older prices
+
         cursor.execute('''
             WITH latest AS (
                 SELECT market_id, token_id, price, timestamp,
-                       ROW_NUMBER() OVER (PARTITION BY token_id ORDER BY timestamp DESC) as rn
+                       ROW_NUMBER() OVER (PARTITION BY market_id ORDER BY timestamp DESC) as rn
                 FROM prices
             ),
             older AS (
                 SELECT market_id, token_id, price, timestamp,
-                       ROW_NUMBER() OVER (PARTITION BY token_id ORDER BY timestamp DESC) as rn
+                       ROW_NUMBER() OVER (PARTITION BY market_id ORDER BY timestamp DESC) as rn
                 FROM prices
                 WHERE timestamp < datetime('now', ?)
             )
-            SELECT 
+            SELECT
                 l.market_id,
                 l.token_id,
                 l.price as current_price,
@@ -180,17 +176,17 @@ class PriceUpdater:
                 (l.price - o.price) as change,
                 m.question
             FROM latest l
-            JOIN older o ON l.token_id = o.token_id AND o.rn = 1
+            JOIN older o ON l.market_id = o.market_id AND o.rn = 1
             JOIN markets m ON l.market_id = m.id
             WHERE l.rn = 1
             AND ABS(l.price - o.price) > 0.02
             ORDER BY ABS(l.price - o.price) DESC
             LIMIT 10
         ''', (f'-{hours} hours',))
-        
+
         rows = cursor.fetchall()
         conn.close()
-        
+
         return [
             {
                 'market_id': row[0],
@@ -208,32 +204,25 @@ class PriceUpdater:
 def main():
     """Run price update"""
     print("="*60)
-    print("💰 Polymarket Price Updater")
+    print("💰 Oracle Sentinel - Jupiter Price Updater")
     print("="*60)
-    
+
     updater = PriceUpdater()
-    
-    # First sync markets if needed
-    client = PolymarketClient()
-    markets = client.get_all_markets()
-    
-    if len(markets) < 10:
-        print("\n📊 Syncing markets first...")
-        client.sync_markets(limit=50)
-    
+
     # Update prices
-    print("\n💵 Updating prices...")
+    print("\n💵 Updating prices from Jupiter...")
     result = updater.update_all_prices()
-    
+
     print(f"\n📈 Results:")
-    print(f"   Total tokens: {result['total']}")
+    print(f"   Jupiter markets: {result['total']}")
     print(f"   Success: {result['success']}")
     print(f"   Failed: {result['failed']}")
-    
+    print(f"   Legacy skipped: {result['legacy_skipped']}")
+
     # Show price changes if any
     print("\n📊 Recent price movements (>2%):")
     changes = updater.get_price_changes(hours=1)
-    
+
     if changes:
         for c in changes[:5]:
             direction = "📈" if c['change'] > 0 else "📉"
@@ -241,7 +230,7 @@ def main():
             print(f"      {c['old_price']:.2%} → {c['current_price']:.2%} ({c['change']:+.2%})")
     else:
         print("   No significant changes in the last hour")
-    
+
     print("\n" + "="*60)
 
 

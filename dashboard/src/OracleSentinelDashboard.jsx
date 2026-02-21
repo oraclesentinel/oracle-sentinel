@@ -93,7 +93,7 @@ function Header() {
         SENTINEL PREDICT
       </div>
       <div style={{ color: SLATE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", letterSpacing: "3px", marginTop: "4px" }}>
-        POLYMARKET PREDICTION INTELLIGENCE v2.0
+        JUPITER PREDICTION INTELLIGENCE v3.0
       </div>
     </div>
   );
@@ -266,11 +266,11 @@ function WeeklyAccuracyChart({ data }) {
 
 function BootSequence({ onComplete }) {
   const lines = [
-    { text: "SENTINEL PREDICT v2.0", color: BLUE_BRIGHT },
-    { text: "Polymarket Prediction Intelligence System", color: FROST },
+    { text: "SENTINEL PREDICT v3.0", color: BLUE_BRIGHT },
+    { text: "Jupiter Prediction Intelligence System", color: FROST },
     { text: "─────────────────────────────────────────", color: BORDER_LIGHT },
     { text: "> Initializing prediction engine...", color: SLATE },
-    { text: "> Loading market data from Polymarket API...", color: SLATE },
+    { text: "> Loading market data from Jupiter API...", color: SLATE },
     { text: "> Connecting to OpenRouter AI backend...", color: SLATE },
     { text: "> Mounting accuracy tracker...", color: SLATE },
     { text: "> Establishing Telegram channel...", color: SLATE },
@@ -519,7 +519,7 @@ function AIAgentChat() {
             <div style={{ fontSize: "32px", marginBottom: "12px" }}>🤖</div>
             <div style={{ color: FROST, marginBottom: "8px" }}>Sentinel Predict AI</div>
             <div style={{ lineHeight: "1.6" }}>
-              Analyze any Polymarket with:<br />
+              Analyze any prediction market with:<br />
               <span style={{ color: TEAL }}>"Analyze this market and check the resolution rules carefully: [URL]"</span>
             </div>
           </div>
@@ -587,7 +587,7 @@ function AIAgentChat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask about any Polymarket..."
+            placeholder="Ask about any prediction market..."
             disabled={isLoading}
             style={{
               flex: 1,
@@ -681,7 +681,7 @@ function AIAgentPanel() {
             <div style={{ fontSize: "48px", marginBottom: "16px" }}>🤖</div>
             <div style={{ color: FROST, marginBottom: "12px", fontSize: "14px" }}>Sentinel Predict AI</div>
             <div style={{ lineHeight: "1.8", maxWidth: "500px", margin: "0 auto" }}>
-              Analyze any Polymarket with:<br />
+              Analyze any prediction market with:<br />
               <span style={{ color: TEAL }}>"Analyze this market: [URL]"</span><br /><br />
               Or ask questions like:<br />
               <span style={{ color: AMBER_COLD }}>"What are the current signals?"</span><br />
@@ -709,7 +709,7 @@ function AIAgentPanel() {
         <div ref={messagesEndRef} />
       </div>
       <div style={{ display: "flex", gap: "10px" }}>
-        <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Ask about any Polymarket or paste a URL to analyze..." disabled={isLoading} style={{ flex: 1, background: BG, border: `1px solid ${BORDER_LIGHT}`, borderRadius: "6px", padding: "12px 14px", color: ICE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", resize: "none", height: "50px", outline: "none" }} onFocus={(e) => { e.target.style.borderColor = BLUE_MID; }} onBlur={(e) => { e.target.style.borderColor = BORDER_LIGHT; }} />
+        <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Ask about any prediction market or paste a market ID..." disabled={isLoading} style={{ flex: 1, background: BG, border: `1px solid ${BORDER_LIGHT}`, borderRadius: "6px", padding: "12px 14px", color: ICE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", resize: "none", height: "50px", outline: "none" }} onFocus={(e) => { e.target.style.borderColor = BLUE_MID; }} onBlur={(e) => { e.target.style.borderColor = BORDER_LIGHT; }} />
         <button onClick={sendMessage} disabled={isLoading || !input.trim()} style={{ background: isLoading || !input.trim() ? BORDER : `linear-gradient(135deg, ${BLUE_MID}, ${BLUE_DIM})`, border: "none", borderRadius: "6px", padding: "0 24px", color: isLoading || !input.trim() ? SLATE : ICE, fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", fontWeight: 600, cursor: isLoading || !input.trim() ? "not-allowed" : "pointer", transition: "all 0.2s" }}>
           {isLoading ? "..." : "SEND"}
         </button>
@@ -830,13 +830,13 @@ export default function OracleSentinelDashboard() {
     return () => clearInterval(iv);
   }, [booted, seenWhaleTxs]);
 
-  // Fetch live markets from Polymarket API
+  // Fetch live markets from Jupiter API
   useEffect(() => {
     if (!booted) return;
     const fetchLiveMarkets = async () => {
       setLiveMarketsLoading(true);
       try {
-        const res = await fetch(API_BASE + "/markets/live?limit=100");
+        const res = await fetch(API_BASE + "/markets/live/fresh?limit=100");
         if (res.ok) {
           const json = await res.json();
           setLiveMarkets(json.markets || []);
@@ -1014,7 +1014,7 @@ export default function OracleSentinelDashboard() {
               <Panel title="SYSTEM">
                 <div style={{ display: "flex", flexDirection: "column", gap: "7px", fontSize: "13px" }}>
                   {[
-                    { l: "Polymarket API", s: apiOk ? "CONNECTED" : "OFFLINE", c: apiOk ? TEAL : RED_COLD },
+                    { l: "Jupiter API", s: apiOk ? "CONNECTED" : "OFFLINE", c: apiOk ? TEAL : RED_COLD },
                     { l: "OpenRouter AI", s: "CONNECTED", c: TEAL },
                     { l: "Telegram Bot", s: "CONNECTED", c: TEAL },
                     { l: "Cron Daemon", s: "4H CYCLE", c: TEAL },
@@ -1026,10 +1026,10 @@ export default function OracleSentinelDashboard() {
                 <div style={{ color: FROST, fontSize: "12px", lineHeight: "1.7", fontFamily: "'JetBrains Mono', monospace" }}>
                   <div style={{ color: BLUE_BRIGHT, fontWeight: 600, marginBottom: "8px" }}>DASHBOARD GUIDE</div>
                   <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>SIGNALS</span> — AI-generated signals with rigorous multi-factor analysis.</div>
-                  <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>MARKETS</span> — Browse tracked Polymarket markets with real-time prices.</div>
+                  <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>MARKETS</span> — Browse tracked Jupiter markets with real-time prices.</div>
                   <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>ACCURACY</span> — Monitor prediction performance and win rate.</div>
                   <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>WHALES</span> — Track large trades ($5K+) from whales.</div>
-                  <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>AI AGENT</span> — Ask for instant analysis of any Polymarket URL.</div>
+                  <div style={{ marginBottom: "6px" }}><span style={{ color: TEAL }}>AI AGENT</span> — Ask for instant analysis of any Jupiter market.</div>
                   <div style={{ color: AMBER_COLD, fontSize: "13px", marginTop: "8px", padding: "8px", background: BG, borderRadius: "4px" }}>💡 Can't find your market? Use the AI Agent tab for instant analysis.</div>
                 </div>
               </Panel>
@@ -1040,10 +1040,10 @@ export default function OracleSentinelDashboard() {
         {/* ── MARKETS ── */}
         {activeTab === "markets" && (
           <Panel title="MARKET EXPLORER" headerRight={<span style={{ color: SLATE, fontSize: "12px", fontFamily: "'JetBrains Mono', monospace" }}>{liveMarketsLoading ? "Loading..." : (liveMarkets.length)} markets · <span style={{ color: TEAL }}>LIVE</span></span>}>
-            <ColHeaders columns={[{l:"",w:"40px"},{l:"MARKET",w:"1fr"},{l:"YES",w:"60px",a:"right"},{l:"NO",w:"60px",a:"right"},{l:"VOL 24H",w:"80px",a:"right"},{l:"LIQ",w:"70px",a:"right"}]} />
+            <ColHeaders columns={[{l:"",w:"40px"},{l:"MARKET",w:"1fr"},{l:"YES",w:"60px",a:"right"},{l:"NO",w:"60px",a:"right"},{l:"VOL 24H",w:"80px",a:"right"}]} />
             <div style={{ maxHeight: "calc(100vh - 340px)", overflowY: "auto" }}>
               {(liveMarkets).map((m, i) => (
-                <div key={m.id || i} className="row-hover" style={{ display: "grid", gridTemplateColumns: "40px 1fr 60px 60px 80px 70px", gap: "8px", alignItems: "center", padding: "8px 10px", fontSize: "13px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.02}s both` }}>
+                <div key={m.id || i} className="row-hover" style={{ display: "grid", gridTemplateColumns: "40px 1fr 60px 60px 80px", gap: "8px", alignItems: "center", padding: "8px 10px", fontSize: "13px", fontFamily: "'JetBrains Mono', monospace", borderBottom: `1px solid ${GRID_LINE}`, animation: `fadeInUp 0.3s ease-out ${i * 0.02}s both` }}>
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     <div 
                       onClick={(e) => {
@@ -1068,7 +1068,6 @@ export default function OracleSentinelDashboard() {
                   <span style={{ color: TEAL, textAlign: "right", fontWeight: 500 }}>{((m.yes_price || 0) * 100).toFixed(1)}¢</span>
                   <span style={{ color: RED_COLD, textAlign: "right", fontWeight: 500 }}>{((m.no_price || 0) * 100).toFixed(1)}¢</span>
                   <span style={{ color: FROST, textAlign: "right" }}>${formatNum(m.volume_24h || m.volume || 0)}</span>
-                  <span style={{ color: SLATE, textAlign: "right" }}>${formatNum(m.liquidity || 0)}</span>
                 </div>
               ))}
             </div>
@@ -1412,7 +1411,6 @@ export default function OracleSentinelDashboard() {
                     <span style={{ color: TEAL, fontSize: "14px", fontWeight: 600 }}>YES: {((selectedMarket.yes_price || 0) * 100).toFixed(1)}¢</span>
                     <span style={{ color: RED_COLD, fontSize: "14px", fontWeight: 600 }}>NO: {((selectedMarket.no_price || 0) * 100).toFixed(1)}¢</span>
                     <span style={{ color: FROST, fontSize: "12px" }}>Vol: ${formatNum(selectedMarket.volume_24h || selectedMarket.volume || 0)}</span>
-                    <span style={{ color: SLATE, fontSize: "12px" }}>Liq: ${formatNum(selectedMarket.liquidity || 0)}</span>
                   </div>
                 </div>
                 <div onClick={() => { setSelectedMarket(null); setMarketAnalysis(null); }} style={{ color: SLATE, cursor: "pointer", fontSize: "20px", padding: "4px 8px", borderRadius: "4px", transition: "all 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.color = RED_COLD} onMouseLeave={(e) => e.currentTarget.style.color = SLATE}>✕</div>
@@ -1463,10 +1461,10 @@ export default function OracleSentinelDashboard() {
                 </div>
               )}
               
-              {/* Polymarket Link */}
+              {/* Jupiter Link */}
               <div style={{ display: "flex", justifyContent: "center", paddingTop: "8px" }}>
-                <a href={`https://polymarket.com/market/${selectedMarket.slug || selectedMarket.id}`} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: `linear-gradient(135deg, ${BLUE_DARK}, ${BG})`, border: `1px solid ${BORDER_LIGHT}`, borderRadius: "6px", padding: "10px 20px", color: FROST, fontSize: "12px", textDecoration: "none", transition: "all 0.2s" }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER_LIGHT; e.currentTarget.style.color = FROST; }}>
-                  View on Polymarket
+                <a href={`https://jup.ag/prediction/${selectedMarket.event_id || selectedMarket.polymarket_id || selectedMarket.id}`} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: `linear-gradient(135deg, ${BLUE_DARK}, ${BG})`, border: `1px solid ${BORDER_LIGHT}`, borderRadius: "6px", padding: "10px 20px", color: FROST, fontSize: "12px", textDecoration: "none", transition: "all 0.2s" }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = TEAL; e.currentTarget.style.color = TEAL; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER_LIGHT; e.currentTarget.style.color = FROST; }}>
+                  View on Jupiter
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 </a>
               </div>
@@ -1528,16 +1526,6 @@ export default function OracleSentinelDashboard() {
                   </div>
                 </div>
 
-                {/* Recommendation */}
-                {signalDetail?.recommendation && (
-                  <div>
-                    <div style={{ color: TEAL, fontSize: "12px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>RECOMMENDATION</div>
-                    <div style={{ color: ICE, fontSize: "13px", lineHeight: "1.6", background: BG, padding: "12px", borderRadius: "4px", border: `1px solid ${GRID_LINE}` }}>
-                      {signalDetail.recommendation}
-                    </div>
-                  </div>
-                )}
-
                 {/* Key Factors */}
                 {((signalDetail?.key_factors_for?.length > 0) || (signalDetail?.key_factors_against?.length > 0)) && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
@@ -1570,28 +1558,6 @@ export default function OracleSentinelDashboard() {
                   </div>
                 )}
 
-                {/* Price Tracking */}
-                {signalDetail?.tracking && (
-                  <div>
-                    <div style={{ color: BLUE_BRIGHT, fontSize: "12px", fontWeight: 600, letterSpacing: "1px", marginBottom: "8px" }}>PRICE TRACKING</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
-                      {[
-                        { label: "At Signal", value: signalDetail.tracking.market_price_at_signal, color: FROST },
-                        { label: "After 1H", value: signalDetail.tracking.price_after_1h, color: BLUE_MID },
-                        { label: "After 6H", value: signalDetail.tracking.price_after_6h, color: BLUE_BRIGHT },
-                        { label: "After 24H", value: signalDetail.tracking.price_after_24h, color: AMBER_COLD },
-                        { label: "After 48H", value: signalDetail.tracking.price_after_48h, color: TEAL },
-                      ].map(t => (
-                        <div key={t.label} style={{ textAlign: "center", background: BG, padding: "8px", borderRadius: "4px" }}>
-                          <div style={{ color: t.value ? t.color : SLATE, fontSize: "14px", fontWeight: 600 }}>
-                            {t.value ? (t.value * 100).toFixed(1) + "¢" : "—"}
-                          </div>
-                          <div style={{ color: SLATE, fontSize: "12px", marginTop: "2px" }}>{t.label}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Whale Activity */}
                 {signalDetail?.whales?.length > 0 && (
@@ -1617,7 +1583,7 @@ export default function OracleSentinelDashboard() {
 
       {/* Footer */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: BG_PANEL, borderTop: `1px solid ${BORDER}`, padding: "5px 20px", display: "flex", justifyContent: "space-between", fontSize: "13px", color: SLATE }}>
-        <span>SENTINEL PREDICT v2.0 — Claude Sonnet 4.5</span>
+        <span>SENTINEL PREDICT v3.0 — Claude Sonnet 4.5</span>
         <span style={{ display: "flex", gap: "16px" }}>
           <span>OpenClaw 2026.1.30</span><a href="https://x.com/oracle_sentinel" target="_blank" rel="noopener noreferrer" style={{ color: AMBER_COLD, textDecoration: "none" }}>$OSAI</a>
           <span style={{ color: apiOk ? TEAL : RED_COLD }}>{apiOk ? "API: connected" : "API: offline"}</span>

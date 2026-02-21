@@ -10,7 +10,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from polymarket_client import PolymarketClient
+from jupiter_prediction_client import JupiterPredictionClient
 from price_updater import PriceUpdater
 from news_fetcher import NewsFetcher
 from ai_brain import AIBrain
@@ -77,7 +77,7 @@ def main():
 
     # Step 1: Sync more markets
     print("\n📊 Step 1: Syncing 100 markets...")
-    client = PolymarketClient()
+    client = JupiterPredictionClient()
     result = client.sync_markets(limit=100)
     print(f"   Synced {result['synced']}/{result['fetched']} (skipped {result['skipped']})")
     if result['skip_reasons']:

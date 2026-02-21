@@ -15,6 +15,7 @@ import sys
 import json
 import sqlite3
 import requests
+from jupiter_prediction_client import JupiterPredictionClient
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
@@ -99,47 +100,24 @@ def send_telegram(text: str):
 
 
 # =========================================================
-# POLYMARKET API
+# JUPITER API
 # =========================================================
-def fetch_market_price(condition_id: str) -> float:
-    """Fetch current price from Polymarket Gamma API"""
-    if not condition_id:
+def fetch_market_price(market_id: str) -> float:
+    """Fetch current price from Jupiter Prediction API"""
+    if not market_id:
         return None
-    
     try:
-        # Use Gamma API (more reliable)
-        response = requests.get(
-            f"https://gamma-api.polymarket.com/markets/{condition_id}",
-            timeout=10
-        )
-        if response.ok:
-            data = response.json()
-            
-            # Parse outcomePrices - it's a JSON string like '["0.85", "0.15"]'
-            outcome_prices = data.get('outcomePrices', '["0.5", "0.5"]')
-            
-            # Handle both string and list formats
-            if isinstance(outcome_prices, str):
-                import ast
-                try:
-                    prices = ast.literal_eval(outcome_prices)
-                except:
-                    prices = [0.5, 0.5]
-            else:
-                prices = outcome_prices
-            
-            # First price is YES price
-            yes_price = float(prices[0]) if prices else 0.5
-            
-            # Log successful fetch
-            log(f"  📊 Fetched {condition_id}: {yes_price*100:.1f}¢")
+        jupiter = JupiterPredictionClient()
+        market = jupiter.get_market_by_id(market_id)
+        
+        if market:
+            pricing = market.get('pricing', {})
+            yes_price = (pricing.get('buyYesPriceUsd', 0) or 0) / 1_000_000
+            log(f"  📊 Fetched {market_id}: {yes_price*100:.1f}¢")
             return yes_price
-            
     except Exception as e:
-        log(f"  ⚠ Gamma API error for {condition_id}: {e}")
-    
+        log(f"  ⚠ Jupiter API error for {market_id}: {e}")
     return None
-
 
 def fetch_prices_batch(positions: list) -> dict:
     """Fetch prices for multiple positions"""
@@ -366,7 +344,7 @@ def format_alert_message(position: dict, alert: dict, current_price: float) -> s
 
     # Add market link if available
     if position.get('polymarket_id'):
-        msg += f"\n\n🔗 https://polymarket.com/event/{position.get('polymarket_id', '')[:20]}"
+        msg += f"\n\n🔗 https://jup.ag/prediction/{position.get('polymarket_id', '')[:20]}"
     
     return msg
 

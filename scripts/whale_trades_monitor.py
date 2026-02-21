@@ -27,7 +27,8 @@ MIN_TRADE_SIZE_USD = 5000      # $5,000 minimum for alerts
 MEGA_WHALE_THRESHOLD = 20000   # $20,000+ triggers AI analysis
 
 # Data API
-DATA_API_BASE = "https://data-api.polymarket.com"
+# Jupiter Prediction API for trades
+from jupiter_prediction_client import JupiterPredictionClient
 
 
 def init_db():
@@ -100,18 +101,28 @@ def send_telegram(text: str):
 
 
 def fetch_recent_trades(limit: int = 50) -> list:
-    """Fetch recent trades from Polymarket Data API"""
+    """Fetch recent trades from Jupiter Prediction API"""
     try:
-        resp = requests.get(
-            f"{DATA_API_BASE}/trades",
-            params={"limit": limit},
-            timeout=15
-        )
-        if resp.status_code == 200:
-            return resp.json()
-        else:
-            print(f"API error: {resp.status_code}")
-            return []
+        jupiter = JupiterPredictionClient()
+        trades = jupiter.get_trades(limit=limit)
+        
+        # Convert Jupiter format to compatible format
+        converted = []
+        for t in trades:
+            converted.append({
+                'id': t.get('id', ''),
+                'taker': t.get('ownerPubkey', ''),
+                'market': t.get('marketId', ''),
+                'eventSlug': t.get('eventId', ''),
+                'title': t.get('eventTitle', ''),
+                'outcome': t.get('side', '').upper(),  # yes/no -> YES/NO
+                'side': t.get('action', ''),  # buy/sell
+                'size': int(t.get('amountUsd', 0)) / 1_000_000 if t.get('amountUsd') else 0,
+                'price': int(t.get('priceUsd', 0)) / 1_000_000 if t.get('priceUsd') else 0,
+                'timestamp': t.get('createdAt', ''),
+                'tx_hash': t.get('txHash', t.get('id', '')),
+            })
+        return converted
     except Exception as e:
         print(f"Fetch error: {e}")
         return []
@@ -127,43 +138,49 @@ def calculate_trade_value(trade: dict) -> float:
 
 def auto_fetch_market_from_api(trade: dict) -> int:
     """
-    Auto-fetch market dari Polymarket API jika belum ada di database.
+    Auto-fetch market dari Jupiter API jika belum ada di database.
     Returns market_id jika berhasil, None jika gagal.
     """
-    from polymarket_client import PolymarketClient
-    
-    slug = trade.get('eventSlug', '')
+    market_id_str = trade.get('market', trade.get('eventSlug', ''))
     title = trade.get('title', '')
-    
-    if not slug:
-        print(f"  ⚠ No slug available for auto-fetch")
+
+    if not market_id_str:
+        print(f"  ⚠ No market ID available for auto-fetch")
         return None
-    
-    print(f"  🔄 Auto-fetching market from Polymarket API...")
-    print(f"     Slug: {slug}")
-    
+
+    print(f"  🔄 Auto-fetching market from Jupiter API...")
+    print(f"     Market ID: {market_id_str}")
+
     try:
-        client = PolymarketClient()
+        jupiter = JupiterPredictionClient()
         
-        # Fetch market by slug
-        market_data = client.get_market_by_slug(slug)
+        # Try direct fetch by market ID
+        target_market = jupiter.get_market_by_id(market_id_str)
         
-        if not market_data:
-            print(f"  ⚠ Market not found on Polymarket API")
+        if target_market:
+            # Add _event info for save_market compatibility
+            target_market['_event'] = {
+                'eventId': target_market.get('eventId', ''),
+                'title': target_market.get('metadata', {}).get('title', ''),
+                'category': target_market.get('category', ''),
+            }
+        
+        if not target_market:
+            print(f"  ⚠ Market not found on Jupiter API")
             return None
-        
+
         # Save to database
-        market_id = client.save_market(market_data)
-        
-        print(f"  ✅ Market auto-fetched and saved! ID: {market_id}")
-        print(f"     Question: {market_data.get('question', '')[:60]}...")
-        
-        return market_id
-        
+        db_market_id = jupiter.save_market(target_market)
+
+        print(f"  ✅ Market auto-fetched and saved! ID: {db_market_id}")
+        event_title = target_market.get('_event', {}).get('title', '')[:60]
+        print(f"     Title: {event_title}...")
+
+        return db_market_id
+
     except Exception as e:
         print(f"  ❌ Auto-fetch failed: {e}")
         return None
-
 
 def analyze_mega_whale(trade: dict) -> dict:
     """
@@ -858,7 +875,7 @@ def format_trade_alert(trade: dict, ai_analysis: dict = None) -> str:
         f"Value: <b>${value_usd:,.0f}</b>",
         f"Time: {trade_time}",
         f"",
-        f"Market: polymarket.com/event/{slug}",
+        f"Market: jup.ag/prediction/{slug}",
         f"TX: polygonscan.com/tx/{tx_hash}",
     ]
     

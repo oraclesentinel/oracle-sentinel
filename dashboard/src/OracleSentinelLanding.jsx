@@ -222,6 +222,11 @@ export default function OracleSentinelLanding() {
               letterSpacing: 1.5, textDecoration: "none", textTransform: "uppercase",
               transition: "color 0.2s",
             }} onMouseEnter={e => e.target.style.color = C.frost} onMouseLeave={e => e.target.style.color = C.slate}>CODE</a>
+            <a href="/economic" style={{
+              color: C.slate, fontFamily: "'JetBrains Mono', monospace", fontSize: 10,
+              letterSpacing: 1.5, textDecoration: "none", textTransform: "uppercase",
+              transition: "color 0.2s",
+            }} onMouseEnter={e => e.target.style.color = C.frost} onMouseLeave={e => e.target.style.color = C.slate}>ECONOMIC</a>
           </div>
         </div>
       </nav>
@@ -250,7 +255,7 @@ export default function OracleSentinelLanding() {
 
             <Reveal delay={0.2}>
               <p style={{ fontSize: 16, color: C.frost, lineHeight: 1.8, maxWidth: 580, marginBottom: 36, margin: "0 auto 36px" }}>
-                AI-powered analysis for prediction markets and code repositories. Scan Polymarket for mispriced opportunities. Audit GitHub repos for vulnerabilities. All tracked with radical transparency.
+                AI-powered analysis for prediction markets and code repositories. Scan Jupiter prediction markets for mispriced opportunities. Audit GitHub repos for vulnerabilities. All tracked with radical transparency.
               </p>
             </Reveal>
 
@@ -268,6 +273,12 @@ export default function OracleSentinelLanding() {
                   letterSpacing: 1.5, padding: "15px 32px", borderRadius: 6, textDecoration: "none",
                   display: "inline-block",
                 }}>CODE ANALYZER</a>
+                <a href="/economic" style={{
+                  background: `linear-gradient(135deg, ${C.amber}, #b8860b)`, border: "none",
+                  color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 500,
+                  letterSpacing: 1.5, padding: "15px 32px", borderRadius: 6, textDecoration: "none",
+                  display: "inline-block",
+                }}>MARKETPLACE</a>
               </div>
             </Reveal>
           </div>
@@ -285,11 +296,11 @@ export default function OracleSentinelLanding() {
         <Reveal>
           <div style={{ textAlign: "center", marginBottom: 64 }}>
             <div style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 4, marginBottom: 12 }}>INTELLIGENCE MODULES</div>
-            <h2 style={{ color: C.ice, fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 800, lineHeight: 1.15 }}>Two brains.<br /><span style={{ color: C.teal }}>One mission.</span></h2>
+            <h2 style={{ color: C.ice, fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 800, lineHeight: 1.15 }}>Three brains.<br /><span style={{ color: C.teal }}>One mission.</span></h2>
           </div>
         </Reveal>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
           {/* PREDICT Module */}
           <Reveal delay={0.1}>
             <Card glow={C.blue} style={{ padding: 0, height: "100%" }}>
@@ -301,7 +312,7 @@ export default function OracleSentinelLanding() {
                     </div>
                     <div>
                       <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 700 }}>SENTINEL PREDICT</div>
-                      <div style={{ color: C.dim, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 1 }}>POLYMARKET INTELLIGENCE</div>
+                      <div style={{ color: C.dim, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 1 }}>JUPITER INTELLIGENCE</div>
                     </div>
                   </div>
                   <span style={{ color: C.green, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "4px 10px", background: `${C.green}15`, borderRadius: 4 }}>LIVE</span>
@@ -379,6 +390,51 @@ export default function OracleSentinelLanding() {
               </div>
             </Card>
           </Reveal>
+
+          {/* ECONOMIC Module */}
+          <Reveal delay={0.3}>
+            <Card glow={C.amber} style={{ padding: 0, height: "100%" }}>
+              <div style={{ padding: "32px 28px", borderBottom: `1px solid ${C.border}` }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 40, height: 40, background: `linear-gradient(135deg, ${C.amber}, #b8860b)`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700 }}>E</span>
+                    </div>
+                    <div>
+                      <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 700 }}>SENTINEL ECONOMIC</div>
+                      <div style={{ color: C.dim, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 1 }}>AI AGENT ECONOMY</div>
+                    </div>
+                  </div>
+                  <span style={{ color: C.green, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "4px 10px", background: `${C.green}15`, borderRadius: 4 }}>LIVE</span>
+                </div>
+                <p style={{ color: C.frost, fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>
+                  Decentralized marketplace for AI services. Buy, sell, and negotiate API access with AI-powered pricing. USDC payments and $OSAI token gating for free access.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {["AI Negotiation", "USDC Payments", "Token Gating", "API Marketplace"].map(t => (
+                    <span key={t} style={{ color: C.amber, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, padding: "4px 10px", background: `${C.amber}10`, border: `1px solid ${C.amber}20`, borderRadius: 4 }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+              <div style={{ padding: "20px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 24 }}>
+                  <div>
+                    <div style={{ color: C.dim, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, marginBottom: 2 }}>PAYMENT</div>
+                    <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13 }}>USDC</div>
+                  </div>
+                  <div>
+                    <div style={{ color: C.dim, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, marginBottom: 2 }}>FREE ACCESS</div>
+                    <div style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 13 }}>1000+ $OSAI</div>
+                  </div>
+                </div>
+                <a href="/economic" style={{
+                  background: `linear-gradient(135deg, ${C.amber}, #b8860b)`,
+                  color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600,
+                  letterSpacing: 1, padding: "10px 20px", borderRadius: 5, textDecoration: "none",
+                }}>MARKETPLACE</a>
+              </div>
+            </Card>
+          </Reveal>
         </div>
       </Sec>
 
@@ -439,13 +495,15 @@ export default function OracleSentinelLanding() {
               { m: "GET", p: "/api/v1/analysis/{slug}", d: "Full AI analysis with reasoning", price: "$0.03", module: "PREDICT" },
               { m: "POST", p: "/api/code/analyze", d: "Analyze GitHub repository", price: "$0.10", module: "CODE" },
               { m: "GET", p: "/api/code/health", d: "Code analyzer health check", price: "FREE", module: "CODE" },
+              { m: "GET", p: "/api/economic/services", d: "List available AI services", price: "FREE", module: "ECONOMIC" },
+              { m: "POST", p: "/api/economic/negotiate", d: "AI-powered price negotiation", price: "FREE", module: "ECONOMIC" },
             ].map((ep, i) => (
-              <div key={i} style={{ display: "grid", gridTemplateColumns: "80px 240px 1fr 80px", gap: 12, padding: "14px 16px", borderBottom: i < 3 ? `1px solid ${C.border}` : "none" }}>
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "80px 240px 1fr 80px", gap: 12, padding: "14px 16px", borderBottom: i < 5 ? `1px solid ${C.border}` : "none" }}>
                 <span style={{ color: ep.m === "POST" ? C.amber : C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600 }}>{ep.m}</span>
                 <span style={{ color: C.ice, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{ep.p}</span>
                 <div>
                   <span style={{ color: C.frost, fontSize: 12 }}>{ep.d}</span>
-                  <span style={{ color: ep.module === "CODE" ? C.teal : C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, marginLeft: 8 }}>[{ep.module}]</span>
+                  <span style={{ color: ep.module === "CODE" ? C.teal : ep.module === "ECONOMIC" ? C.amber : C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, marginLeft: 8 }}>[{ep.module}]</span>
                 </div>
                 <span style={{ color: ep.price === "FREE" ? C.green : C.amber, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 600, textAlign: "right" }}>{ep.price}</span>
               </div>
@@ -501,7 +559,7 @@ export default function OracleSentinelLanding() {
               <div style={{ color: C.teal, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: 2, marginBottom: 20 }}>HOLDER BENEFITS</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {[
-                  { tier: "1,000+ $OSAI", benefit: "FREE unlimited API access (Predict + Code)", color: C.teal },
+                  { tier: "1,000+ $OSAI", benefit: "FREE unlimited API access (Predict + Code + Economic)", color: C.teal },
                   { tier: "10,000+ $OSAI", benefit: "Premium features (coming soon)", color: C.blue },
                   { tier: "100,000+ $OSAI", benefit: "VIP tier (coming soon)", color: C.amber },
                 ].map((t, i) => (
@@ -550,7 +608,7 @@ export default function OracleSentinelLanding() {
               <span style={{ color: C.blue, fontSize: 7, animation: "pulse 2s infinite" }}>●</span>
               <span style={{ color: C.blue, fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, letterSpacing: 3 }}>ORACLE SENTINEL</span>
             </div>
-            <div style={{ color: C.dim, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1 }}>Autonomous Intelligence Layer | Predict + Code | Built on Solana | 2026</div>
+            <div style={{ color: C.dim, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: 1 }}>Autonomous Intelligence Layer | Predict + Code + Economic | Built on Solana | 2026</div>
           </div>
           <div style={{ display: "flex", gap: 24 }}>
             {[

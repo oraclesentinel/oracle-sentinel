@@ -1,9 +1,9 @@
 # Oracle Sentinel
 
-Autonomous AI agent for Polymarket prediction intelligence.
+Autonomous AI agent for Jupiter Prediction market intelligence.
 
 ![Status](https://img.shields.io/badge/status-live-brightgreen)
-![Version](https://img.shields.io/badge/version-2.0-blue)
+![Version](https://img.shields.io/badge/version-3.0-blue)
 ![Agent](https://img.shields.io/badge/powered%20by-OpenClaw-blue)
 ![AI](https://img.shields.io/badge/AI-Claude%20Sonnet%204.5-purple)
 ![Solana](https://img.shields.io/badge/token-$OSAI-teal)
@@ -11,7 +11,7 @@ Autonomous AI agent for Polymarket prediction intelligence.
 
 ## What It Does
 
-Oracle Sentinel is an autonomous prediction market intelligence system that continuously monitors Polymarket, identifies mispricing opportunities using dual-model AI analysis, tracks whale activity, and maintains radical transparency on all predictions.
+Oracle Sentinel is an autonomous prediction market intelligence system that continuously monitors Jupiter Prediction, identifies mispricing opportunities using dual-model AI analysis, tracks whale activity, and maintains radical transparency on all predictions.
 
 **Not a chatbot. An autonomous system.**
 
@@ -29,7 +29,7 @@ What it can do:
 - Execute bash commands on VPS
 - Query databases in real-time
 - Fetch and parse any web page
-- Read Polymarket resolution rules
+- Read market resolution rules
 - Search the internet for live data
 - Schedule and run tasks autonomously
 
@@ -93,10 +93,10 @@ Final verification and learning:
 ## Core Systems
 
 ### Market Scanner
-Comprehensive analysis of active Polymarket markets using dual-model AI. Identifies opportunities where AI assessment differs significantly from market price.
+Comprehensive analysis of active Jupiter Prediction markets using dual-model AI. Identifies opportunities where AI assessment differs significantly from market price.
 
 ### Whale Intelligence
-Real-time monitoring of large trades on Polymarket. When significant whale activity is detected, the system runs AI analysis to validate whether the whale's direction aligns with AI assessment. Only aligned signals are tracked.
+Real-time monitoring of large trades on Jupiter Prediction. When significant whale activity is detected, the system runs AI analysis to validate whether the whale's direction aligns with AI assessment. Only aligned signals are tracked.
 
 ### Smart Scanner
 Adaptive system that detects market anomalies between scheduled scans. Catches breaking news opportunities that would otherwise be missed.
@@ -121,9 +121,9 @@ Daily analysis of prediction performance. Identifies error patterns, adjusts con
 | **Accuracy Tracking** | Every prediction recorded, every outcome verified |
 | **Dashboard AI Agent** | Chat directly with Oracle Sentinel on the web |
 
-## Dashboard
+## Sentinel Predict
 
-**Live at:** [oraclesentinel.xyz/app](https://oraclesentinel.xyz/app)
+**Live at:** [predict.oraclesentinel.xyz](https://predict.oraclesentinel.xyz)
 
 | Tab | Description |
 |-----|-------------|
@@ -139,34 +139,37 @@ Daily analysis of prediction performance. Identifies error patterns, adjusts con
 ## API Endpoints
 ```bash
 # Dashboard data (stats, signals, accuracy)
-curl https://oraclesentinel.xyz/api/dashboard
+curl https://predict.oraclesentinel.xyz/api/dashboard
 
 # Active signals
-curl https://oraclesentinel.xyz/api/signals
+curl https://predict.oraclesentinel.xyz/api/signals/tracked
 
-# Monitored markets
-curl https://oraclesentinel.xyz/api/markets
-
-# Tracked predictions
-curl https://oraclesentinel.xyz/api/predictions
+# Real-time markets from Jupiter API
+curl https://predict.oraclesentinel.xyz/api/markets/live/fresh
 
 # Whale activity
-curl https://oraclesentinel.xyz/api/whales
+curl https://predict.oraclesentinel.xyz/api/whales
+
+# Self-improvement stats
+curl https://predict.oraclesentinel.xyz/api/self-improvement/stats
 
 # AI Chat - Analyze any market
-curl -X POST https://oraclesentinel.xyz/api/chat \
+curl -X POST https://predict.oraclesentinel.xyz/api/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "Analyze https://polymarket.com/event/..."}'
+  -d '{"message": "Analyze market..."}'
+
+# Trigger AI analysis on specific market
+curl -X POST https://predict.oraclesentinel.xyz/api/markets/live/<market_id>/analyze
 
 # Health check
-curl https://oraclesentinel.xyz/api/health
+curl https://predict.oraclesentinel.xyz/api/health
 ```
 
 ## How to Interact
 
-### Dashboard AI Agent
-Visit [oraclesentinel.xyz/app](https://oraclesentinel.xyz/app) and use the AI Agent tab:
-- "Analyze this market: [Polymarket URL]"
+### Sentinel Predict Dashboard
+Visit [predict.oraclesentinel.xyz](https://predict.oraclesentinel.xyz) and use the AI Agent tab:
+- "Analyze this market: [Market URL]"
 - "What are the current signals?"
 - "Show me accuracy stats"
 
@@ -175,7 +178,6 @@ Join [@oraclesentinelsignals](https://t.me/oraclesentinelsignals) for real-time 
 - Signal alerts (BUY_YES / BUY_NO)
 - Whale trade alerts
 - Signal revisions
-
 
 ### REST API
 Integrate Oracle Sentinel intelligence into your own applications.
@@ -186,7 +188,7 @@ Integrate Oracle Sentinel intelligence into your own applications.
 |-------|------------|
 | **Agent** | OpenClaw — autonomous AI gateway |
 | **AI** | Claude Sonnet 4.5, Claude Haiku 3.5 |
-| **Data** | Polymarket API, News Sources |
+| **Data** | Jupiter Prediction API, News Sources |
 | **Backend** | Python, Flask, SQLite |
 | **Frontend** | React, Vite |
 | **Infrastructure** | VPS, Nginx, SSL |
@@ -196,8 +198,10 @@ Integrate Oracle Sentinel intelligence into your own applications.
 
 | Resource | URL |
 |----------|-----|
-| **Dashboard** | https://oraclesentinel.xyz/app |
-| **Documentation** | https://oraclesentinel.xyz/docs |
+| **Sentinel Predict** | https://predict.oraclesentinel.xyz |
+| **Sentinel Code** | https://code.oraclesentinel.xyz |
+| **Sentinel Economic** | https://economic.oraclesentinel.xyz |
+| **Documentation** | https://docs.oraclesentinel.xyz |
 | **Landing Page** | https://oraclesentinel.xyz |
 | **Telegram Channel** | https://t.me/oraclesentinelsignals |
 | **X (Twitter)** | https://x.com/oracle_sentinel |
@@ -218,10 +222,10 @@ Every prediction is recorded. Every outcome is verified.
 
 No cherry-picked wins. No deleted calls. No hidden losses.
 
-Live accuracy stats: [oraclesentinel.xyz/app](https://oraclesentinel.xyz/app)
+Live accuracy stats: [predict.oraclesentinel.xyz](https://predict.oraclesentinel.xyz)
 
 ---
 
-**Oracle Sentinel v2.0** — Autonomous Prediction Market Intelligence
+**Oracle Sentinel v3.0** — Autonomous Prediction Market Intelligence
 
 Powered by Claude AI and OpenClaw

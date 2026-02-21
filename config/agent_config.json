@@ -8,8 +8,8 @@
     "Always cross-validate technical signals with macro indicators, sentiment analysis, and recent market trends before making high-confidence predictions",
     "Never completely rule out a market's resolvability, especially with high-activity public figures like Elon Musk; maintain probabilistic thinking even for seemingly improbable scenarios"
   ],
-  "version": 6,
-  "last_updated": "2026-02-15T04:04:16.874102",
+  "version": 9,
+  "last_updated": "2026-02-21T06:00:02.356956",
   "category_thresholds": {
     "crypto": 8,
     "sports": 12,
